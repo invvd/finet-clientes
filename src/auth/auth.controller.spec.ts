@@ -5,7 +5,7 @@ import { AuthService } from './auth.service.js';
 
 describe('AuthController', () => {
   let authController: AuthController;
-  let mockAuthService: { login: jest.Mock; logout: jest.Mock };
+  let mockAuthService: { login: jest.Mock; logout: jest.Mock; register: jest.Mock };
 
   const mockCliente = {
     id: 1,
@@ -20,6 +20,7 @@ describe('AuthController', () => {
     mockAuthService = {
       login: jest.fn<any>(),
       logout: jest.fn<any>(),
+      register: jest.fn<any>(),
     };
 
     const module = await Test.createTestingModule({
@@ -53,6 +54,37 @@ describe('AuthController', () => {
       expect(mockAuthService.login).toHaveBeenCalledWith(
         '12.345.678-5',
         'password',
+        '127.0.0.1',
+      );
+    });
+  });
+
+  describe('POST /auth/register', () => {
+    it('call register service and return access_token + cliente', async () => {
+      const result = {
+        access_token: 'register-jwt',
+        cliente: { id: 2, rut: '123456785', nombre_completo: 'Nuevo', email: null, telefono: null },
+      };
+      mockAuthService.register.mockResolvedValue(result);
+
+      const response = await authController.register(
+        {
+          rut: '12.345.678-5',
+          nombre_completo: 'Nuevo',
+          password: 'password123',
+          email: '',
+          telefono: '',
+        },
+        { ip: '127.0.0.1' } as any,
+      );
+
+      expect(response).toEqual(result);
+      expect(mockAuthService.register).toHaveBeenCalledWith(
+        '12.345.678-5',
+        'Nuevo',
+        'password123',
+        '',
+        '',
         '127.0.0.1',
       );
     });

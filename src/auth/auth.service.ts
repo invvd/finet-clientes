@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -66,6 +70,62 @@ export class AuthService {
     const token = await this.jwtService.signAsync(payload);
 
     await this.invalidarSesionesAnteriores(cliente.id_cliente);
+
+    await this.prisma.sesion_portal.create({
+      data: {
+        id_cliente: cliente.id_cliente,
+        token,
+        fecha_inicio: new Date(),
+        fecha_expiracion: this.calcularExpiracion(),
+      },
+    });
+
+    return {
+      access_token: token,
+      cliente: {
+        id: cliente.id_cliente,
+        rut: cliente.rut,
+        nombre_completo: cliente.nombre_completo,
+        email: cliente.email,
+        telefono: cliente.telefono,
+      },
+    };
+  }
+
+  async register(
+    rut: string,
+    nombreCompleto: string,
+    password: string,
+    email?: string | null,
+    telefono?: string | null,
+    ip?: string,
+  ) {
+    const rutLimpio = cleanRut(rut);
+
+    const existente = await this.prisma.cliente.findUnique({
+      where: { rut: rutLimpio },
+    });
+
+    if (existente) {
+      throw new ConflictException('El RUT ya está registrado');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const cliente = await this.prisma.cliente.create({
+      data: {
+        rut: rutLimpio,
+        nombre_completo: nombreCompleto,
+        email: email || null,
+        telefono: telefono || null,
+        password_portal_hash: passwordHash,
+        id_empresa: 1,
+        estado: 'activo',
+      },
+    });
+
+    const payload = { sub: cliente.id_cliente, rut: cliente.rut };
+    const token = await this.jwtService.signAsync(payload);
 
     await this.prisma.sesion_portal.create({
       data: {
