@@ -3,6 +3,7 @@ import { ChevronDown, Search } from 'lucide-react';
 import NavLogo from './NavLogo';
 import PortalClienteButton from './PortalClienteButton';
 import ThemeToggle from './ThemeToggle';
+import MobileMenu from './MobileMenu';
 import { navItems, audienceSwitch } from './nav.config';
 
 export default function Navbar() {
@@ -65,6 +66,7 @@ export default function Navbar() {
               <Search size={18} />
             </button>
             <PortalClienteButton />
+            <MobileMenu items={navItems} />
           </div>
         </div>
       </div>
