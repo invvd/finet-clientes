@@ -6,6 +6,7 @@ import { AppService } from './app.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { DeudaPublicaModule } from './deuda-publica/deuda-publica.module.js';
+import { PortalModule } from './portal/portal.module.js';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DeudaPublicaModule } from './deuda-publica/deuda-publica.module.js';
     PrismaModule,
     AuthModule,
     DeudaPublicaModule,
+    PortalModule,
   ],
   controllers: [AppController],
   providers: [AppService],

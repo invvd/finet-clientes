@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ContratoEstadoDto,
@@ -13,7 +13,10 @@ import {
 export class PortalService {
   constructor(private readonly prisma: PrismaService) {}
 
-  //  CU-23: Consultar estado operativo del contrato 
+  // Estados válidos según RF-20 y CU-23
+  private readonly ESTADOS_CONTRATO_VALIDOS = ['activo', 'suspendido', 'en_tramite'] as const;
+
+  //  CU-23: Consultar estado operativo del contrato
   // Retorna el estado de TODOS los contratos del cliente (puede tener varios) y se ve si esta activo, fechas e identificador ;3.
   async getEstadoContratos(idCliente: number): Promise<ContratoEstadoDto[]> {
     const contratos = await this.prisma.contrato.findMany({
@@ -28,6 +31,20 @@ export class PortalService {
 
     if (!contratos.length) {
       throw new NotFoundException('No se encontraron contratos para este cliente');
+    }
+
+    // CU-23 Excepción 3: registrar estados no reconocidos por la regla de negocio
+    for (const c of contratos) {
+      if (!this.ESTADOS_CONTRATO_VALIDOS.includes(c.estado as any)) {
+        await this.prisma.log_auditoria.create({
+          data: {
+            accion: 'ESTADO_CONTRATO_INVALIDO',
+            entidad_afectada: 'contrato',
+            id_entidad_afectada: c.id_contrato,
+            valor_anterior: { estado: c.estado },
+          },
+        });
+      }
     }
 
     return contratos.map((c) => ({
@@ -152,6 +169,11 @@ export class PortalService {
     });
 
     const saldo_total = facturasMapeadas.reduce((acc, f) => acc + f.monto, 0);
+
+    // CU-27 Excepción 3: saldo negativo indica inconsistencia de datos
+    if (saldo_total < 0) {
+      throw new InternalServerErrorException('Saldo inconsistente. Contacte al administrador.');
+    }
 
     return {
       tiene_deuda: facturasMapeadas.length > 0,
