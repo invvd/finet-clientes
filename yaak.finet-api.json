@@ -47,6 +47,12 @@
             "name": "JWT",
             "value": "<pegar_token_aqui>",
             "id": "IzFuWmUp6M"
+          },
+          {
+            "enabled": true,
+            "name": "ADMIN_API_KEY",
+            "value": "finet-admin-key-2026-dev",
+            "id": "env_AdminKeyId1"
           }
         ],
         "color": null,
@@ -67,6 +73,40 @@
         "headers": [],
         "name": "auth",
         "sortPriority": -1780120507445.0,
+        "settingSendCookies": {
+          "enabled": false,
+          "value": true
+        },
+        "settingStoreCookies": {
+          "enabled": false,
+          "value": true
+        },
+        "settingValidateCertificates": {
+          "enabled": false,
+          "value": true
+        },
+        "settingFollowRedirects": {
+          "enabled": false,
+          "value": true
+        },
+        "settingRequestTimeout": {
+          "enabled": false,
+          "value": 0
+        }
+      },
+      {
+        "model": "folder",
+        "id": "fl_yJhRgTfVcU",
+        "createdAt": "2026-05-30T18:30:00.000000000",
+        "updatedAt": "2026-05-30T18:30:00.000000000",
+        "workspaceId": "wk_5ik5FWC6FN",
+        "folderId": null,
+        "authentication": {},
+        "authenticationType": null,
+        "description": "",
+        "headers": [],
+        "name": "admin",
+        "sortPriority": -1780120507440.0,
         "settingSendCookies": {
           "enabled": false,
           "value": true
@@ -263,6 +303,89 @@
         "sortPriority": -1780120512331.0,
         "url": "${[ API_URL ]}/auth/login",
         "urlParameters": [],
+        "settingSendCookies": {
+          "enabled": false,
+          "value": true
+        },
+        "settingStoreCookies": {
+          "enabled": false,
+          "value": true
+        },
+        "settingValidateCertificates": {
+          "enabled": false,
+          "value": true
+        },
+        "settingFollowRedirects": {
+          "enabled": false,
+          "value": true
+        },
+        "settingRequestTimeout": {
+          "enabled": false,
+          "value": 0
+        }
+      },
+      {
+        "model": "http_request",
+        "id": "rq_BnXmZkLpQw",
+        "createdAt": "2026-05-30T18:30:00.000000000",
+        "updatedAt": "2026-05-30T18:30:00.000000000",
+        "workspaceId": "wk_5ik5FWC6FN",
+        "folderId": "fl_yJhRgTfVcU",
+        "authentication": {},
+        "authenticationType": null,
+        "body": {},
+        "bodyType": null,
+        "description": "",
+        "headers": [
+          {
+            "enabled": true,
+            "name": "X-API-Key",
+            "value": "${[ ADMIN_API_KEY ]}",
+            "id": "hd_AdminApiKey"
+          }
+        ],
+        "method": "GET",
+        "name": "Intentos Fallidos",
+        "sortPriority": -1780120512331.0,
+        "url": "${[ API_URL ]}/admin/intentos-fallidos?bloqueados=true&page=1&limit=20",
+        "urlParameters": [
+          {
+            "enabled": true,
+            "name": "bloqueados",
+            "value": "true",
+            "id": "up_Blocked"
+          },
+          {
+            "enabled": false,
+            "name": "rut",
+            "value": "",
+            "id": "up_Rut"
+          },
+          {
+            "enabled": false,
+            "name": "desde",
+            "value": "",
+            "id": "up_Desde"
+          },
+          {
+            "enabled": false,
+            "name": "hasta",
+            "value": "",
+            "id": "up_Hasta"
+          },
+          {
+            "enabled": true,
+            "name": "page",
+            "value": "1",
+            "id": "up_Page"
+          },
+          {
+            "enabled": true,
+            "name": "limit",
+            "value": "20",
+            "id": "up_Limit"
+          }
+        ],
         "settingSendCookies": {
           "enabled": false,
           "value": true
