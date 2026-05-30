@@ -39,19 +39,22 @@ export const loginSchema = z.object({
     .refine((val) => validateRut(val), "RUT inválido"),
   password: z
     .string({ message: "La contraseña es obligatoria" })
-    .min(1, "La contraseña es obligatoria"),
+    .min(8, "Mínimo 8 caracteres")
+    .regex(/^(?=.*[A-Z])(?=.*\d).+$/, "Al menos 1 mayúscula y 1 número"),
 });
 
 export const registerSchema = z
   .object({
-    nombre: z
+    nombreCompleto: z
       .string({ message: "El nombre es obligatorio" })
       .min(2, "El nombre debe tener al menos 2 caracteres")
-      .max(100, "El nombre es demasiado largo"),
+      .max(100, "El nombre es demasiado largo")
+      .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo letras y espacios"),
     email: z
       .string({ message: "El email es obligatorio" })
       .min(1, "El email es obligatorio")
-      .email("Email inválido"),
+      .email("Email inválido")
+      .max(254, "El email es demasiado largo"),
     telefono: z
       .string({ message: "El teléfono es obligatorio" })
       .min(1, "El teléfono es obligatorio")
@@ -62,8 +65,9 @@ export const registerSchema = z
       .refine((val) => validateRut(val), "RUT inválido"),
     password: z
       .string({ message: "La contraseña es obligatoria" })
-      .min(8, "La contraseña debe tener al menos 8 caracteres")
-      .max(128, "La contraseña es demasiado larga"),
+      .min(8, "Mínimo 8 caracteres")
+      .max(128, "La contraseña es demasiado larga")
+      .regex(/^(?=.*[A-Z])(?=.*\d).+$/, "Al menos 1 mayúscula y 1 número"),
     confirmPassword: z
       .string({ message: "Debes confirmar la contraseña" })
       .min(1, "Debes confirmar la contraseña"),

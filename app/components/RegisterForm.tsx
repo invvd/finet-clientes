@@ -2,21 +2,25 @@
 
 import { useState } from "react";
 import { registerSchema } from "../utils/login-schema";
+import { api } from "../utils/api";
+import type { ApiError } from "../utils/api";
 import LoginBranding from "./LoginBranding";
 import RutInput from "./RutInput";
 import PasswordInput from "./PasswordInput";
 
 export default function RegisterForm() {
-  const [nombre, setNombre] = useState("");
+  const [nombreCompleto, setNombreCompleto] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [rut, setRut] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
 
   function validateField(field: string, value: string) {
-    const current = { nombre, email, telefono, rut, password, confirmPassword, [field]: value };
+    const current = { nombreCompleto, email, telefono, rut, password, confirmPassword, [field]: value };
     const result = registerSchema.safeParse(current);
     if (!result.success) {
       const fieldError = result.error.issues.find(
@@ -31,10 +35,12 @@ export default function RegisterForm() {
     }
   }
 
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    setServerError("");
+
     const result = registerSchema.safeParse({
-      nombre,
+      nombreCompleto,
       email,
       telefono,
       rut,
@@ -50,8 +56,26 @@ export default function RegisterForm() {
       setErrors(fieldErrors);
       return;
     }
+
     setErrors({});
-    console.log(result.data);
+    setLoading(true);
+
+    try {
+      const data = await api.post<{ token: string }>("/auth/register", {
+        rut: result.data.rut,
+        nombre_completo: result.data.nombreCompleto,
+        email: result.data.email,
+        telefono: result.data.telefono,
+        password: result.data.password,
+      });
+      console.log(data);
+      window.location.href = "/inicio-sesion";
+    } catch (err) {
+      const error = err as ApiError;
+      setServerError(error.message ?? "Error al registrarse");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const inputClass =
@@ -61,31 +85,37 @@ export default function RegisterForm() {
     <div className="rounded-2xl border border-fin-500/20 bg-surface/80 p-8 shadow-2xl shadow-fin-500/10 backdrop-blur-xl sm:p-10">
       <LoginBranding subtitle="Crea tu cuenta" />
 
+      {serverError && (
+        <div className="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {serverError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
           <label
-            htmlFor="nombre"
+            htmlFor="nombreCompleto"
             className="mb-1.5 block text-sm font-medium text-slate-300"
           >
-            Nombre
+            Nombre completo
           </label>
           <input
-            id="nombre"
+            id="nombreCompleto"
             type="text"
             placeholder="Tu nombre completo"
-            value={nombre}
+            value={nombreCompleto}
             onChange={(e) => {
-              setNombre(e.target.value);
-              setErrors((prev) => ({ ...prev, nombre: "" }));
+              setNombreCompleto(e.target.value);
+              setErrors((prev) => ({ ...prev, nombreCompleto: "" }));
             }}
-            onBlur={() => validateField("nombre", nombre)}
-            data-error={!!errors.nombre}
+            onBlur={() => validateField("nombreCompleto", nombreCompleto)}
+            data-error={!!errors.nombreCompleto}
             className={`${inputClass}
               border-red-500/60 focus:border-red-400/60 focus:ring-red-400/20
               data-[error=false]:border-slate-700/60 data-[error=false]:focus:border-fin-400/60 data-[error=false]:focus:ring-fin-400/20`}
           />
-          {errors.nombre && (
-            <p className="mt-1 text-xs text-red-400">{errors.nombre}</p>
+          {errors.nombreCompleto && (
+            <p className="mt-1 text-xs text-red-400">{errors.nombreCompleto}</p>
           )}
         </div>
 
@@ -184,9 +214,10 @@ export default function RegisterForm() {
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-linear-to-r from-fin-500 to-fin-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fin-500/25 transition-all duration-200 hover:from-fin-400 hover:to-fin-500 hover:shadow-fin-400/30 active:scale-[0.98]"
+          disabled={loading}
+          className="w-full rounded-lg bg-linear-to-r from-fin-500 to-fin-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fin-500/25 transition-all duration-200 hover:from-fin-400 hover:to-fin-500 hover:shadow-fin-400/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Registrarse
+          {loading ? "Registrando..." : "Registrarse"}
         </button>
       </form>
 
