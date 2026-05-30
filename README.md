@@ -31,6 +31,26 @@ Variables principales:
 - `CORS_ORIGIN` lista separada por comas de orígenes permitidos
 - `NODE_ENV` usa `production` en prod
 
+## Base de datos local (Docker + Prisma)
+
+Levantar Postgres local:
+
+```bash
+$ docker compose up -d
+```
+
+Generar tablas desde migraciones:
+
+```bash
+$ pnpm prisma migrate deploy
+```
+
+Generar Prisma Client (si lo necesitas):
+
+```bash
+$ pnpm prisma generate
+```
+
 ## Scripts
 
 ```bash
