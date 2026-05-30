@@ -1,21 +1,13 @@
 'use client';
 
 import { Sun, Moon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toggleTheme, getTheme, type Theme } from '../theme/theme';
 
 export default function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<Theme>('light');
-
-  useEffect(() => {
-    setTheme(getTheme());
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <div className="w-9 h-9" />;
-  }
+  const [theme, setTheme] = useState<Theme>(() =>
+    typeof document === 'undefined' ? 'light' : getTheme(),
+  );
 
   function handleClick() {
     const next = toggleTheme();
