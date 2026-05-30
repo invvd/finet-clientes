@@ -101,17 +101,19 @@ describe('AuthController', () => {
   });
 
   describe('POST /auth/recuperar-password', () => {
-    it('call recuperarPassword service with RUT', async () => {
-      const result = { token: 'reset-token' };
+    it('call recuperarPassword service with RUT and IP', async () => {
+      const result = { link: 'http://localhost:5173/restablecer-password?token=reset-token' };
       mockAuthService.recuperarPassword.mockResolvedValue(result);
 
+      const mockReq = { ip: '127.0.0.1' } as any;
       const response = await authController.recuperarPassword({
         rut: '12.345.678-5',
-      });
+      }, mockReq);
 
       expect(response).toEqual(result);
       expect(mockAuthService.recuperarPassword).toHaveBeenCalledWith(
         '12.345.678-5',
+        '127.0.0.1',
       );
     });
   });

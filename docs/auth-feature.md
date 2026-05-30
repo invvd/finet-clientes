@@ -120,7 +120,7 @@ Content-Type: application/json
 **RUT registrado — Respuesta 200:**
 ```json
 {
-  "token": "eyJhbGciOi..."
+  "link": "http://localhost:5173/restablecer-password?token=eyJhbGciOi..."
 }
 ```
 
@@ -131,10 +131,19 @@ Content-Type: application/json
 }
 ```
 
+**RUT registrado sin correo — Respuesta 200:**
+```json
+{
+  "message": "Si el RUT esta registrado, recibiras un enlace de recuperacion"
+}
+```
+(El incidente se registra internamente en `intento_fallido` sin informar al visitante.)
+
 **Notas:**
-- El token es un JWT firmado con claim `type: "reset"`, expira en 15 minutos.
+- El token en el link es un JWT firmado con claim `type: "reset"`, expira en 15 minutos.
 - No puede usarse un token de sesion para resetear (type mismatch).
-- Futuro: enviar por email en lugar de devolverlo en la respuesta.
+- El link completo se devuelve listo para ser enviado por correo electronico (integracion futura).
+- Si el RUT existe pero no tiene email asociado, se registra el incidente y se responde igual que RUT inexistente.
 
 ---
 

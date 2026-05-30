@@ -66,8 +66,9 @@ export class AuthController {
   async recuperarPassword(
     @Body(new ZodValidationPipe(recuperarPasswordSchema))
     body: { rut: string },
+    @Req() req: Request,
   ) {
-    return this.authService.recuperarPassword(body.rut);
+    return this.authService.recuperarPassword(body.rut, req.ip);
   }
 
   @Post('restablecer-password')

@@ -249,13 +249,15 @@ describe('AuthService', () => {
   });
 
   describe('recuperarPassword', () => {
-    it('return token when RUT exists', async () => {
+    it('return link when RUT exists', async () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('reset-token');
 
       const result = await authService.recuperarPassword('12.345.678-5');
 
-      expect(result).toEqual({ token: 'reset-token' });
+      expect(result).toEqual({
+        link: 'http://localhost:5173/restablecer-password?token=reset-token',
+      });
       expect(jwtService.signAsync).toHaveBeenCalledWith(
         { sub: 1, type: 'reset' },
         { expiresIn: '15m' },

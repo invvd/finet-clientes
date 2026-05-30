@@ -162,26 +162,46 @@ export class AuthService {
     });
   }
 
-  async recuperarPassword(rut: string) {
+  async recuperarPassword(rut: string, ip?: string) {
     const rutLimpio = cleanRut(rut);
+    const mensajeGenerico = {
+      message:
+        'Si el RUT está registrado, recibirás un enlace de recuperación',
+    };
 
     const cliente = await this.prisma.cliente.findUnique({
       where: { rut: rutLimpio },
     });
 
     if (!cliente) {
-      return {
-        message:
-          'Si el RUT está registrado, recibirás un enlace de recuperación',
-      };
+      return mensajeGenerico;
     }
 
-    const payload = { sub: cliente.id_cliente, type: 'reset' };
-    const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '15m',
-    });
+    if (!cliente.email) {
+      await this.prisma.intento_fallido.create({
+        data: {
+          rut_intentado: rutLimpio,
+          ip_address: ip ?? '0.0.0.0',
+          id_empresa: cliente.id_empresa ?? undefined,
+        },
+      });
+      return mensajeGenerico;
+    }
 
-    return { token };
+    try {
+      const payload = { sub: cliente.id_cliente, type: 'reset' };
+      const token = await this.jwtService.signAsync(payload, {
+        expiresIn: '15m',
+      });
+
+      const frontendUrl =
+        process.env.FRONTEND_URL || 'http://localhost:5173';
+      const link = `${frontendUrl}/restablecer-password?token=${token}`;
+
+      return { link };
+    } catch {
+      return mensajeGenerico;
+    }
   }
 
   async restablecerPassword(token: string, password: string) {
