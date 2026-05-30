@@ -61,7 +61,11 @@ describe('AuthService', () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt-token');
 
-      const result = await authService.login('12.345.678-5', 'password', '127.0.0.1');
+      const result = await authService.login(
+        '12.345.678-5',
+        'password',
+        '127.0.0.1',
+      );
 
       expect(result).toHaveProperty('access_token', 'jwt-token');
       expect(result).toHaveProperty('cliente');

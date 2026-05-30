@@ -24,9 +24,7 @@ describe('AuthController', () => {
 
     const module = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [
-        { provide: AuthService, useValue: mockAuthService },
-      ],
+      providers: [{ provide: AuthService, useValue: mockAuthService }],
     })
       .overrideGuard({ token: 'jwt' } as any)
       .useValue({ canActivate: () => true })
@@ -62,11 +60,9 @@ describe('AuthController', () => {
 
   describe('POST /auth/logout', () => {
     it('return success message and call logout', async () => {
-      mockAuthService.logout.mockImplementation(
-        async (idCliente: number, token: string) => {
-          // en la implementación real se invalida la sesión
-        },
-      );
+      mockAuthService.logout.mockImplementation(async () => {
+        // en la implementación real se invalida la sesión
+      });
 
       const req = { headers: { authorization: 'Bearer test-token' } };
       const response = await authController.logout(

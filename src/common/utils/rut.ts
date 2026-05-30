@@ -24,7 +24,8 @@ export function validateRut(rut: string): boolean {
   }
 
   const dvEsperado = 11 - (suma % 11);
-  const dvChar = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : String(dvEsperado);
+  const dvChar =
+    dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : String(dvEsperado);
 
   return dvChar === dvIngresado;
 }

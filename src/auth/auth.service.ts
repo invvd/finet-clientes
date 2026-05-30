@@ -36,7 +36,11 @@ export class AuthService {
     }
 
     if (!cliente.password_portal_hash) {
-      await this.registrarIntentoFallido(rutLimpio, ip, cliente.id_empresa ?? null);
+      await this.registrarIntentoFallido(
+        rutLimpio,
+        ip,
+        cliente.id_empresa ?? null,
+      );
       throw new UnauthorizedException('RUT o contraseña incorrectos');
     }
 
@@ -46,7 +50,11 @@ export class AuthService {
     );
 
     if (!passwordValida) {
-      await this.registrarIntentoFallido(rutLimpio, ip, cliente.id_empresa ?? null);
+      await this.registrarIntentoFallido(
+        rutLimpio,
+        ip,
+        cliente.id_empresa ?? null,
+      );
       throw new UnauthorizedException('RUT o contraseña incorrectos');
     }
 
@@ -126,9 +134,8 @@ export class AuthService {
       },
     });
 
-    const bloquearHasta = intentos + 1 >= 5
-      ? new Date(ahora.getTime() + 15 * 60 * 1000)
-      : null;
+    const bloquearHasta =
+      intentos + 1 >= 5 ? new Date(ahora.getTime() + 15 * 60 * 1000) : null;
 
     await this.prisma.intento_fallido.create({
       data: {
