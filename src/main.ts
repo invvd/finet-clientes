@@ -1,8 +1,42 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { ConfigService } from '@nestjs/config';
+import { AppModule } from './app.module.js';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  const config = app.get(ConfigService);
+
+  app.setGlobalPrefix('api');
+  const isProd = config.get<string>('NODE_ENV') === 'production';
+  if (isProd) {
+    app.set('trust proxy', 1);
+  }
+
+  const corsOrigins = (config.get<string>('CORS_ORIGIN') ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (isProd && corsOrigins.length === 0) {
+    throw new Error('CORS_ORIGIN is required in production');
+  }
+
+  app.enableCors(
+    isProd
+      ? {
+          origin: corsOrigins,
+        }
+      : undefined,
+  );
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  const port = process.env.PORT ?? 4000;
+  await app.listen(port);
+  const url = await app.getUrl();
+  const displayUrl = url.replace('[::1]', 'localhost');
+  console.log(`Backend running at ${displayUrl}`);
 }
-bootstrap();
+void bootstrap();
