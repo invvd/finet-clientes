@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { loginSchema } from "../utils/login-schema";
 import { api } from "../utils/api";
 import type { ApiError } from "../utils/api";
@@ -9,6 +10,7 @@ import RutInput from "./RutInput";
 import PasswordInput from "./PasswordInput";
 
 export default function LoginForm() {
+  const router = useRouter();
   const [rut, setRut] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -51,7 +53,7 @@ export default function LoginForm() {
     try {
       const data = await api.post<{ token: string }>("/auth/login", result.data);
       console.log(data);
-      window.location.href = "/perfil";
+      router.push("/perfil");
     } catch (err) {
       const error = err as ApiError;
       setServerError(error.message ?? "Error al iniciar sesión");

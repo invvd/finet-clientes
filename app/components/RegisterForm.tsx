@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { registerSchema } from "../utils/login-schema";
 import { api } from "../utils/api";
 import type { ApiError } from "../utils/api";
@@ -9,6 +10,7 @@ import RutInput from "./RutInput";
 import PasswordInput from "./PasswordInput";
 
 export default function RegisterForm() {
+  const router = useRouter();
   const [nombreCompleto, setNombreCompleto] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -69,7 +71,7 @@ export default function RegisterForm() {
         password: result.data.password,
       });
       console.log(data);
-      window.location.href = "/inicio-sesion";
+      router.push("/inicio-sesion");
     } catch (err) {
       const error = err as ApiError;
       setServerError(error.message ?? "Error al registrarse");
