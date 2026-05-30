@@ -33,6 +33,9 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  await app.listen(process.env.PORT ?? 4000);
+  const port = process.env.PORT ?? 4000;
+  await app.listen(port);
+  const url = await app.getUrl();
+  console.log(`Backend running at ${url}`);
 }
 void bootstrap();
