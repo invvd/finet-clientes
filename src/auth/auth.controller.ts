@@ -72,7 +72,7 @@ export class AuthController {
     return { message: 'Sesión cerrada exitosamente' };
   }
 
-  @Get('me')
+  @Get('perfil')
   @UseGuards(JwtAuthGuard)
   getProfile(
     @CurrentClient()

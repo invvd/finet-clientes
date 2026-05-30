@@ -212,6 +212,40 @@ describe('AuthService', () => {
         }),
       });
     });
+
+    it('set session expiration within 15 minutes from now', async () => {
+      const mockCreated = {
+        id_cliente: 5,
+        rut: '333333333',
+        nombre_completo: 'Expiracion',
+        email: null,
+        telefono: null,
+        password_portal_hash: 'hashed',
+        estado: 'activo',
+        id_empresa: 1,
+      };
+
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
+      (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt');
+
+      const beforeCall = Date.now();
+      await authService.register('33.333.333-3', 'Expiracion', 'Password1');
+      const afterCall = Date.now();
+
+      const createCall = (prisma.sesion_portal.create as jest.Mock).mock
+        .calls[0][0];
+      const fechaExpiracion = new Date(
+        createCall.data.fecha_expiracion,
+      ).getTime();
+
+      const expectedMin = beforeCall + 14 * 60 * 1000;
+      const expectedMax = afterCall + 15 * 60 * 1000;
+
+      expect(fechaExpiracion).toBeGreaterThanOrEqual(expectedMin);
+      expect(fechaExpiracion).toBeLessThanOrEqual(expectedMax);
+    });
   });
 
   describe('logout', () => {

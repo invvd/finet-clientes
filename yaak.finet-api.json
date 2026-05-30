@@ -251,9 +251,9 @@
           }
         ],
         "method": "GET",
-        "name": "Me",
+        "name": "Perfil",
         "sortPriority": -1780120512331.0,
-        "url": "${[ API_URL ]}/auth/me",
+        "url": "${[ API_URL ]}/auth/perfil",
         "urlParameters": [],
         "settingSendCookies": {
           "enabled": false,

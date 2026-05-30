@@ -174,8 +174,12 @@ export class AuthService {
   }
 
   private calcularExpiracion(): Date {
+    const timeout = parseInt(
+      process.env.SESSION_INACTIVITY_MINUTES ?? '15',
+      10,
+    );
     const expiracion = new Date();
-    expiracion.setDate(expiracion.getDate() + 7);
+    expiracion.setMinutes(expiracion.getMinutes() + timeout);
     return expiracion;
   }
 

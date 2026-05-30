@@ -109,7 +109,7 @@ describe('AuthController', () => {
     });
   });
 
-  describe('GET /auth/me', () => {
+  describe('GET /auth/perfil', () => {
     it('return authenticated client', () => {
       const response = authController.getProfile(mockCliente);
       expect(response).toEqual(mockCliente);
