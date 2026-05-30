@@ -24,8 +24,14 @@ export const registerSchema = z.object({
   telefono: z.string().max(20).optional().or(z.literal('')),
   password: z
     .string()
-    .min(6, 'Contraseña debe tener al menos 6 caracteres')
-    .max(72),
+    .min(8, 'Contraseña debe tener al menos 8 caracteres')
+    .max(72)
+    .refine((val) => /[A-Z]/.test(val), {
+      message: 'Contraseña debe contener al menos una mayúscula',
+    })
+    .refine((val) => /[0-9]/.test(val), {
+      message: 'Contraseña debe contener al menos un número',
+    }),
 });
 
 export type RegisterDto = z.infer<typeof registerSchema>;

@@ -1,7 +1,9 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
+import type { Request } from 'express';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 
 describe('AuthController', () => {
   let authController: AuthController;
@@ -18,16 +20,16 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     mockAuthService = {
-      login: jest.fn<any>(),
-      logout: jest.fn<any>(),
-      register: jest.fn<any>(),
+      login: jest.fn(),
+      logout: jest.fn(),
+      register: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [{ provide: AuthService, useValue: mockAuthService }],
     })
-      .overrideGuard({ token: 'jwt' } as any)
+      .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -47,7 +49,7 @@ describe('AuthController', () => {
           rut: '12.345.678-5',
           password: 'password',
         },
-        { ip: '127.0.0.1' } as any,
+        { ip: '127.0.0.1' } as Request,
       );
 
       expect(response).toEqual(result);
@@ -71,18 +73,18 @@ describe('AuthController', () => {
         {
           rut: '12.345.678-5',
           nombre_completo: 'Nuevo',
-          password: 'password123',
+          password: 'Password1',
           email: '',
           telefono: '',
         },
-        { ip: '127.0.0.1' } as any,
+        { ip: '127.0.0.1' } as Request,
       );
 
       expect(response).toEqual(result);
       expect(mockAuthService.register).toHaveBeenCalledWith(
         '12.345.678-5',
         'Nuevo',
-        'password123',
+        'Password1',
         '',
         '',
         '127.0.0.1',
@@ -98,8 +100,8 @@ describe('AuthController', () => {
 
       const req = { headers: { authorization: 'Bearer test-token' } };
       const response = await authController.logout(
-        { id_cliente: 1 } as any,
-        req as any,
+        { id_cliente: 1 },
+        req as Request,
       );
 
       expect(response).toEqual({ message: 'Sesión cerrada exitosamente' });
@@ -109,7 +111,7 @@ describe('AuthController', () => {
 
   describe('GET /auth/me', () => {
     it('return authenticated client', () => {
-      const response = authController.getProfile(mockCliente as any);
+      const response = authController.getProfile(mockCliente);
       expect(response).toEqual(mockCliente);
     });
   });

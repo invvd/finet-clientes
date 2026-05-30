@@ -123,7 +123,7 @@ describe('AuthService', () => {
       const result = await authService.register(
         '12.345.678-5',
         'Nuevo Cliente',
-        'password123',
+        'Password1',
         'nuevo@test.cl',
         '998877665',
         '127.0.0.1',
@@ -155,7 +155,7 @@ describe('AuthService', () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
 
       await expect(
-        authService.register('12.345.678-5', 'Otro', 'password123'),
+        authService.register('12.345.678-5', 'Otro', 'Password1'),
       ).rejects.toThrow('El RUT ya está registrado');
     });
 
@@ -176,7 +176,7 @@ describe('AuthService', () => {
       (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt');
 
-      await authService.register('11.111.111-1', 'Sin Contacto', 'password123', '', '');
+      await authService.register('11.111.111-1', 'Sin Contacto', 'Password1', '', '');
 
       expect(prisma.cliente.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -203,7 +203,7 @@ describe('AuthService', () => {
       (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('session-jwt');
 
-      await authService.register('22.222.222-2', 'Con Sesion', 'password123');
+      await authService.register('22.222.222-2', 'Con Sesion', 'Password1');
 
       expect(prisma.sesion_portal.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -218,7 +218,7 @@ describe('AuthService', () => {
     it('mark session as expired', async () => {
       const updateMany = jest
         .spyOn(prisma.sesion_portal, 'updateMany')
-        .mockResolvedValue({ count: 1 } as any);
+        .mockResolvedValue({ count: 1 });
 
       await authService.logout(1, 'some-token');
 
