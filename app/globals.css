@@ -9,6 +9,21 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
+  --color-fin: #0ea5e9;
+  --color-fin-50: #ecfeff;
+  --color-fin-100: #cffafe;
+  --color-fin-200: #a5f3fc;
+  --color-fin-300: #67e8f9;
+  --color-fin-400: #22d3ee;
+  --color-fin-500: #06b6d4;
+  --color-fin-600: #0891b2;
+  --color-fin-700: #0e7490;
+  --color-fin-800: #155e75;
+  --color-fin-900: #164e63;
+  --color-fin-950: #083344;
+  --color-surface: #0f172a;
+  --color-surface-50: #1e293b;
+  --color-surface-100: #334155;
 }
 
 body {
