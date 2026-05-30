@@ -20,7 +20,7 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
-  @Throttle(5, 60)
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @HttpCode(200)
   async login(
     @Body(new ZodValidationPipe(loginSchema))
