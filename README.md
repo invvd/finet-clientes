@@ -28,6 +28,8 @@ Variables principales:
 
 - `DATABASE_URL` conexion a PostgreSQL
 - `JWT_SECRET` secreto para firmar JWT
+- `ADMIN_API_KEY` clave para endpoints admin
+- `SESSION_INACTIVITY_MINUTES` minutos de inactividad para expirar sesion (default: 15)
 - `CORS_ORIGIN` lista separada por comas de orígenes permitidos
 - `NODE_ENV` usa `production` en prod
 
