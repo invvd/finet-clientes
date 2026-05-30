@@ -77,9 +77,9 @@ describe('JwtStrategy', () => {
       (prisma.sesion_portal.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
 
-      await expect(
-        strategy.validate(mockReq, mockPayload),
-      ).rejects.toThrow('Sesión expirada por inactividad');
+      await expect(strategy.validate(mockReq, mockPayload)).rejects.toThrow(
+        'Sesión expirada por inactividad',
+      );
 
       expect(prisma.cliente.findUnique).not.toHaveBeenCalled();
     });
@@ -94,9 +94,9 @@ describe('JwtStrategy', () => {
       });
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        strategy.validate(mockReq, mockPayload),
-      ).rejects.toThrow('Cliente no encontrado');
+      await expect(strategy.validate(mockReq, mockPayload)).rejects.toThrow(
+        'Cliente no encontrado',
+      );
     });
   });
 });

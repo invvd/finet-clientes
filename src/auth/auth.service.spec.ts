@@ -13,7 +13,7 @@ const { AuthService } = await import('./auth.service.js');
 const bcrypt = await import('bcrypt');
 
 describe('AuthService', () => {
-  let authService: AuthService;
+  let authService: InstanceType<typeof AuthService>;
   let prisma: PrismaService;
   let jwtService: JwtService;
 
@@ -34,7 +34,11 @@ describe('AuthService', () => {
         {
           provide: PrismaService,
           useValue: {
-            cliente: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
+            cliente: {
+              findUnique: jest.fn(),
+              create: jest.fn(),
+              update: jest.fn(),
+            },
             sesion_portal: { create: jest.fn(), updateMany: jest.fn() },
             intento_fallido: {
               findFirst: jest.fn().mockResolvedValue(null),
@@ -46,12 +50,15 @@ describe('AuthService', () => {
         },
         {
           provide: JwtService,
-          useValue: { signAsync: jest.fn().mockResolvedValue('mock-token'), verify: jest.fn() },
+          useValue: {
+            signAsync: jest.fn().mockResolvedValue('mock-token'),
+            verify: jest.fn(),
+          },
         },
       ],
     }).compile();
 
-    authService = module.get<AuthService>(AuthService);
+    authService = module.get(AuthService);
     prisma = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
   });
@@ -126,7 +133,6 @@ describe('AuthService', () => {
         'Password1',
         'nuevo@test.cl',
         '998877665',
-        '127.0.0.1',
       );
 
       expect(prisma.cliente.create).toHaveBeenCalledWith({
@@ -176,7 +182,13 @@ describe('AuthService', () => {
       (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt');
 
-      await authService.register('11.111.111-1', 'Sin Contacto', 'Password1', '', '');
+      await authService.register(
+        '11.111.111-1',
+        'Sin Contacto',
+        'Password1',
+        '',
+        '',
+      );
 
       expect(prisma.cliente.create).toHaveBeenCalledWith({
         data: expect.objectContaining({

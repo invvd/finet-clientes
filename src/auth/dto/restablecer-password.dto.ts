@@ -14,6 +14,4 @@ export const restablecerPasswordSchema = z.object({
     }),
 });
 
-export type RestablecerPasswordDto = z.infer<
-  typeof restablecerPasswordSchema
->;
+export type RestablecerPasswordDto = z.infer<typeof restablecerPasswordSchema>;

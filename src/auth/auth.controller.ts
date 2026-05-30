@@ -48,7 +48,6 @@ export class AuthController {
       telefono?: string;
       password: string;
     },
-    @Req() req: Request,
   ) {
     return this.authService.register(
       body.rut,
@@ -56,7 +55,6 @@ export class AuthController {
       body.password,
       body.email,
       body.telefono,
-      req.ip ?? '0.0.0.0',
     );
   }
 
@@ -76,7 +74,10 @@ export class AuthController {
   @HttpCode(200)
   async restablecerPassword(
     @Body(new ZodValidationPipe(restablecerPasswordSchema))
-    body: { token: string; password: string },
+    body: {
+      token: string;
+      password: string;
+    },
   ) {
     return this.authService.restablecerPassword(body.token, body.password);
   }

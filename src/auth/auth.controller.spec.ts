@@ -73,20 +73,23 @@ describe('AuthController', () => {
     it('call register service and return access_token + cliente', async () => {
       const result = {
         access_token: 'register-jwt',
-        cliente: { id: 2, rut: '123456785', nombre_completo: 'Nuevo', email: null, telefono: null },
+        cliente: {
+          id: 2,
+          rut: '123456785',
+          nombre_completo: 'Nuevo',
+          email: null,
+          telefono: null,
+        },
       };
       mockAuthService.register.mockResolvedValue(result);
 
-      const response = await authController.register(
-        {
-          rut: '12.345.678-5',
-          nombre_completo: 'Nuevo',
-          password: 'Password1',
-          email: '',
-          telefono: '',
-        },
-        { ip: '127.0.0.1' } as Request,
-      );
+      const response = await authController.register({
+        rut: '12.345.678-5',
+        nombre_completo: 'Nuevo',
+        password: 'Password1',
+        email: '',
+        telefono: '',
+      });
 
       expect(response).toEqual(result);
       expect(mockAuthService.register).toHaveBeenCalledWith(
@@ -95,20 +98,24 @@ describe('AuthController', () => {
         'Password1',
         '',
         '',
-        '127.0.0.1',
       );
     });
   });
 
   describe('POST /auth/recuperar-password', () => {
     it('call recuperarPassword service with RUT and IP', async () => {
-      const result = { link: 'http://localhost:5173/restablecer-password?token=reset-token' };
+      const result = {
+        link: 'http://localhost:5173/restablecer-password?token=reset-token',
+      };
       mockAuthService.recuperarPassword.mockResolvedValue(result);
 
       const mockReq = { ip: '127.0.0.1' } as any;
-      const response = await authController.recuperarPassword({
-        rut: '12.345.678-5',
-      }, mockReq);
+      const response = await authController.recuperarPassword(
+        {
+          rut: '12.345.678-5',
+        },
+        mockReq,
+      );
 
       expect(response).toEqual(result);
       expect(mockAuthService.recuperarPassword).toHaveBeenCalledWith(

@@ -99,7 +99,6 @@ export class AuthService {
     password: string,
     email?: string | null,
     telefono?: string | null,
-    ip?: string,
   ) {
     const rutLimpio = cleanRut(rut);
 
@@ -165,8 +164,7 @@ export class AuthService {
   async recuperarPassword(rut: string, ip?: string) {
     const rutLimpio = cleanRut(rut);
     const mensajeGenerico = {
-      message:
-        'Si el RUT está registrado, recibirás un enlace de recuperación',
+      message: 'Si el RUT está registrado, recibirás un enlace de recuperación',
     };
 
     const cliente = await this.prisma.cliente.findUnique({
@@ -194,8 +192,7 @@ export class AuthService {
         expiresIn: '15m',
       });
 
-      const frontendUrl =
-        process.env.FRONTEND_URL || 'http://localhost:5173';
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const link = `${frontendUrl}/restablecer-password?token=${token}`;
 
       return { link };
