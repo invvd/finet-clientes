@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { loginSchema } from "../utils/login-schema";
+import { api } from "../utils/api";
+import type { ApiError } from "../utils/api";
 import LoginBranding from "./LoginBranding";
 import RutInput from "./RutInput";
 import PasswordInput from "./PasswordInput";
@@ -10,6 +12,8 @@ export default function LoginForm() {
   const [rut, setRut] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
 
   function validateField(field: string, value: string) {
     const result = loginSchema.safeParse({ rut, password, [field]: value });
@@ -26,8 +30,10 @@ export default function LoginForm() {
     }
   }
 
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    setServerError("");
+
     const result = loginSchema.safeParse({ rut, password });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
@@ -38,13 +44,31 @@ export default function LoginForm() {
       setErrors(fieldErrors);
       return;
     }
+
     setErrors({});
-    console.log(result.data);
+    setLoading(true);
+
+    try {
+      const data = await api.post<{ token: string }>("/auth/login", result.data);
+      console.log(data);
+      window.location.href = "/perfil";
+    } catch (err) {
+      const error = err as ApiError;
+      setServerError(error.message ?? "Error al iniciar sesión");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="rounded-2xl border border-fin-500/20 bg-surface/80 p-8 shadow-2xl shadow-fin-500/10 backdrop-blur-xl sm:p-10">
       <LoginBranding />
+
+      {serverError && (
+        <div className="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {serverError}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <RutInput
@@ -58,10 +82,12 @@ export default function LoginForm() {
         />
         <PasswordInput
           value={password}
+          error={errors.password}
           onChange={(v) => {
             setPassword(v);
             setErrors((prev) => ({ ...prev, password: "" }));
           }}
+          onBlur={() => validateField("password", password)}
         />
 
         <div className="flex items-center justify-between text-sm">
@@ -82,9 +108,10 @@ export default function LoginForm() {
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-linear-to-r from-fin-500 to-fin-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fin-500/25 transition-all duration-200 hover:from-fin-400 hover:to-fin-500 hover:shadow-fin-400/30 active:scale-[0.98]"
+          disabled={loading}
+          className="w-full rounded-lg bg-linear-to-r from-fin-500 to-fin-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fin-500/25 transition-all duration-200 hover:from-fin-400 hover:to-fin-500 hover:shadow-fin-400/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Ingresar
+          {loading ? "Ingresando..." : "Ingresar"}
         </button>
       </form>
 

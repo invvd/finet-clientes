@@ -1,0 +1,201 @@
+"use client";
+
+import { useState } from "react";
+import { registerSchema } from "../utils/login-schema";
+import LoginBranding from "./LoginBranding";
+import RutInput from "./RutInput";
+import PasswordInput from "./PasswordInput";
+
+export default function RegisterForm() {
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [rut, setRut] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function validateField(field: string, value: string) {
+    const current = { nombre, email, telefono, rut, password, confirmPassword, [field]: value };
+    const result = registerSchema.safeParse(current);
+    if (!result.success) {
+      const fieldError = result.error.issues.find(
+        (i) => i.path[0] === field || (field === "confirmPassword" && i.path[0] === "confirmPassword")
+      );
+      setErrors((prev) => ({
+        ...prev,
+        [field]: fieldError?.message ?? "",
+      }));
+    } else {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  }
+
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const result = registerSchema.safeParse({
+      nombre,
+      email,
+      telefono,
+      rut,
+      password,
+      confirmPassword,
+    });
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
+      return;
+    }
+    setErrors({});
+    console.log(result.data);
+  }
+
+  const inputClass =
+    "w-full rounded-lg border bg-slate-800/50 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors duration-200 focus:ring-2";
+
+  return (
+    <div className="rounded-2xl border border-fin-500/20 bg-surface/80 p-8 shadow-2xl shadow-fin-500/10 backdrop-blur-xl sm:p-10">
+      <LoginBranding subtitle="Crea tu cuenta" />
+
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div>
+          <label
+            htmlFor="nombre"
+            className="mb-1.5 block text-sm font-medium text-slate-300"
+          >
+            Nombre
+          </label>
+          <input
+            id="nombre"
+            type="text"
+            placeholder="Tu nombre completo"
+            value={nombre}
+            onChange={(e) => {
+              setNombre(e.target.value);
+              setErrors((prev) => ({ ...prev, nombre: "" }));
+            }}
+            onBlur={() => validateField("nombre", nombre)}
+            data-error={!!errors.nombre}
+            className={`${inputClass}
+              border-red-500/60 focus:border-red-400/60 focus:ring-red-400/20
+              data-[error=false]:border-slate-700/60 data-[error=false]:focus:border-fin-400/60 data-[error=false]:focus:ring-fin-400/20`}
+          />
+          {errors.nombre && (
+            <p className="mt-1 text-xs text-red-400">{errors.nombre}</p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="email"
+            className="mb-1.5 block text-sm font-medium text-slate-300"
+          >
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            placeholder="correo@ejemplo.com"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setErrors((prev) => ({ ...prev, email: "" }));
+            }}
+            onBlur={() => validateField("email", email)}
+            data-error={!!errors.email}
+            className={`${inputClass}
+              border-red-500/60 focus:border-red-400/60 focus:ring-red-400/20
+              data-[error=false]:border-slate-700/60 data-[error=false]:focus:border-fin-400/60 data-[error=false]:focus:ring-fin-400/20`}
+          />
+          {errors.email && (
+            <p className="mt-1 text-xs text-red-400">{errors.email}</p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="telefono"
+            className="mb-1.5 block text-sm font-medium text-slate-300"
+          >
+            Teléfono
+          </label>
+          <input
+            id="telefono"
+            type="tel"
+            placeholder="+56912345678"
+            value={telefono}
+            onChange={(e) => {
+              setTelefono(e.target.value);
+              setErrors((prev) => ({ ...prev, telefono: "" }));
+            }}
+            onBlur={() => validateField("telefono", telefono)}
+            data-error={!!errors.telefono}
+            className={`${inputClass}
+              border-red-500/60 focus:border-red-400/60 focus:ring-red-400/20
+              data-[error=false]:border-slate-700/60 data-[error=false]:focus:border-fin-400/60 data-[error=false]:focus:ring-fin-400/20`}
+          />
+          {errors.telefono && (
+            <p className="mt-1 text-xs text-red-400">{errors.telefono}</p>
+          )}
+        </div>
+
+        <RutInput
+          value={rut}
+          error={errors.rut}
+          onChange={(v) => {
+            setRut(v);
+            setErrors((prev) => ({ ...prev, rut: "" }));
+          }}
+          onBlur={() => validateField("rut", rut)}
+        />
+
+        <PasswordInput
+          value={password}
+          error={errors.password}
+          onChange={(v) => {
+            setPassword(v);
+            setErrors((prev) => ({ ...prev, password: "" }));
+          }}
+          onBlur={() => validateField("password", password)}
+        />
+
+        <div>
+          <label
+            htmlFor="confirmPassword"
+            className="mb-1.5 block text-sm font-medium text-slate-300"
+          >
+            Confirmar Contraseña
+          </label>
+          <PasswordInput
+            id="confirmPassword"
+            value={confirmPassword}
+            error={errors.confirmPassword}
+            onChange={(v) => {
+              setConfirmPassword(v);
+              setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+            }}
+            onBlur={() => validateField("confirmPassword", confirmPassword)}
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full rounded-lg bg-linear-to-r from-fin-500 to-fin-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fin-500/25 transition-all duration-200 hover:from-fin-400 hover:to-fin-500 hover:shadow-fin-400/30 active:scale-[0.98]"
+        >
+          Registrarse
+        </button>
+      </form>
+
+      <p className="mt-6 text-center text-xs text-slate-500">
+        Al registrarte aceptas nuestros{" "}
+        <a href="#" className="text-slate-400 underline hover:text-slate-300">
+          Términos y Condiciones
+        </a>
+      </p>
+    </div>
+  );
+}

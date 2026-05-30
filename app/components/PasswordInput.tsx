@@ -5,28 +5,37 @@ import { useState } from "react";
 export default function PasswordInput({
   value,
   onChange,
+  id = "password",
+  error,
+  onBlur,
 }: {
   value: string;
   onChange: (value: string) => void;
+  id?: string;
+  error?: string;
+  onBlur?: () => void;
 }) {
   const [show, setShow] = useState(false);
 
   return (
     <div>
       <label
-        htmlFor="password"
+        htmlFor={id}
         className="mb-1.5 block text-sm font-medium text-slate-300"
       >
         Contraseña
       </label>
       <div className="relative">
         <input
-          id="password"
+          id={id}
           type={show ? "text" : "password"}
           placeholder="••••••••"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-slate-700/60 bg-slate-800/50 px-4 py-2.5 pr-11 text-sm text-white placeholder-slate-500 outline-none transition-colors duration-200 focus:border-fin-400/60 focus:ring-2 focus:ring-fin-400/20"
+          onBlur={onBlur}
+          data-error={error !== undefined && !!error}
+          className={`w-full rounded-lg border bg-slate-800/50 px-4 py-2.5 pr-11 text-sm text-white placeholder-slate-500 outline-none transition-colors duration-200 focus:ring-2 
+            ${error !== undefined ? "data-[error=false]:border-slate-700/60 data-[error=false]:focus:border-fin-400/60 data-[error=false]:focus:ring-fin-400/20 border-red-500/60 focus:border-red-400/60 focus:ring-red-400/20" : "border-slate-700/60 focus:border-fin-400/60 focus:ring-fin-400/20"}`}
         />
         <button
           type="button"
@@ -73,6 +82,9 @@ export default function PasswordInput({
           )}
         </button>
       </div>
+      {error && (
+        <p className="mt-1 text-xs text-red-400">{error}</p>
+      )}
     </div>
   );
 }
