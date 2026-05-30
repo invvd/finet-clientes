@@ -5,10 +5,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { DeudaPublicaService } from './deuda-publica.service';
-import {
-  consultaDeudaAbonadoSchema,
-  consultaDeudaRutSchema,
-} from './dto/deuda-publica.dto';
+import { ConsultaDeudaAbonado, ConsultaDeudaRutDto } from './dto/deuda-publica.dto';
 
 /**
  * Endpoints públicos — NO requieren autenticación.
@@ -24,9 +21,9 @@ export class DeudaPublicaController {
    */
   @Get('rut')
   consultarPorRut(@Query() query: Record<string, string>) {
-    const parsed = consultaDeudaRutSchema.safeParse(query);
+    const parsed = ConsultaDeudaRutDto.safeParse(query);
     if (!parsed.success) {
-      throw new BadRequestException(parsed.error.errors[0].message);
+      throw new BadRequestException(parsed.error.issues[0].message);
     }
     return this.deudaPublicaService.consultarPorRut(parsed.data.rut);
   }
@@ -40,13 +37,16 @@ export class DeudaPublicaController {
    */
   @Get('abonado')
   consultarPorAbonado(@Query() query: Record<string, string>) {
-    const parsed = consultaDeudaAbonadoSchema.safeParse(query);
+    const parsed = ConsultaDeudaAbonado.safeParse(query);
     if (!parsed.success) {
-      throw new BadRequestException(parsed.error.errors[0].message);
+      throw new BadRequestException(parsed.error.issues[0].message);
     }
 
-    return this.deudaPublicaService.consultarPorAbonado(
-      parseInt(parsed.data.codigo_abonado, 10),
-    );
+    const codigoNum = parseInt(parsed.data.codigo_abonado, 10);
+    if (isNaN(codigoNum)) {
+      throw new BadRequestException('El código de abonado debe ser numérico');
+    }
+
+    return this.deudaPublicaService.consultarPorAbonado(codigoNum);
   }
 }

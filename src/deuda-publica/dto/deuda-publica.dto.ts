@@ -1,28 +1,24 @@
 import { z } from 'zod';
-import { validateRut } from '../../common/utils/rut.js';
 
 // CU-39: Consultar deuda pública por RUT
-export const consultaDeudaRutSchema = z.object({
+export const ConsultaDeudaRutDto = z.object({
   rut: z
     .string()
     .min(1, 'El RUT es requerido')
-    .refine((val) => /^\d{1,3}(\.\d{3})*-[\dkK]$/.test(val), {
-      message: 'Formato inválido. Ej: 12.345.678-5',
-    })
-    .refine((val) => validateRut(val), {
-      message: 'RUT inválido — dígito verificador incorrecto',
-    }),
+    .max(12)
+    .regex(/^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$|^\d{7,8}-[\dkK]$/,
+      'Formato de RUT inválido. Use 12.345.678-9 o 12345678-9'),
 });
-export type ConsultaDeudaRutDto = z.infer<typeof consultaDeudaRutSchema>;
+export type ConsultaDeudaRutDto = z.infer<typeof ConsultaDeudaRutDto>;
 
 // CU-40: Consultar deuda pública por código de abonado
-export const consultaDeudaAbonadoSchema = z.object({
+export const ConsultaDeudaAbonado = z.object({
   codigo_abonado: z
     .string()
     .min(1, 'El código de abonado es requerido')
-    .regex(/^\d+$/, 'El código de abonado debe ser numérico'),
+    .max(20),
 });
-export type ConsultaDeudaAbonadoDto = z.infer<typeof consultaDeudaAbonadoSchema>;
+export type ConsultaDeudaAbonado = z.infer<typeof ConsultaDeudaAbonado>;
 
 // ─── Respuesta compartida CU-39 / CU-40 / CU-41 ─────────────────────────────
 export interface DeudaPublicaResponseDto {
