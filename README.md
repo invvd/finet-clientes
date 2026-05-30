@@ -28,8 +28,30 @@ Variables principales:
 
 - `DATABASE_URL` conexion a PostgreSQL
 - `JWT_SECRET` secreto para firmar JWT
+- `ADMIN_API_KEY` clave para endpoints admin
+- `SESSION_INACTIVITY_MINUTES` minutos de inactividad para expirar sesion (default: 15)
 - `CORS_ORIGIN` lista separada por comas de orígenes permitidos
 - `NODE_ENV` usa `production` en prod
+
+## Base de datos local (Docker + Prisma)
+
+Levantar Postgres local:
+
+```bash
+$ docker compose up -d
+```
+
+Generar tablas desde migraciones:
+
+```bash
+$ pnpm prisma migrate deploy
+```
+
+Generar Prisma Client (si lo necesitas):
+
+```bash
+$ pnpm prisma generate
+```
 
 ## Scripts
 
@@ -57,6 +79,7 @@ $ pnpm run test
 ## Documentacion
 
 - `docs/auth-feature.md` autenticacion de clientes
+- `docs/prisma-types.md` generacion de tipos desde Prisma
 
 ## Feature: autenticacion de clientes
 

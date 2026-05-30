@@ -30,7 +30,9 @@ describe('DeudaPublicaController', () => {
   });
 
   it('rechaza RUT con formato inválido', () => {
-    expect(() => controller.consultarPorRut({ rut: 'abc' })).toThrow(BadRequestException);
+    expect(() => controller.consultarPorRut({ rut: 'abc' })).toThrow(
+      BadRequestException,
+    );
   });
 
   it('acepta RUT válido y llama al service', async () => {
@@ -39,11 +41,15 @@ describe('DeudaPublicaController', () => {
   });
 
   it('rechaza código de abonado vacío', () => {
-    expect(() => controller.consultarPorAbonado({ codigo_abonado: '' })).toThrow(BadRequestException);
+    expect(() =>
+      controller.consultarPorAbonado({ codigo_abonado: '' }),
+    ).toThrow(BadRequestException);
   });
 
   it('rechaza código de abonado no numérico', () => {
-    expect(() => controller.consultarPorAbonado({ codigo_abonado: 'abc' })).toThrow(BadRequestException);
+    expect(() =>
+      controller.consultarPorAbonado({ codigo_abonado: 'abc' }),
+    ).toThrow(BadRequestException);
   });
 
   it('acepta código numérico y llama al service', async () => {

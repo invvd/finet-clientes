@@ -4,15 +4,16 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 jest.unstable_mockModule('bcrypt', () => ({
-  default: { compare: jest.fn() },
+  default: { compare: jest.fn(), hash: jest.fn() },
   compare: jest.fn(),
+  hash: jest.fn(),
 }));
 
 const { AuthService } = await import('./auth.service.js');
 const bcrypt = await import('bcrypt');
 
 describe('AuthService', () => {
-  let authService: AuthService;
+  let authService: InstanceType<typeof AuthService>;
   let prisma: PrismaService;
   let jwtService: JwtService;
 
@@ -33,7 +34,11 @@ describe('AuthService', () => {
         {
           provide: PrismaService,
           useValue: {
-            cliente: { findUnique: jest.fn() },
+            cliente: {
+              findUnique: jest.fn(),
+              create: jest.fn(),
+              update: jest.fn(),
+            },
             sesion_portal: { create: jest.fn(), updateMany: jest.fn() },
             intento_fallido: {
               findFirst: jest.fn().mockResolvedValue(null),
@@ -45,12 +50,15 @@ describe('AuthService', () => {
         },
         {
           provide: JwtService,
-          useValue: { signAsync: jest.fn().mockResolvedValue('mock-token') },
+          useValue: {
+            signAsync: jest.fn().mockResolvedValue('mock-token'),
+            verify: jest.fn(),
+          },
         },
       ],
     }).compile();
 
-    authService = module.get<AuthService>(AuthService);
+    authService = module.get(AuthService);
     prisma = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
   });
@@ -101,11 +109,235 @@ describe('AuthService', () => {
     });
   });
 
+  describe('register', () => {
+    it('create cliente and return token', async () => {
+      const mockCreated = {
+        id_cliente: 2,
+        rut: '876543210',
+        nombre_completo: 'Nuevo Cliente',
+        email: 'nuevo@test.cl',
+        telefono: '998877665',
+        password_portal_hash: 'hashed',
+        estado: 'activo',
+        id_empresa: 1,
+      };
+
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
+      (jwtService.signAsync as jest.Mock).mockResolvedValue('register-jwt');
+
+      const result = await authService.register(
+        '12.345.678-5',
+        'Nuevo Cliente',
+        'Password1',
+        'nuevo@test.cl',
+        '998877665',
+      );
+
+      expect(prisma.cliente.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          rut: '123456785',
+          nombre_completo: 'Nuevo Cliente',
+          email: 'nuevo@test.cl',
+          telefono: '998877665',
+          password_portal_hash: 'hashed-password',
+          id_empresa: 1,
+          estado: 'activo',
+        }),
+      });
+
+      expect(result).toHaveProperty('access_token', 'register-jwt');
+      expect(result.cliente).toMatchObject({
+        id: 2,
+        rut: '876543210',
+        nombre_completo: 'Nuevo Cliente',
+        email: 'nuevo@test.cl',
+        telefono: '998877665',
+      });
+    });
+
+    it('throw ConflictException when RUT already exists', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
+
+      await expect(
+        authService.register('12.345.678-5', 'Otro', 'Password1'),
+      ).rejects.toThrow('El RUT ya está registrado');
+    });
+
+    it('set email and telefono to null when empty string', async () => {
+      const mockCreated = {
+        id_cliente: 3,
+        rut: '111111111',
+        nombre_completo: 'Sin Contacto',
+        email: null,
+        telefono: null,
+        password_portal_hash: 'hashed',
+        estado: 'activo',
+        id_empresa: 1,
+      };
+
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
+      (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt');
+
+      await authService.register(
+        '11.111.111-1',
+        'Sin Contacto',
+        'Password1',
+        '',
+        '',
+      );
+
+      expect(prisma.cliente.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          email: null,
+          telefono: null,
+        }),
+      });
+    });
+
+    it('create session after register', async () => {
+      const mockCreated = {
+        id_cliente: 4,
+        rut: '222222222',
+        nombre_completo: 'Con Sesion',
+        email: null,
+        telefono: null,
+        password_portal_hash: 'hashed',
+        estado: 'activo',
+        id_empresa: 1,
+      };
+
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
+      (jwtService.signAsync as jest.Mock).mockResolvedValue('session-jwt');
+
+      await authService.register('22.222.222-2', 'Con Sesion', 'Password1');
+
+      expect(prisma.sesion_portal.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          id_cliente: 4,
+          token: 'session-jwt',
+        }),
+      });
+    });
+
+    it('set session expiration within 15 minutes from now', async () => {
+      const mockCreated = {
+        id_cliente: 5,
+        rut: '333333333',
+        nombre_completo: 'Expiracion',
+        email: null,
+        telefono: null,
+        password_portal_hash: 'hashed',
+        estado: 'activo',
+        id_empresa: 1,
+      };
+
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
+      (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt');
+
+      const beforeCall = Date.now();
+      await authService.register('33.333.333-3', 'Expiracion', 'Password1');
+      const afterCall = Date.now();
+
+      const createCall = (prisma.sesion_portal.create as jest.Mock).mock
+        .calls[0][0];
+      const fechaExpiracion = new Date(
+        createCall.data.fecha_expiracion,
+      ).getTime();
+
+      const expectedMin = beforeCall + 14 * 60 * 1000;
+      const expectedMax = afterCall + 15 * 60 * 1000;
+
+      expect(fechaExpiracion).toBeGreaterThanOrEqual(expectedMin);
+      expect(fechaExpiracion).toBeLessThanOrEqual(expectedMax);
+    });
+  });
+
+  describe('recuperarPassword', () => {
+    it('return link when RUT exists', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
+      (jwtService.signAsync as jest.Mock).mockResolvedValue('reset-token');
+
+      const result = await authService.recuperarPassword('12.345.678-5');
+
+      expect(result).toEqual({
+        link: 'http://localhost:5173/restablecer-password?token=reset-token',
+      });
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        { sub: 1, type: 'reset' },
+        { expiresIn: '15m' },
+      );
+    });
+
+    it('return generic message when RUT not found', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const result = await authService.recuperarPassword('99.999.999-9');
+
+      expect(result).toHaveProperty('message');
+      expect(jwtService.signAsync).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('restablecerPassword', () => {
+    it('update password and invalidate sessions on valid token', async () => {
+      (jwtService.verify as jest.Mock).mockReturnValue({
+        sub: 1,
+        type: 'reset',
+      });
+      (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
+      (prisma.cliente.update as jest.Mock).mockResolvedValue({
+        id_cliente: 1,
+      });
+
+      const result = await authService.restablecerPassword(
+        'reset-token',
+        'NewPass1',
+      );
+
+      expect(prisma.cliente.update).toHaveBeenCalledWith({
+        where: { id_cliente: 1 },
+        data: { password_portal_hash: 'new-hash' },
+      });
+      expect(result).toEqual({
+        message: 'Contraseña restablecida exitosamente',
+      });
+    });
+
+    it('throw BadRequestException on expired token', async () => {
+      (jwtService.verify as jest.Mock).mockImplementation(() => {
+        throw new Error('jwt expired');
+      });
+
+      await expect(
+        authService.restablecerPassword('expired-token', 'NewPass1'),
+      ).rejects.toThrow('Token inválido o expirado');
+    });
+
+    it('throw BadRequestException when token type is not reset', async () => {
+      (jwtService.verify as jest.Mock).mockReturnValue({
+        sub: 1,
+        type: 'login',
+      });
+
+      await expect(
+        authService.restablecerPassword('session-token', 'NewPass1'),
+      ).rejects.toThrow('Token inválido');
+    });
+  });
+
   describe('logout', () => {
     it('mark session as expired', async () => {
       const updateMany = jest
         .spyOn(prisma.sesion_portal, 'updateMany')
-        .mockResolvedValue({ count: 1 } as any);
+        .mockResolvedValue({ count: 1 });
 
       await authService.logout(1, 'some-token');
 

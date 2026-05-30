@@ -1,6 +1,9 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PortalService } from './portal.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -54,7 +57,9 @@ describe('PortalService', () => {
 
   describe('getEstadoContratos', () => {
     it('retorna contratos con estado y fechas formateadas', async () => {
-      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([CONTRATO_MOCK]);
+      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
+        CONTRATO_MOCK,
+      ]);
       (prisma.log_auditoria.create as jest.Mock).mockResolvedValue({});
 
       const result = await service.getEstadoContratos(1);
@@ -69,12 +74,16 @@ describe('PortalService', () => {
     it('lanza NotFoundException si el cliente no tiene contratos', async () => {
       (prisma.contrato.findMany as jest.Mock).mockResolvedValue([]);
 
-      await expect(service.getEstadoContratos(99)).rejects.toThrow(NotFoundException);
+      await expect(service.getEstadoContratos(99)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('registra en log_auditoria si el estado no es reconocido (CU-23 Excepción 3)', async () => {
       const contratoInvalido = { ...CONTRATO_MOCK, estado: 'cortado' };
-      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([contratoInvalido]);
+      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
+        contratoInvalido,
+      ]);
       (prisma.log_auditoria.create as jest.Mock).mockResolvedValue({});
 
       await service.getEstadoContratos(1);
@@ -94,7 +103,9 @@ describe('PortalService', () => {
 
   describe('getContratosVigentes', () => {
     it('retorna contratos activos con datos del plan (precio como number)', async () => {
-      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([CONTRATO_MOCK]);
+      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
+        CONTRATO_MOCK,
+      ]);
 
       const result = await service.getContratosVigentes(1);
 
@@ -117,7 +128,9 @@ describe('PortalService', () => {
 
   describe('getResumenDeuda', () => {
     it('retorna tiene_deuda:false y saldo_total:0 cuando no hay facturas pendientes', async () => {
-      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([{ id_contrato: 1 }]);
+      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
+        { id_contrato: 1 },
+      ]);
       (prisma.factura.findMany as jest.Mock).mockResolvedValue([]);
 
       const result = await service.getResumenDeuda(1);
@@ -129,7 +142,9 @@ describe('PortalService', () => {
 
     it('retorna tiene_deuda:true con dias_vencida calculados para facturas vencidas', async () => {
       const hace3dias = new Date(Date.now() - 86_400_000 * 3);
-      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([{ id_contrato: 1 }]);
+      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
+        { id_contrato: 1 },
+      ]);
       (prisma.factura.findMany as jest.Mock).mockResolvedValue([
         {
           id_factura: 10,
@@ -145,12 +160,16 @@ describe('PortalService', () => {
 
       expect(result.tiene_deuda).toBe(true);
       expect(result.saldo_total).toBe(23890);
-      expect(result.facturas_pendientes[0].dias_vencida).toBeGreaterThanOrEqual(2);
+      expect(result.facturas_pendientes[0].dias_vencida).toBeGreaterThanOrEqual(
+        2,
+      );
       expect(result.facturas_pendientes[0].periodo).toBe('Abril 2026');
     });
 
     it('lanza InternalServerErrorException si saldo_total es negativo (CU-27 Excepción 3)', async () => {
-      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([{ id_contrato: 1 }]);
+      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
+        { id_contrato: 1 },
+      ]);
       (prisma.factura.findMany as jest.Mock).mockResolvedValue([
         {
           id_factura: 11,
@@ -162,7 +181,9 @@ describe('PortalService', () => {
         },
       ]);
 
-      await expect(service.getResumenDeuda(1)).rejects.toThrow(InternalServerErrorException);
+      await expect(service.getResumenDeuda(1)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 
@@ -191,7 +212,9 @@ describe('PortalService', () => {
         categoria_falla: { nombre: 'Conectividad' },
         origen: 'portal',
       }));
-      (prisma.ticket.findMany as jest.Mock).mockResolvedValue(ticketsMock.slice(0, 3));
+      (prisma.ticket.findMany as jest.Mock).mockResolvedValue(
+        ticketsMock.slice(0, 3),
+      );
 
       const result = await service.getTickets(1, 3);
 
@@ -207,7 +230,9 @@ describe('PortalService', () => {
     it('agrega cliente, contratos, deuda y tickets en la estructura PanelPrincipalDto', async () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_MOCK);
       // getContratosVigentes y getResumenDeuda llaman a contrato.findMany
-      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([CONTRATO_MOCK]);
+      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
+        CONTRATO_MOCK,
+      ]);
       (prisma.factura.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.ticket.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.log_auditoria.create as jest.Mock).mockResolvedValue({});
@@ -224,7 +249,9 @@ describe('PortalService', () => {
     it('lanza NotFoundException si el cliente no existe', async () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getPanelPrincipal(99)).rejects.toThrow(NotFoundException);
+      await expect(service.getPanelPrincipal(99)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

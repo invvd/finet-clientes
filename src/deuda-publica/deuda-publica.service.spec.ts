@@ -55,8 +55,12 @@ describe('DeudaPublicaService', () => {
     });
     (prisma.factura.findMany as jest.Mock).mockResolvedValue([
       {
-        id_factura: 1, periodo_mes: 4, periodo_anio: 2026,
-        monto: 23890, fecha_limite_pago: ayer, estado: 'vencida',
+        id_factura: 1,
+        periodo_mes: 4,
+        periodo_anio: 2026,
+        monto: 23890,
+        fecha_limite_pago: ayer,
+        estado: 'vencida',
       },
     ]);
     const r = await service.consultarPorRut('12.345.678-9');
@@ -74,8 +78,12 @@ describe('DeudaPublicaService', () => {
     });
     (prisma.factura.findMany as jest.Mock).mockResolvedValue([
       {
-        id_factura: 2, periodo_mes: 5, periodo_anio: 2026,
-        monto: 23890, fecha_limite_pago: futuro, estado: 'pendiente',
+        id_factura: 2,
+        periodo_mes: 5,
+        periodo_anio: 2026,
+        monto: 23890,
+        fecha_limite_pago: futuro,
+        estado: 'pendiente',
       },
     ]);
     const r = await service.consultarPorRut('12.345.678-9');

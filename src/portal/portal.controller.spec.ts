@@ -2,6 +2,7 @@ import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { PortalController } from './portal.controller.js';
 import { PortalService } from './portal.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 
 const CLIENTE_MOCK = {
   id_cliente: 1,
@@ -15,7 +16,11 @@ const CLIENTE_MOCK = {
 const PANEL_MOCK = {
   cliente: CLIENTE_MOCK,
   contratos: [],
-  resumen_deuda: { tiene_deuda: false, saldo_total: 0, facturas_pendientes: [] },
+  resumen_deuda: {
+    tiene_deuda: false,
+    saldo_total: 0,
+    facturas_pendientes: [],
+  },
   tickets_recientes: [],
 };
 
@@ -28,13 +33,22 @@ describe('PortalController', () => {
       getPanelPrincipal: jest.fn().mockResolvedValue(PANEL_MOCK),
       getEstadoContratos: jest.fn().mockResolvedValue([]),
       getContratosVigentes: jest.fn().mockResolvedValue([]),
-      getResumenDeuda: jest.fn().mockResolvedValue({ tiene_deuda: false, saldo_total: 0, facturas_pendientes: [] }),
-      getTickets: jest.fn().mockResolvedValue({ total: 0, tiene_tickets: false, tickets: [] }),
+      getResumenDeuda: jest.fn().mockResolvedValue({
+        tiene_deuda: false,
+        saldo_total: 0,
+        facturas_pendientes: [],
+      }),
+      getTickets: jest
+        .fn()
+        .mockResolvedValue({ total: 0, tiene_tickets: false, tickets: [] }),
     };
     const module = await Test.createTestingModule({
       controllers: [PortalController],
       providers: [{ provide: PortalService, useValue: mockService }],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
     controller = module.get(PortalController);
     service = module.get(PortalService);
   });

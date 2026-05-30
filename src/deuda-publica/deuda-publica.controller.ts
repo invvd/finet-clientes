@@ -1,11 +1,9 @@
+import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
+import { DeudaPublicaService } from './deuda-publica.service.js';
 import {
-  BadRequestException,
-  Controller,
-  Get,
-  Query,
-} from '@nestjs/common';
-import { DeudaPublicaService } from './deuda-publica.service';
-import { ConsultaDeudaAbonado, ConsultaDeudaRutDto } from './dto/deuda-publica.dto';
+  ConsultaDeudaAbonado,
+  ConsultaDeudaRutDto,
+} from './dto/deuda-publica.dto.js';
 
 /**
  * Endpoints públicos — NO requieren autenticación.

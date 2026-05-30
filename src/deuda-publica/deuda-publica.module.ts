@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { DeudaPublicaController } from './deuda-publica.controller';
-import { DeudaPublicaService } from './deuda-publica.service';
+import { DeudaPublicaController } from './deuda-publica.controller.js';
+import { DeudaPublicaService } from './deuda-publica.service.js';
 
 @Module({
   controllers: [DeudaPublicaController],

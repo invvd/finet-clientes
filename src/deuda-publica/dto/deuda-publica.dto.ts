@@ -6,8 +6,10 @@ export const ConsultaDeudaRutDto = z.object({
     .string()
     .min(1, 'El RUT es requerido')
     .max(12)
-    .regex(/^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$|^\d{7,8}-[\dkK]$/,
-      'Formato de RUT inválido. Use 12.345.678-9 o 12345678-9'),
+    .regex(
+      /^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$|^\d{7,8}-[\dkK]$/,
+      'Formato de RUT inválido. Use 12.345.678-9 o 12345678-9',
+    ),
 });
 export type ConsultaDeudaRutDto = z.infer<typeof ConsultaDeudaRutDto>;
 
@@ -26,7 +28,7 @@ export interface DeudaPublicaResponseDto {
   cliente: {
     nombre_completo: string;
     rut: string | null;
-    codigo_abonado: number | null;  // id_contrato como código de abonado
+    codigo_abonado: number | null; // id_contrato como código de abonado
   } | null;
   tiene_deuda: boolean;
   saldo_total: number;
@@ -41,5 +43,5 @@ export interface DetalleFacturaPublicaDto {
   fecha_limite_pago: string;
   estado: string;
   dias_vencida: number | null;
-  dias_para_vencer: number | null;  // null si ya está vencida
+  dias_para_vencer: number | null; // null si ya está vencida
 }

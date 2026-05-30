@@ -1,17 +1,12 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { PortalService } from './portal.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { ClienteActual } from '../common/decorators/cliente-actual.decorator';
-import { cliente } from '../../generated/prisma/client';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { PortalService } from './portal.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { CurrentClient } from '../auth/decorators/current-client.decorator.js';
+import type { cliente } from '../../generated/prisma/client.js';
 
 /**
  * Todas las rutas requieren sesión activa (JwtAuthGuard).
- * El cliente autenticado se extrae del token via @ClienteActual().
+ * El cliente autenticado se extrae del token via @CurrentClient().
  */
 @Controller('portal')
 @UseGuards(JwtAuthGuard)
@@ -24,7 +19,7 @@ export class PortalController {
    * GET /portal/panel
    */
   @Get('panel')
-  getPanelPrincipal(@ClienteActual() cliente: cliente) {
+  getPanelPrincipal(@CurrentClient() cliente: cliente) {
     return this.portalService.getPanelPrincipal(cliente.id_cliente);
   }
 
@@ -33,7 +28,7 @@ export class PortalController {
    * GET /portal/contratos/estado
    */
   @Get('contratos/estado')
-  getEstadoContratos(@ClienteActual() cliente: cliente) {
+  getEstadoContratos(@CurrentClient() cliente: cliente) {
     return this.portalService.getEstadoContratos(cliente.id_cliente);
   }
 
@@ -44,7 +39,7 @@ export class PortalController {
    * GET /portal/contratos/vigentes
    */
   @Get('contratos/vigentes')
-  getContratosVigentes(@ClienteActual() cliente: cliente) {
+  getContratosVigentes(@CurrentClient() cliente: cliente) {
     return this.portalService.getContratosVigentes(cliente.id_cliente);
   }
 
@@ -55,7 +50,7 @@ export class PortalController {
    * GET /portal/deuda
    */
   @Get('deuda')
-  getResumenDeuda(@ClienteActual() cliente: cliente) {
+  getResumenDeuda(@CurrentClient() cliente: cliente) {
     return this.portalService.getResumenDeuda(cliente.id_cliente);
   }
 
@@ -68,7 +63,7 @@ export class PortalController {
    */
   @Get('tickets')
   getTickets(
-    @ClienteActual() cliente: cliente,
+    @CurrentClient() cliente: cliente,
     @Query('limite') limite?: string,
   ) {
     const limiteNum = limite ? parseInt(limite, 10) : undefined;
