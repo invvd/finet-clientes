@@ -79,6 +79,7 @@ $ pnpm run test
 ## Documentacion
 
 - `docs/auth-feature.md` autenticacion de clientes
+- `docs/prisma-types.md` generacion de tipos desde Prisma
 
 ## Feature: autenticacion de clientes
 
