@@ -1,9 +1,9 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 
-interface RequestWithUser extends Request {
-  user?: unknown;
-}
+type RequestWithUser = Request & {
+  user?: Request['user'];
+};
 
 export const CurrentClient = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
