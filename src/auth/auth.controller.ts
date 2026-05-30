@@ -12,6 +12,8 @@ import type { Request } from 'express';
 import { AuthService } from './auth.service.js';
 import { loginSchema } from './dto/login.dto.js';
 import { registerSchema } from './dto/register.dto.js';
+import { recuperarPasswordSchema } from './dto/recuperar-password.dto.js';
+import { restablecerPasswordSchema } from './dto/restablecer-password.dto.js';
 import { ZodValidationPipe } from './pipes/zod-validation.pipe.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentClient } from './decorators/current-client.decorator.js';
@@ -56,6 +58,26 @@ export class AuthController {
       body.telefono,
       req.ip ?? '0.0.0.0',
     );
+  }
+
+  @Post('recuperar-password')
+  @Throttle({ default: { limit: 3, ttl: 60 } })
+  @HttpCode(200)
+  async recuperarPassword(
+    @Body(new ZodValidationPipe(recuperarPasswordSchema))
+    body: { rut: string },
+  ) {
+    return this.authService.recuperarPassword(body.rut);
+  }
+
+  @Post('restablecer-password')
+  @Throttle({ default: { limit: 3, ttl: 60 } })
+  @HttpCode(200)
+  async restablecerPassword(
+    @Body(new ZodValidationPipe(restablecerPasswordSchema))
+    body: { token: string; password: string },
+  ) {
+    return this.authService.restablecerPassword(body.token, body.password);
   }
 
   @Post('logout')

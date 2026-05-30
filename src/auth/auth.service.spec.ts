@@ -34,7 +34,7 @@ describe('AuthService', () => {
         {
           provide: PrismaService,
           useValue: {
-            cliente: { findUnique: jest.fn(), create: jest.fn() },
+            cliente: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
             sesion_portal: { create: jest.fn(), updateMany: jest.fn() },
             intento_fallido: {
               findFirst: jest.fn().mockResolvedValue(null),
@@ -46,7 +46,7 @@ describe('AuthService', () => {
         },
         {
           provide: JwtService,
-          useValue: { signAsync: jest.fn().mockResolvedValue('mock-token') },
+          useValue: { signAsync: jest.fn().mockResolvedValue('mock-token'), verify: jest.fn() },
         },
       ],
     }).compile();
@@ -245,6 +245,77 @@ describe('AuthService', () => {
 
       expect(fechaExpiracion).toBeGreaterThanOrEqual(expectedMin);
       expect(fechaExpiracion).toBeLessThanOrEqual(expectedMax);
+    });
+  });
+
+  describe('recuperarPassword', () => {
+    it('return token when RUT exists', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
+      (jwtService.signAsync as jest.Mock).mockResolvedValue('reset-token');
+
+      const result = await authService.recuperarPassword('12.345.678-5');
+
+      expect(result).toEqual({ token: 'reset-token' });
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        { sub: 1, type: 'reset' },
+        { expiresIn: '15m' },
+      );
+    });
+
+    it('return generic message when RUT not found', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const result = await authService.recuperarPassword('99.999.999-9');
+
+      expect(result).toHaveProperty('message');
+      expect(jwtService.signAsync).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('restablecerPassword', () => {
+    it('update password and invalidate sessions on valid token', async () => {
+      (jwtService.verify as jest.Mock).mockReturnValue({
+        sub: 1,
+        type: 'reset',
+      });
+      (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
+      (prisma.cliente.update as jest.Mock).mockResolvedValue({
+        id_cliente: 1,
+      });
+
+      const result = await authService.restablecerPassword(
+        'reset-token',
+        'NewPass1',
+      );
+
+      expect(prisma.cliente.update).toHaveBeenCalledWith({
+        where: { id_cliente: 1 },
+        data: { password_portal_hash: 'new-hash' },
+      });
+      expect(result).toEqual({
+        message: 'Contraseña restablecida exitosamente',
+      });
+    });
+
+    it('throw BadRequestException on expired token', async () => {
+      (jwtService.verify as jest.Mock).mockImplementation(() => {
+        throw new Error('jwt expired');
+      });
+
+      await expect(
+        authService.restablecerPassword('expired-token', 'NewPass1'),
+      ).rejects.toThrow('Token inválido o expirado');
+    });
+
+    it('throw BadRequestException when token type is not reset', async () => {
+      (jwtService.verify as jest.Mock).mockReturnValue({
+        sub: 1,
+        type: 'login',
+      });
+
+      await expect(
+        authService.restablecerPassword('session-token', 'NewPass1'),
+      ).rejects.toThrow('Token inválido');
     });
   });
 

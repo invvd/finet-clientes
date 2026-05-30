@@ -7,7 +7,13 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 
 describe('AuthController', () => {
   let authController: AuthController;
-  let mockAuthService: { login: jest.Mock; logout: jest.Mock; register: jest.Mock };
+  let mockAuthService: {
+    login: jest.Mock;
+    logout: jest.Mock;
+    register: jest.Mock;
+    recuperarPassword: jest.Mock;
+    restablecerPassword: jest.Mock;
+  };
 
   const mockCliente = {
     id: 1,
@@ -23,6 +29,8 @@ describe('AuthController', () => {
       login: jest.fn(),
       logout: jest.fn(),
       register: jest.fn(),
+      recuperarPassword: jest.fn(),
+      restablecerPassword: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -88,6 +96,40 @@ describe('AuthController', () => {
         '',
         '',
         '127.0.0.1',
+      );
+    });
+  });
+
+  describe('POST /auth/recuperar-password', () => {
+    it('call recuperarPassword service with RUT', async () => {
+      const result = { token: 'reset-token' };
+      mockAuthService.recuperarPassword.mockResolvedValue(result);
+
+      const response = await authController.recuperarPassword({
+        rut: '12.345.678-5',
+      });
+
+      expect(response).toEqual(result);
+      expect(mockAuthService.recuperarPassword).toHaveBeenCalledWith(
+        '12.345.678-5',
+      );
+    });
+  });
+
+  describe('POST /auth/restablecer-password', () => {
+    it('call restablecerPassword service with token and password', async () => {
+      const result = { message: 'Contraseña restablecida exitosamente' };
+      mockAuthService.restablecerPassword.mockResolvedValue(result);
+
+      const response = await authController.restablecerPassword({
+        token: 'reset-token',
+        password: 'NewPass1',
+      });
+
+      expect(response).toEqual(result);
+      expect(mockAuthService.restablecerPassword).toHaveBeenCalledWith(
+        'reset-token',
+        'NewPass1',
       );
     });
   });

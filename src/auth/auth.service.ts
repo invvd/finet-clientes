@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -159,6 +160,53 @@ export class AuthService {
         fecha_expiracion: new Date(),
       },
     });
+  }
+
+  async recuperarPassword(rut: string) {
+    const rutLimpio = cleanRut(rut);
+
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { rut: rutLimpio },
+    });
+
+    if (!cliente) {
+      return {
+        message:
+          'Si el RUT está registrado, recibirás un enlace de recuperación',
+      };
+    }
+
+    const payload = { sub: cliente.id_cliente, type: 'reset' };
+    const token = await this.jwtService.signAsync(payload, {
+      expiresIn: '15m',
+    });
+
+    return { token };
+  }
+
+  async restablecerPassword(token: string, password: string) {
+    let payload: { sub: number; type: string };
+
+    try {
+      payload = this.jwtService.verify<{ sub: number; type: string }>(token);
+    } catch {
+      throw new BadRequestException('Token inválido o expirado');
+    }
+
+    if (payload.type !== 'reset') {
+      throw new BadRequestException('Token inválido');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await this.prisma.cliente.update({
+      where: { id_cliente: payload.sub },
+      data: { password_portal_hash: passwordHash },
+    });
+
+    await this.invalidarSesionesAnteriores(payload.sub);
+
+    return { message: 'Contraseña restablecida exitosamente' };
   }
 
   private async invalidarSesionesAnteriores(idCliente: number) {
