@@ -36,6 +36,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
   const url = await app.getUrl();
-  console.log(`Backend running at ${url}`);
+  const displayUrl = url.replace('[::1]', 'localhost');
+  console.log(`Backend running at ${displayUrl}`);
 }
 void bootstrap();
