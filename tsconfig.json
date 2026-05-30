@@ -1,5 +1,5 @@
 {
-  "exclude": ["src/generated"],
+  "exclude": ["dist", "src/generated"],
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",

@@ -1,98 +1,229 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Finet Clientes Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend para el portal de clientes basado en NestJS, Prisma y PostgreSQL.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack
 
-## Description
+- Node.js + NestJS (ESM)
+- PostgreSQL + Prisma
+- Zod para validacion
+- JWT para autenticacion
+- pnpm como gestor de paquetes
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Requisitos
 
-## Project setup
+- Node.js 20+
+- pnpm 9+
+- PostgreSQL 14+
+
+## Configuracion
+
+Copia el archivo de entorno de ejemplo y ajusta los valores:
 
 ```bash
-$ pnpm install
+$ cp .env.example .env
 ```
 
-## Compile and run the project
+Variables principales:
+
+- `DATABASE_URL` conexion a PostgreSQL
+- `JWT_SECRET` secreto para firmar JWT
+- `CORS_ORIGIN` lista separada por comas de orígenes permitidos
+- `NODE_ENV` usa `production` en prod
+
+## Scripts
 
 ```bash
-# development
-$ pnpm run start
+# instalar dependencias
+$ pnpm install
 
-# watch mode
+# desarrollo
 $ pnpm run start:dev
 
-# production mode
+# produccion
 $ pnpm run start:prod
-```
 
-## Run tests
-
-```bash
-# unit tests
+# tests
 $ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
 ```
 
-## Deployment
+## Estructura relevante
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- `src/auth` modulo de autenticacion de clientes
+- `src/common` utilidades comunes (RUT, filtros)
+- `src/prisma` cliente Prisma y conexion DB
+- `src/generated` salida de zod (excluida del build)
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Feature: autenticacion de clientes
+
+Autenticacion exclusiva para clientes (`cliente`), no para usuarios internos.
+
+### Endpoints
+
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+
+### Probar con Postman
+
+Base URL:
+
+```
+http://localhost:3000
+```
+
+#### Login
+
+`POST /api/auth/login`
+
+Headers:
+
+```
+Content-Type: application/json
+```
+
+Body (JSON):
+
+```json
+{
+  "rut": "12.345.678-5",
+  "password": "tu_password"
+}
+```
+
+Respuesta exitosa (200):
+
+```json
+{
+  "access_token": "<jwt>",
+  "cliente": {
+    "id": 123,
+    "rut": "12345678",
+    "nombre_completo": "Nombre Apellido",
+    "email": "cliente@correo.com",
+    "telefono": "+56911111111"
+  }
+}
+```
+
+Notas:
+
+- `rut` debe venir con formato `XX.XXX.XXX-X` y DV valido.
+- En DB el RUT se guarda sin guion.
+- Si hay 5 intentos fallidos en 10 min, se bloquea por 15 min.
+
+#### Me
+
+`GET /api/auth/me`
+
+Headers:
+
+```
+Authorization: Bearer <jwt>
+```
+
+Respuesta exitosa (200):
+
+```json
+{
+  "id_cliente": 123,
+  "rut": "12345678",
+  "nombre_completo": "Nombre Apellido",
+  "email": "cliente@correo.com",
+  "telefono": "+56911111111"
+}
+```
+
+#### Logout
+
+`POST /api/auth/logout`
+
+Headers:
+
+```
+Authorization: Bearer <jwt>
+```
+
+Respuesta exitosa (200):
+
+```json
+{
+  "message": "Sesion cerrada exitosamente"
+}
+```
+
+### Probar con curl
+
+Base URL:
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+BASE_URL=http://localhost:3000
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Login:
 
-## Resources
+```bash
+curl -X POST "$BASE_URL/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"rut":"12.345.678-5","password":"tu_password"}'
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Guardar token en variable (PowerShell):
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```powershell
+$token = (Invoke-RestMethod -Method Post -Uri "$env:BASE_URL/api/auth/login" -ContentType "application/json" -Body '{"rut":"12.345.678-5","password":"tu_password"}').access_token
+```
 
-## Support
+Me:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+curl -X GET "$BASE_URL/api/auth/me" \
+  -H "Authorization: Bearer <jwt>"
+```
 
-## Stay in touch
+Logout:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+curl -X POST "$BASE_URL/api/auth/logout" \
+  -H "Authorization: Bearer <jwt>"
+```
 
-## License
+### Flujo tecnico
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+1) Login recibe `rut` y `password`.
+2) Zod valida formato `XX.XXX.XXX-X` y DV.
+3) `cleanRut` normaliza para DB (sin guion).
+4) Se consulta `cliente` por `rut`.
+5) Se valida hash con bcrypt.
+6) Se controla bloqueo por intentos fallidos.
+7) Se genera JWT (7 dias) y se guarda sesion en `sesion_portal`.
+8) Se invalida cualquier sesion anterior (una activa por cliente).
+
+### Seguridad aplicada
+
+- Rate limit en login: 5 intentos por minuto.
+- Bloqueo temporal por intentos fallidos (15 min tras 5 intentos en 10 min).
+- JWT con `JWT_SECRET` obligatorio.
+- Sesiones persistidas en DB y una activa por cliente.
+- CORS: abierto en dev, en prod requiere `CORS_ORIGIN`.
+- `trust proxy` en prod para IP correcta.
+
+### Validacion de RUT
+
+- Formato esperado `XX.XXX.XXX-X`.
+- DV validado con algoritmo chileno.
+- DB almacena RUT sin guion.
+
+### Archivos clave
+
+- `src/auth/auth.controller.ts` endpoints y guards.
+- `src/auth/auth.service.ts` login/logout y control de sesiones.
+- `src/auth/dto/login.dto.ts` validacion Zod.
+- `src/common/utils/rut.ts` limpieza y validacion de RUT.
+- `src/auth/strategies/jwt.strategy.ts` JWT.
+- `src/main.ts` CORS y filtros globales.
+
+## Notas de despliegue
+
+- En prod, `CORS_ORIGIN` es obligatorio.
+- Se requiere `JWT_SECRET` en todos los entornos.
