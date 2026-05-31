@@ -23,56 +23,26 @@ export interface Ticket {
   description: string;
 }
 
-const API_URL = process.env.API_URL;
+function apiUrl(path: string): string {
+  const base = process.env.API_URL;
+  if (!base) throw new Error('API_URL no está configurada en las variables de entorno');
+  return `${base}${path}`;
+}
 
-// Mock data used when API_URL is not set (desarrollo local)
-const mockContract: PortalContract = {
-  status: 'Activo',
-  userName: 'Juan Pérez',
-  plans: [
-    { id: '1', name: 'Fibra 200 Megas' },
-    { id: '2', name: 'TV Digital Básico' },
-  ],
-};
-
-const mockBalance: Balance = {
-  amount: 24990,
-  dueDate: '2026-06-10',
-};
-
-const mockTickets: Ticket[] = [
-  {
-    code: 'TK-20260501-AB3',
-    status: 'En proceso',
-    createdAt: '2026-05-01',
-    description: 'Sin señal en decodificador TV',
-  },
-  {
-    code: 'TK-20260415-CC7',
-    status: 'Resuelto',
-    createdAt: '2026-04-15',
-    description: 'Velocidad de internet reducida',
-  },
-];
-
-// Datos del usuario: no cachear globalmente, cada request es por usuario autenticado
 export async function getContract(): Promise<PortalContract> {
-  if (!API_URL) return mockContract;
-  const res = await fetch(`${API_URL}/portal/contract`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('No se pudo obtener el contrato');
+  const res = await fetch(apiUrl('/portal/contract'), { cache: 'no-store' });
+  if (!res.ok) throw new Error('No se pudo obtener la información del contrato');
   return res.json();
 }
 
 export async function getBalance(): Promise<Balance> {
-  if (!API_URL) return mockBalance;
-  const res = await fetch(`${API_URL}/portal/balance`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('No se pudo obtener el saldo');
+  const res = await fetch(apiUrl('/portal/balance'), { cache: 'no-store' });
+  if (!res.ok) throw new Error('No se pudo obtener el estado de cuenta');
   return res.json();
 }
 
 export async function getTickets(): Promise<Ticket[]> {
-  if (!API_URL) return mockTickets;
-  const res = await fetch(`${API_URL}/portal/tickets`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('No se pudo obtener los tickets');
+  const res = await fetch(apiUrl('/portal/tickets'), { cache: 'no-store' });
+  if (!res.ok) throw new Error('No se pudo obtener el historial de tickets');
   return res.json();
 }

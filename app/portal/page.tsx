@@ -2,6 +2,8 @@ import { getContract, getBalance, getTickets } from './_lib/portal-api';
 import ContractStatusBadge from '@/app/_components/portal/ContractStatusBadge';
 import PlanSummarySection from '@/app/_components/portal/PlanSummarySection';
 import DebtStatusSection from '@/app/_components/portal/DebtStatusSection';
+import WifiPasswordSection from '@/app/_components/portal/WifiPasswordSection';
+import OoklaSpeedTest from '@/app/_components/portal/OoklaSpeedTest';
 import TicketsSection from '@/app/_components/portal/TicketsSection';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +32,13 @@ export default async function PortalPage() {
       {/* Saldo / Deuda — full width */}
       <DebtStatusSection balance={balance} />
 
-      {/* Tickets — full width */}
+      {/* Cambio de contraseña WiFi — RF-25: solo si el contrato está Activo */}
+      {contract.status === 'Activo' && <WifiPasswordSection />}
+
+      {/* Velocidad de red — RF-26 */}
+      <OoklaSpeedTest />
+
+      {/* Tickets de soporte — full width */}
       <TicketsSection tickets={tickets} />
     </div>
   );

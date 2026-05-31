@@ -1,5 +1,6 @@
 import { CheckCircle, AlertCircle } from 'lucide-react';
 import type { Balance } from '@/app/portal/_lib/portal-api';
+import PayButton from './PayButton';
 
 function formatCLP(amount: number) {
   return new Intl.NumberFormat('es-CL', {
@@ -24,9 +25,7 @@ export default function DebtStatusSection({ balance }: { balance: Balance }) {
   return (
     <div
       className={`rounded-2xl p-5 shadow-sm flex flex-col gap-3 ${
-        isUpToDate
-          ? 'bg-green-50 dark:bg-green-900/20'
-          : 'bg-surface'
+        isUpToDate ? 'bg-green-50 dark:bg-green-900/20' : 'bg-surface'
       }`}
     >
       <p className="text-sm font-medium text-muted">Estado de Cuenta</p>
@@ -39,17 +38,18 @@ export default function DebtStatusSection({ balance }: { balance: Balance }) {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="text-red-500 shrink-0" size={28} />
-            <p className="text-2xl font-bold text-foreground">{formatCLP(balance.amount)}</p>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="text-red-500 shrink-0" size={28} />
+              <p className="text-2xl font-bold text-foreground">{formatCLP(balance.amount)}</p>
+            </div>
+            <p className="text-sm text-muted">
+              Fecha límite de pago:{' '}
+              <span className="font-semibold text-foreground">{formatDate(balance.dueDate)}</span>
+            </p>
           </div>
-          <p className="text-sm text-muted">
-            Fecha límite de pago:{' '}
-            <span className="font-semibold text-foreground">
-              {formatDate(balance.dueDate)}
-            </span>
-          </p>
+          <PayButton />
         </div>
       )}
     </div>
