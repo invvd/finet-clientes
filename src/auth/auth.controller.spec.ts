@@ -89,7 +89,8 @@ describe('AuthController', () => {
           rut: '12.345.678-5',
           nombre_completo: 'Nuevo',
           password: 'Password1',
-          email: '',
+          password_confirmation: 'Password1',
+          email: 'nuevo@test.cl',
           telefono: '',
         },
         { ip: '127.0.0.1' } as Request,
@@ -102,7 +103,7 @@ describe('AuthController', () => {
         'Nuevo',
         'Password1',
         '127.0.0.1',
-        '',
+        'nuevo@test.cl',
         '',
       );
     });
@@ -111,7 +112,8 @@ describe('AuthController', () => {
   describe('POST /auth/recuperar-password', () => {
     it('call recuperarPassword service with RUT and IP', async () => {
       const result = {
-        link: 'http://localhost:5173/restablecer-password?token=reset-token',
+        message:
+          'Si el RUT está registrado, recibirás un enlace de recuperación',
       };
       mockAuthService.recuperarPassword.mockResolvedValue(result);
 

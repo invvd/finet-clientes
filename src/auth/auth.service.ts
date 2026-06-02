@@ -3,17 +3,22 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { MailService } from '../mail/mail.service.js';
 import { cleanRut } from '../common/utils/rut.js';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   async login(rut: string, password: string, ip: string) {
@@ -99,17 +104,25 @@ export class AuthService {
     nombreCompleto: string,
     password: string,
     ip: string,
-    email?: string | null,
+    email: string,
     telefono?: string | null,
   ) {
     const rutLimpio = cleanRut(rut);
 
-    const existente = await this.prisma.cliente.findUnique({
+    const existenteRut = await this.prisma.cliente.findUnique({
       where: { rut: rutLimpio },
     });
 
-    if (existente) {
+    if (existenteRut) {
       throw new ConflictException('El RUT ya está registrado');
+    }
+
+    const existenteEmail = await this.prisma.cliente.findFirst({
+      where: { email },
+    });
+
+    if (existenteEmail) {
+      throw new ConflictException('El email ya está registrado');
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -118,7 +131,7 @@ export class AuthService {
       data: {
         rut: rutLimpio,
         nombre_completo: nombreCompleto,
-        email: email || null,
+        email: email,
         telefono: telefono || null,
         password_portal_hash: passwordHash,
         id_empresa: 1,
@@ -194,7 +207,20 @@ export class AuthService {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const link = `${frontendUrl}/restablecer-password?token=${token}`;
 
-      return { link };
+      try {
+        await this.mailService.sendPasswordReset(
+          cliente.email,
+          cliente.nombre_completo,
+          link,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to send password reset email to ${cliente.email}`,
+          error,
+        );
+      }
+
+      return mensajeGenerico;
     } catch {
       return mensajeGenerico;
     }
@@ -215,12 +241,26 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await this.prisma.cliente.update({
+    const cliente = await this.prisma.cliente.update({
       where: { id_cliente: payload.sub },
       data: { password_portal_hash: passwordHash },
     });
 
     await this.invalidarSesionesAnteriores(payload.sub);
+
+    if (cliente.email) {
+      try {
+        await this.mailService.sendPasswordChanged(
+          cliente.email,
+          cliente.nombre_completo,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to send password changed email to ${cliente.email}`,
+          error,
+        );
+      }
+    }
 
     return { message: 'Contraseña restablecida exitosamente' };
   }

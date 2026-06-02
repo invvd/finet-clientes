@@ -10,5 +10,16 @@ services:
       - "5555:5432"
     volumes:
       - finet_clientes_db:/var/lib/postgresql/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: finet-clientes-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    volumes:
+      - finet_clientes_mailpit:/data
+
 volumes:
   finet_clientes_db:
+  finet_clientes_mailpit:

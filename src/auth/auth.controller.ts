@@ -58,9 +58,10 @@ export class AuthController {
     body: {
       rut: string;
       nombre_completo: string;
-      email?: string;
+      email: string;
       telefono?: string;
       password: string;
+      password_confirmation: string;
     },
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,

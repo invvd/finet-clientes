@@ -106,7 +106,7 @@ Content-Type: application/json
 
 ## POST /auth/recuperar-password
 
-Solicita un token para restablecer la contraseña. No revela si el RUT existe o no.
+Solicita un token para restablecer la contraseña. **Siempre devuelve el mismo mensaje generico** por seguridad (no revela si el RUT existe o no). Si el RUT existe y tiene correo, se envia el enlace de recuperacion por email.
 
 ```
 POST /api/auth/recuperar-password
@@ -117,33 +117,27 @@ Content-Type: application/json
 }
 ```
 
-**RUT registrado — Respuesta 200:**
-```json
-{
-  "link": "http://localhost:5173/restablecer-password?token=eyJhbGciOi..."
-}
-```
-
-**RUT no registrado — Respuesta 200:**
+**Respuesta 200 (siempre la misma):**
 ```json
 {
   "message": "Si el RUT esta registrado, recibiras un enlace de recuperacion"
 }
 ```
 
-**RUT registrado sin correo — Respuesta 200:**
-```json
-{
-  "message": "Si el RUT esta registrado, recibiras un enlace de recuperacion"
-}
-```
-(El incidente se registra internamente en `intento_fallido` sin informar al visitante.)
+**Comportamiento interno:**
+- RUT registrado con email → genera token JWT `type: "reset"` (15 min), envia email con enlace
+- RUT registrado sin email → registra incidente en `intento_fallido`, no envia email
+- RUT no registrado → no hace nada, mismo mensaje generico
+
+**Errores:**
+| Codigo | Mensaje | Causa |
+|---|---|---|
+| 400 | Validation failed | RUT con formato invalido o DV incorrecto |
+| 429 | ThrottlerException | Excede 3 req/min |
 
 **Notas:**
-- El token en el link es un JWT firmado con claim `type: "reset"`, expira en 15 minutos.
-- No puede usarse un token de sesion para resetear (type mismatch).
-- El link completo se devuelve listo para ser enviado por correo electronico (integracion futura).
-- Si el RUT existe pero no tiene email asociado, se registra el incidente y se responde igual que RUT inexistente.
+- El token en el enlace es un JWT firmado con claim `type: "reset"`, expira en 15 minutos.
+- Si falla el envio del email, se registra en el log del servidor y se devuelve el mensaje generico igualmente.
 
 ---
 
@@ -171,6 +165,7 @@ Content-Type: application/json
 **Efectos:**
 - Actualiza `password_portal_hash` en la tabla `cliente`
 - Invalida todas las sesiones activas del cliente (fuerza re-login)
+- Envia email de confirmacion si el cliente tiene correo asociado
 
 **Errores:**
 | Codigo | Mensaje | Causa |
@@ -311,8 +306,15 @@ Configurado via `ThrottlerGuard` global en `app.module.ts`:
 | `JWT_SECRET` | Si | Secreto para firmar JWT |
 | `ADMIN_API_KEY` | Si | API Key para endpoints admin |
 | `SESSION_INACTIVITY_MINUTES` | No (default: 15) | Minutos de inactividad para expirar sesion |
+| `FRONTEND_URL` | Si | URL base del frontend para enlaces de recuperacion |
+| `SMTP_HOST` | No (default: localhost) | Servidor SMTP para envio de emails |
+| `SMTP_PORT` | No (default: 1025) | Puerto SMTP |
+| `SMTP_USER` | No | Usuario SMTP (no necesario en dev con Mailpit) |
+| `SMTP_PASS` | No | Contraseña SMTP (no necesario en dev con Mailpit) |
+| `MAIL_FROM` | No | Remitente de emails ("Portal Clientes" <no-reply@finet.cl>) |
 | `CORS_ORIGIN` | No | Origenes CORS permitidos (separados por coma) |
 | `NODE_ENV` | No | `development` o `production` |
+| `PORT` | No (default: 4000) | Puerto del servidor |
 
 ---
 
@@ -380,8 +382,23 @@ curl -X GET "$BASE_URL/admin/intentos-fallidos?bloqueados=true" \
 | `src/auth/strategies/jwt.strategy.ts` | Estrategia JWT + validacion de sesion por inactividad |
 | `src/auth/guards/jwt-auth.guard.ts` | Guard JWT |
 | `src/auth/guards/` | (futuro) Guards adicionales |
+| `src/mail/mail.service.ts` | Servicio de envio de emails (nodemailer) |
+| `src/mail/mail.module.ts` | Modulo global de mail |
 | `src/common/utils/rut.ts` | Limpieza y validacion de RUT chileno |
 | `src/admin/admin.controller.ts` | Endpoints admin |
 | `src/admin/admin.service.ts` | Logica de admin |
 | `src/admin/guards/api-key.guard.ts` | Guard para API Key |
 | `src/app.module.ts` | Modulo raiz con ThrottlerGuard global |
+
+## Email en desarrollo
+
+El proyecto incluye **Mailpit** en `docker-compose.yml` para capturar emails en desarrollo.
+
+```bash
+docker compose up -d mailpit
+```
+
+- SMTP: `localhost:1025` (sin auth)
+- Web UI: `http://localhost:8025` (todos los emails capturados)
+
+En produccion, configurar `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` con un proveedor SMTP real.

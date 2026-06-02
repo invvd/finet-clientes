@@ -11,6 +11,7 @@ jest.unstable_mockModule('bcrypt', () => ({
 
 const { AuthService } = await import('./auth.service.js');
 const bcrypt = await import('bcrypt');
+const { MailService } = await import('../mail/mail.service.js');
 
 describe('AuthService', () => {
   let authService: InstanceType<typeof AuthService>;
@@ -36,6 +37,7 @@ describe('AuthService', () => {
           useValue: {
             cliente: {
               findUnique: jest.fn(),
+              findFirst: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
             },
@@ -57,6 +59,13 @@ describe('AuthService', () => {
           useValue: {
             signAsync: jest.fn().mockResolvedValue('mock-token'),
             verify: jest.fn(),
+          },
+        },
+        {
+          provide: MailService,
+          useValue: {
+            sendPasswordReset: jest.fn().mockResolvedValue(undefined),
+            sendPasswordChanged: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -128,6 +137,7 @@ describe('AuthService', () => {
 
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.cliente.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('register-jwt');
 
@@ -166,42 +176,29 @@ describe('AuthService', () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
 
       await expect(
-        authService.register('12.345.678-5', 'Otro', 'Password1', '0.0.0.0'),
+        authService.register(
+          '12.345.678-5',
+          'Otro',
+          'Password1',
+          '0.0.0.0',
+          'otro@test.cl',
+        ),
       ).rejects.toThrow('El RUT ya está registrado');
     });
 
-    it('set email and telefono to null when empty string', async () => {
-      const mockCreated = {
-        id_cliente: 3,
-        rut: '111111111',
-        nombre_completo: 'Sin Contacto',
-        email: null,
-        telefono: null,
-        password_portal_hash: 'hashed',
-        estado: 'activo',
-        id_empresa: 1,
-      };
-
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
+    it('throw ConflictException when email already exists', async () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
-      (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
-      (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt');
+      (prisma.cliente.findFirst as jest.Mock).mockResolvedValue(mockCliente);
 
-      await authService.register(
-        '11.111.111-1',
-        'Sin Contacto',
-        'Password1',
-        '0.0.0.0',
-        '',
-        '',
-      );
-
-      expect(prisma.cliente.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          email: null,
-          telefono: null,
-        }),
-      });
+      await expect(
+        authService.register(
+          '99.999.999-9',
+          'Duplicado',
+          'Password1',
+          '0.0.0.0',
+          'juan@test.cl',
+        ),
+      ).rejects.toThrow('El email ya está registrado');
     });
 
     it('create session after register', async () => {
@@ -209,7 +206,7 @@ describe('AuthService', () => {
         id_cliente: 4,
         rut: '222222222',
         nombre_completo: 'Con Sesion',
-        email: null,
+        email: 'sesion@test.cl',
         telefono: null,
         password_portal_hash: 'hashed',
         estado: 'activo',
@@ -218,6 +215,7 @@ describe('AuthService', () => {
 
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.cliente.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('session-jwt');
 
@@ -226,6 +224,7 @@ describe('AuthService', () => {
         'Con Sesion',
         'Password1',
         '0.0.0.0',
+        'sesion@test.cl',
       );
 
       expect(prisma.sesion_portal.create).toHaveBeenCalledWith({
@@ -241,7 +240,7 @@ describe('AuthService', () => {
         id_cliente: 5,
         rut: '333333333',
         nombre_completo: 'Expiracion',
-        email: null,
+        email: 'exp@test.cl',
         telefono: null,
         password_portal_hash: 'hashed',
         estado: 'activo',
@@ -250,6 +249,7 @@ describe('AuthService', () => {
 
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.cliente.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt');
 
@@ -259,6 +259,7 @@ describe('AuthService', () => {
         'Expiracion',
         'Password1',
         '0.0.0.0',
+        'exp@test.cl',
       );
       const afterCall = Date.now();
 
@@ -277,15 +278,13 @@ describe('AuthService', () => {
   });
 
   describe('recuperarPassword', () => {
-    it('return link when RUT exists', async () => {
+    it('return generic message when RUT exists with email', async () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('reset-token');
 
       const result = await authService.recuperarPassword('12.345.678-5');
 
-      expect(result).toEqual({
-        link: 'http://localhost:5173/restablecer-password?token=reset-token',
-      });
+      expect(result).toHaveProperty('message');
       expect(jwtService.signAsync).toHaveBeenCalledWith(
         { sub: 1, type: 'reset' },
         { expiresIn: '15m' },
@@ -311,6 +310,8 @@ describe('AuthService', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
       (prisma.cliente.update as jest.Mock).mockResolvedValue({
         id_cliente: 1,
+        email: 'juan@test.cl',
+        nombre_completo: 'Juan Pérez',
       });
 
       const result = await authService.restablecerPassword(
