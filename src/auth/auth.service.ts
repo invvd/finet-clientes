@@ -78,6 +78,7 @@ export class AuthService {
         token,
         fecha_inicio: new Date(),
         fecha_expiracion: this.calcularExpiracion(),
+        ip_origen: ip,
       },
     });
 
@@ -97,6 +98,7 @@ export class AuthService {
     rut: string,
     nombreCompleto: string,
     password: string,
+    ip: string,
     email?: string | null,
     telefono?: string | null,
   ) {
@@ -133,6 +135,7 @@ export class AuthService {
         token,
         fecha_inicio: new Date(),
         fecha_expiracion: this.calcularExpiracion(),
+        ip_origen: ip,
       },
     });
 
@@ -149,14 +152,10 @@ export class AuthService {
   }
 
   async logout(idCliente: number, token: string) {
-    await this.prisma.sesion_portal.updateMany({
+    await this.prisma.sesion_portal.deleteMany({
       where: {
         id_cliente: idCliente,
         token,
-        fecha_expiracion: { gt: new Date() },
-      },
-      data: {
-        fecha_expiracion: new Date(),
       },
     });
   }

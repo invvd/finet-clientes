@@ -39,7 +39,11 @@ describe('AuthService', () => {
               create: jest.fn(),
               update: jest.fn(),
             },
-            sesion_portal: { create: jest.fn(), updateMany: jest.fn() },
+            sesion_portal: {
+              create: jest.fn(),
+              updateMany: jest.fn(),
+              deleteMany: jest.fn(),
+            },
             intento_fallido: {
               findFirst: jest.fn().mockResolvedValue(null),
               count: jest.fn().mockResolvedValue(0),
@@ -131,6 +135,7 @@ describe('AuthService', () => {
         '12.345.678-5',
         'Nuevo Cliente',
         'Password1',
+        '127.0.0.1',
         'nuevo@test.cl',
         '998877665',
       );
@@ -161,7 +166,7 @@ describe('AuthService', () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
 
       await expect(
-        authService.register('12.345.678-5', 'Otro', 'Password1'),
+        authService.register('12.345.678-5', 'Otro', 'Password1', '0.0.0.0'),
       ).rejects.toThrow('El RUT ya está registrado');
     });
 
@@ -186,6 +191,7 @@ describe('AuthService', () => {
         '11.111.111-1',
         'Sin Contacto',
         'Password1',
+        '0.0.0.0',
         '',
         '',
       );
@@ -215,7 +221,12 @@ describe('AuthService', () => {
       (prisma.cliente.create as jest.Mock).mockResolvedValue(mockCreated);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('session-jwt');
 
-      await authService.register('22.222.222-2', 'Con Sesion', 'Password1');
+      await authService.register(
+        '22.222.222-2',
+        'Con Sesion',
+        'Password1',
+        '0.0.0.0',
+      );
 
       expect(prisma.sesion_portal.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -243,7 +254,12 @@ describe('AuthService', () => {
       (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt');
 
       const beforeCall = Date.now();
-      await authService.register('33.333.333-3', 'Expiracion', 'Password1');
+      await authService.register(
+        '33.333.333-3',
+        'Expiracion',
+        'Password1',
+        '0.0.0.0',
+      );
       const afterCall = Date.now();
 
       const createCall = (prisma.sesion_portal.create as jest.Mock).mock
@@ -334,20 +350,18 @@ describe('AuthService', () => {
   });
 
   describe('logout', () => {
-    it('mark session as expired', async () => {
-      const updateMany = jest
-        .spyOn(prisma.sesion_portal, 'updateMany')
+    it('delete session from database', async () => {
+      const deleteMany = jest
+        .spyOn(prisma.sesion_portal, 'deleteMany')
         .mockResolvedValue({ count: 1 });
 
       await authService.logout(1, 'some-token');
 
-      expect(updateMany).toHaveBeenCalledWith({
+      expect(deleteMany).toHaveBeenCalledWith({
         where: {
           id_cliente: 1,
           token: 'some-token',
-          fecha_expiracion: { gt: expect.any(Date) },
         },
-        data: { fecha_expiracion: expect.any(Date) },
       });
     });
   });

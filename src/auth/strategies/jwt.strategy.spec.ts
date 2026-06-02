@@ -43,6 +43,7 @@ describe('JwtStrategy', () => {
     headers: {
       authorization: 'Bearer test-token',
     },
+    cookies: {},
   } as any;
 
   const mockPayload = { sub: 1, rut: '123456785' };

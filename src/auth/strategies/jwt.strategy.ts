@@ -21,7 +21,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(req: Request, payload: JwtPayload) {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    const token =
+      req.headers.authorization?.replace('Bearer ', '') ||
+      (req.cookies as Record<string, string> | undefined)?.access_token;
 
     if (token) {
       const session = await this.prisma.sesion_portal.findFirst({

@@ -1,6 +1,6 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
@@ -58,6 +58,7 @@ describe('AuthController', () => {
           password: 'password',
         },
         { ip: '127.0.0.1' } as Request,
+        { cookie: jest.fn() } as unknown as Response,
       );
 
       expect(response).toEqual(result);
@@ -83,19 +84,24 @@ describe('AuthController', () => {
       };
       mockAuthService.register.mockResolvedValue(result);
 
-      const response = await authController.register({
-        rut: '12.345.678-5',
-        nombre_completo: 'Nuevo',
-        password: 'Password1',
-        email: '',
-        telefono: '',
-      });
+      const response = await authController.register(
+        {
+          rut: '12.345.678-5',
+          nombre_completo: 'Nuevo',
+          password: 'Password1',
+          email: '',
+          telefono: '',
+        },
+        { ip: '127.0.0.1' } as Request,
+        { cookie: jest.fn() } as unknown as Response,
+      );
 
       expect(response).toEqual(result);
       expect(mockAuthService.register).toHaveBeenCalledWith(
         '12.345.678-5',
         'Nuevo',
         'Password1',
+        '127.0.0.1',
         '',
         '',
       );
@@ -149,10 +155,14 @@ describe('AuthController', () => {
         // en la implementación real se invalida la sesión
       });
 
-      const req = { headers: { authorization: 'Bearer test-token' } };
+      const req = {
+        headers: { authorization: 'Bearer test-token' },
+        cookies: {},
+      };
       const response = await authController.logout(
         { id_cliente: 1 },
-        req as Request,
+        req as unknown as Request,
+        { clearCookie: jest.fn() } as unknown as Response,
       );
 
       expect(response).toEqual({ message: 'Sesión cerrada exitosamente' });

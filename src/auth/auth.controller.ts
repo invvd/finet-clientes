@@ -4,11 +4,12 @@ import {
   Get,
   Body,
   Req,
+  Res,
   UseGuards,
   HttpCode,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { loginSchema } from './dto/login.dto.js';
 import { registerSchema } from './dto/register.dto.js';
@@ -32,8 +33,21 @@ export class AuthController {
       password: string;
     },
     @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.login(body.rut, body.password, req.ip ?? '0.0.0.0');
+    const result = await this.authService.login(
+      body.rut,
+      body.password,
+      req.ip ?? '0.0.0.0',
+    );
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+    return result;
   }
 
   @Post('register')
@@ -48,14 +62,25 @@ export class AuthController {
       telefono?: string;
       password: string;
     },
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.register(
+    const result = await this.authService.register(
       body.rut,
       body.nombre_completo,
       body.password,
+      req.ip ?? '0.0.0.0',
       body.email,
       body.telefono,
     );
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+    return result;
   }
 
   @Post('recuperar-password')
@@ -88,11 +113,15 @@ export class AuthController {
   async logout(
     @CurrentClient() cliente: { id_cliente: number } | null,
     @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    const token =
+      req.headers.authorization?.replace('Bearer ', '') ||
+      (req.cookies as Record<string, string> | undefined)?.access_token;
     if (token && cliente?.id_cliente) {
       await this.authService.logout(cliente.id_cliente, token);
     }
+    res.clearCookie('access_token', { path: '/' });
     return { message: 'Sesión cerrada exitosamente' };
   }
 
