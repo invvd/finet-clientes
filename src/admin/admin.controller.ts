@@ -1,9 +1,18 @@
-import { Controller, Get, Query, UseGuards, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  Body,
+  UseGuards,
+  HttpCode,
+} from '@nestjs/common';
 import { AdminService } from './admin.service.js';
 import { ApiKeyGuard } from './guards/api-key.guard.js';
 import { ZodValidationPipe } from '../auth/pipes/zod-validation.pipe.js';
 import { intentosFallidosQuerySchema } from './dto/intentos-fallidos.dto.js';
 import type { IntentosFallidosQueryDto } from './dto/intentos-fallidos.dto.js';
+import { desbloquearIpSchema } from './dto/desbloquear-ip.dto.js';
 
 @Controller('admin')
 @UseGuards(ApiKeyGuard)
@@ -17,5 +26,16 @@ export class AdminController {
     query: IntentosFallidosQueryDto,
   ) {
     return this.adminService.getIntentosFallidos(query);
+  }
+
+  @Post('intentos-fallidos/desbloquear-ip')
+  @HttpCode(200)
+  async desbloquearIp(
+    @Body(new ZodValidationPipe(desbloquearIpSchema))
+    body: {
+      ip: string;
+    },
+  ) {
+    return this.adminService.desbloquearIp(body.ip);
   }
 }

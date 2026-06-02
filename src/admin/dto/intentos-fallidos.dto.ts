@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const intentosFallidosQuerySchema = z.object({
   rut: z.string().optional(),
+  ip: z.string().optional(),
   bloqueados: z.enum(['true', 'false']).optional(),
   desde: z.string().optional(),
   hasta: z.string().optional(),

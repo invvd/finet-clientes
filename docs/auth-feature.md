@@ -15,6 +15,7 @@ Base URL: `http://localhost:3000/api`
 | `POST` | `/auth/logout` | JWT | 10 req/min | Cerrar sesion activa |
 | `GET` | `/auth/perfil` | JWT | 10 req/min | Obtener datos del cliente autenticado |
 | `GET` | `/admin/intentos-fallidos` | API Key | 10 req/min | Historial de intentos fallidos |
+| `POST` | `/admin/intentos-fallidos/desbloquear-ip` | API Key | 10 req/min | Desbloquear una IP manualmente |
 
 ---
 
@@ -242,6 +243,7 @@ X-API-Key: <ADMIN_API_KEY>
 | Param | Tipo | Default | Descripcion |
 |---|---|---|---|
 | `rut` | string | — | Filtra por RUT exacto (sin puntos ni guion) |
+| `ip` | string | — | Filtra por direccion IP exacta |
 | `bloqueados` | `true` \| `false` | — | Solo con bloqueo activo (`bloqueado_hasta > now`) o inactivos |
 | `desde` | string (fecha) | — | Intentos desde esta fecha (`YYYY-MM-DD`) |
 | `hasta` | string (fecha) | — | Intentos hasta esta fecha (`YYYY-MM-DD`) |
@@ -270,6 +272,44 @@ X-API-Key: <ADMIN_API_KEY>
 | Codigo | Causa |
 |---|---|
 | 401 | Falta header `X-API-Key`, key invalida, o `ADMIN_API_KEY` no configurado |
+
+---
+
+## POST /admin/intentos-fallidos/desbloquear-ip
+
+Desbloquea manualmente una IP, eliminando el `bloqueado_hasta` de todos los registros activos. La accion queda registrada en `log_auditoria`.
+
+```
+POST /api/admin/intentos-fallidos/desbloquear-ip
+X-API-Key: <ADMIN_API_KEY>
+Content-Type: application/json
+
+{
+  "ip": "192.168.1.50"
+}
+```
+
+**Respuesta 200:**
+```json
+{
+  "desbloqueado": true,
+  "registros_afectados": 5
+}
+```
+
+**IP no bloqueada — Respuesta 200:**
+```json
+{
+  "desbloqueado": false,
+  "registros_afectados": 0
+}
+```
+
+**Errores:**
+| Codigo | Causa |
+|---|---|
+| 400 | IP con formato invalido |
+| 401 | API Key invalida o faltante |
 
 ---
 
@@ -355,6 +395,12 @@ curl -X POST "$BASE_URL/auth/logout" \
 # Admin - Intentos fallidos
 curl -X GET "$BASE_URL/admin/intentos-fallidos?bloqueados=true" \
   -H "X-API-Key: finet-admin-key-2026-dev"
+
+# Admin - Desbloquear IP
+curl -X POST "$BASE_URL/admin/intentos-fallidos/desbloquear-ip" \
+  -H "X-API-Key: finet-admin-key-2026-dev" \
+  -H "Content-Type: application/json" \
+  -d '{"ip":"192.168.1.50"}'
 ```
 
 ## Seguridad aplicada
