@@ -24,6 +24,18 @@ export class AuthService {
   async login(rut: string, password: string, ip: string) {
     const rutLimpio = cleanRut(rut);
 
+    const ipBloqueo = await this.prisma.intento_fallido.findFirst({
+      where: {
+        ip_address: ip,
+        bloqueado_hasta: { gt: new Date() },
+      },
+      orderBy: { bloqueado_hasta: 'desc' },
+    });
+
+    if (ipBloqueo?.bloqueado_hasta) {
+      throw new UnauthorizedException('IP bloqueada temporalmente');
+    }
+
     const bloqueo = await this.prisma.intento_fallido.findFirst({
       where: {
         rut_intentado: rutLimpio,
@@ -293,17 +305,29 @@ export class AuthService {
     idEmpresa?: number | null,
   ) {
     const ahora = new Date();
-    const ventanaInicio = new Date(ahora.getTime() - 10 * 60 * 1000);
 
-    const intentos = await this.prisma.intento_fallido.count({
+    const ventanaRut = new Date(ahora.getTime() - 10 * 60 * 1000);
+    const intentosRut = await this.prisma.intento_fallido.count({
       where: {
         rut_intentado: rutLimpio,
-        timestamp: { gte: ventanaInicio },
+        timestamp: { gte: ventanaRut },
       },
     });
 
+    const ventanaIp = new Date(ahora.getTime() - 5 * 60 * 1000);
+    const intentosIp = await this.prisma.intento_fallido.count({
+      where: {
+        ip_address: ip,
+        timestamp: { gte: ventanaIp },
+      },
+    });
+
+    const bloquearRut = intentosRut + 1 >= 5;
+    const bloquearIp = intentosIp + 1 >= 5;
     const bloquearHasta =
-      intentos + 1 >= 5 ? new Date(ahora.getTime() + 15 * 60 * 1000) : null;
+      bloquearRut || bloquearIp
+        ? new Date(ahora.getTime() + 15 * 60 * 1000)
+        : null;
 
     await this.prisma.intento_fallido.create({
       data: {

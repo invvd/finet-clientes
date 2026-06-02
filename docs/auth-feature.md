@@ -51,7 +51,8 @@ Content-Type: application/json
 |---|---|---|
 | 400 | Validation failed | RUT con formato invalido o DV incorrecto |
 | 401 | RUT o contraseña incorrectos | Credenciales invalidas |
-| 401 | RUT bloqueado temporalmente | 5 intentos fallidos en 10 min → bloqueo 15 min |
+| 401 | RUT bloqueado temporalmente | 5 intentos fallidos contra el mismo RUT en 10 min → bloqueo 15 min |
+| 401 | IP bloqueada temporalmente | 5 intentos fallidos desde la misma IP en 5 min → bloqueo 15 min |
 | 429 | ThrottlerException | Excede 5 req/min |
 
 ---
@@ -359,7 +360,9 @@ curl -X GET "$BASE_URL/admin/intentos-fallidos?bloqueados=true" \
 ## Seguridad aplicada
 
 - Rate limiting global con `@Throttle` por endpoint
-- Bloqueo temporal por intentos fallidos: 5 intentos en 10 min → 15 min de bloqueo
+- Bloqueo temporal por intentos fallidos (doble capa):
+  - Por RUT: 5 intentos en 10 min → 15 min de bloqueo
+  - Por IP: 5 intentos en 5 min → 15 min de bloqueo
 - JWT con `JWT_SECRET` obligatorio, expiracion 7 dias
 - Sesiones con sliding window de inactividad (15 min)
 - Una sesion activa por cliente (login invalida sesiones anteriores)
