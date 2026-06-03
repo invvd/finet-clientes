@@ -1,7 +1,6 @@
 import {
   Controller,
   Post,
-  Get,
   Body,
   Req,
   Res,
@@ -124,14 +123,5 @@ export class AuthController {
     }
     res.clearCookie('access_token', { path: '/' });
     return { message: 'Sesión cerrada exitosamente' };
-  }
-
-  @Get('perfil')
-  @UseGuards(JwtAuthGuard)
-  getProfile(
-    @CurrentClient()
-    cliente: { id_cliente: number } | Record<string, unknown> | null,
-  ) {
-    return cliente;
   }
 }

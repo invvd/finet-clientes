@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { DeudaPublicaModule } from './deuda-publica/deuda-publica.module.js';
 import { PortalModule } from './portal/portal.module.js';
 import { AdminModule } from './admin/admin.module.js';
+import { PerfilModule } from './perfil/perfil.module.js';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AdminModule } from './admin/admin.module.js';
     DeudaPublicaModule,
     PortalModule,
     AdminModule,
+    PerfilModule,
   ],
   controllers: [AppController],
   providers: [
