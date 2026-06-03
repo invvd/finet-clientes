@@ -78,12 +78,21 @@ $ pnpm run test
 
 ## Documentacion
 
-- `docs/auth-feature.md` autenticacion de clientes
-- `docs/prisma-types.md` generacion de tipos desde Prisma
+### API para Frontend
 
-## Feature: autenticacion de clientes
+Documentacion de endpoints organizada por feature (bodies, respuestas, errores, ejemplos fetch):
 
-La documentacion tecnica completa esta en `docs/auth-feature.md`.
+| Feature | Archivo | Endpoints |
+|---------|---------|-----------|
+| **Auth** | [`docs/auth.md`](./docs/auth.md) | Login, register, recuperar/restablecer password, logout |
+| **Perfil** | [`docs/perfil.md`](./docs/perfil.md) | Obtener perfil, actualizar telefono/email, cambiar contraseña |
+| **Portal** | [`docs/portal.md`](./docs/portal.md) | Panel, contratos (estado/vigentes), deuda, tickets |
+
+### Docs tecnicas
+
+- [`docs/api-frontend.md`](./docs/api-frontend.md) — referencia completa de la API (incluye deuda publica y admin)
+- [`docs/auth-feature.md`](./docs/auth-feature.md) — diseño de autenticacion
+- [`docs/prisma-types.md`](./docs/prisma-types.md) — generacion de tipos desde Prisma
 
 ## Notas de despliegue
 

@@ -7,6 +7,14 @@ import type { cliente } from '../../generated/prisma/client.js';
 /**
  * Todas las rutas requieren sesión activa (JwtAuthGuard).
  * El cliente autenticado se extrae del token via @CurrentClient().
+ *
+ * Base path: /api/portal
+ *
+ * Autenticación: Enviar header `Authorization: Bearer <token>`
+ * o confiar en la cookie httpOnly `access_token`.
+ *
+ * Sesión: 15 min de inactividad (ventana deslizante, se extiende en cada request).
+ * Si expira → 401 "Sesión expirada por inactividad".
  */
 @Controller('portal')
 @UseGuards(JwtAuthGuard)
@@ -15,8 +23,23 @@ export class PortalController {
 
   /**
    * CU-24: Panel principal del Portal Cliente
-   * Devuelve cliente, contratos, deuda y tickets recientes en una sola llamada.
+   *
+   * Dashboard unificado que devuelve cliente, contratos vigentes, estado de
+   * deuda y los últimos 3 tickets en una sola llamada.
+   *
    * GET /portal/panel
+   * Auth: Bearer <token>
+   *
+   * Respuesta: PanelPrincipalDto
+   *   - cliente: datos personales (id, nombre, RUT, email, teléfono)
+   *   - contratos: array de contratos con plan asociado
+   *   - resumen_deuda: tiene_deuda, saldo_total, facturas_pendientes
+   *   - tickets_recientes: últimos 3 tickets del cliente
+   *
+   * Errores:
+   *   401 - Sesión expirada por inactividad / Token JWT inválido
+   *   404 - Cliente no encontrado
+   *   500 - El portal no está disponible temporalmente
    */
   @Get('panel')
   getPanelPrincipal(@CurrentClient() cliente: cliente) {
@@ -25,7 +48,22 @@ export class PortalController {
 
   /**
    * CU-23: Consultar estado operativo del contrato
+   *
+   * Retorna el estado de TODOS los contratos del cliente (puede tener varios).
+   * Incluye id, estado, fecha de inicio y fecha de suspensión (si aplica).
+   *
    * GET /portal/contratos/estado
+   * Auth: Bearer <token>
+   *
+   * Respuesta: ContratoEstadoDto[]
+   *   - id_contrato, estado, fecha_inicio, fecha_suspension
+   *
+   * Estados posibles: activo, suspendido, cortado, inactivo.
+   * Estados no reconocidos se registran en log de auditoría.
+   *
+   * Errores:
+   *   401 - Sesión expirada por inactividad / Token JWT inválido
+   *   404 - No se encontraron contratos para este cliente
    */
   @Get('contratos/estado')
   getEstadoContratos(@CurrentClient() cliente: cliente) {
@@ -33,10 +71,23 @@ export class PortalController {
   }
 
   /**
-   * CU-25 + CU-26: Plan vigente / Múltiples planes vigentes
-   * Si el cliente tiene 1 contrato → CU-25.
-   * Si tiene varios → CU-26 (mismo endpoint, el frontend decide la vista).
+   * CU-25 + CU-26: Plan(es) vigente(s)
+   *
+   * Devuelve los contratos activos o suspendidos con su plan asociado.
+   *
    * GET /portal/contratos/vigentes
+   * Auth: Bearer <token>
+   *
+   * Si el cliente tiene 1 contrato → CU-25 (vista de plan único).
+   * Si tiene varios → CU-26 (vista de múltiples planes).
+   * Mismo endpoint, el frontend decide la vista según el largo del array.
+   *
+   * Respuesta: ContratoResumenDto[]
+   *   - id_contrato, estado, fecha_inicio, dia_vencimiento
+   *   - plan: { id_plan, nombre_comercial, tipo_plan, velocidad_mbps, precio_mensual }
+   *
+   * Errores:
+   *   401 - Sesión expirada por inactividad / Token JWT inválido
    */
   @Get('contratos/vigentes')
   getContratosVigentes(@CurrentClient() cliente: cliente) {
@@ -45,9 +96,25 @@ export class PortalController {
 
   /**
    * CU-27 + CU-28: Estado de deuda
-   * Si tiene_deuda = false → CU-27 (cuenta al día).
-   * Si tiene_deuda = true → CU-28 (muestra saldo y facturas).
+   *
+   * Consulta las facturas pendientes y vencidas de todos los contratos del cliente.
+   *
    * GET /portal/deuda
+   * Auth: Bearer <token>
+   *
+   * Si tiene_deuda = false → CU-27 (cuenta al día, saldo $0).
+   * Si tiene_deuda = true → CU-28 (muestra saldo total y detalle de facturas).
+   *
+   * Respuesta: ResumenDeudaDto
+   *   - tiene_deuda: boolean
+   *   - saldo_total: number (suma de todas las facturas pendientes)
+   *   - facturas_pendientes: FacturaPendienteDto[]
+   *     - id_factura, periodo (ej: "Mayo 2026"), monto, fecha_limite_pago,
+   *       estado ("pendiente" | "vencida"), dias_vencida (null si no ha vencido)
+   *
+   * Errores:
+   *   401 - Sesión expirada por inactividad / Token JWT inválido
+   *   500 - Saldo inconsistente (saldo negativo → error interno)
    */
   @Get('deuda')
   getResumenDeuda(@CurrentClient() cliente: cliente) {
@@ -56,10 +123,28 @@ export class PortalController {
 
   /**
    * CU-29 + CU-30: Tickets de soporte
+   *
+   * Devuelve el historial de tickets del cliente, ordenados del más reciente
+   * al más antiguo.
+   *
+   * GET /portal/tickets
+   * Auth: Bearer <token>
+   *
+   * @query limite?: number — opcional. Si se envía, trae solo los N tickets
+   *        más recientes. Si se omite, devuelve todos.
+   *
    * Si tiene_tickets = false → CU-29 (estado vacío).
    * Si tiene_tickets = true → CU-30 (historial completo).
-   * GET /portal/tickets
-   * Query opcional: ?limite=N  (para traer solo los N más recientes)
+   *
+   * Respuesta: TicketsResponseDto
+   *   - total: number (cantidad devuelta en esta llamada)
+   *   - tiene_tickets: boolean
+   *   - tickets: TicketResumenDto[]
+   *     - id_ticket, codigo_seguimiento, estado, prioridad, descripcion,
+   *       fecha_creacion, fecha_cierre, categoria, origen
+   *
+   * Errores:
+   *   401 - Sesión expirada por inactividad / Token JWT inválido
    */
   @Get('tickets')
   getTickets(
