@@ -198,7 +198,7 @@ El frontend debe capturar este 401 y redirigir a login con un mensaje informativ
 
 ---
 
-### 1.7 Obtener perfil (RF-01)
+### 1.7 Obtener perfil (CU-07)
 
 ```
 GET /api/auth/perfil
@@ -209,13 +209,144 @@ Authorization: Bearer <token>
 ```json
 {
   "id_cliente": 1,
-  "rut": "123456785",
   "nombre_completo": "Juan Pérez",
+  "rut": "123456785",
   "email": "juan@test.cl",
-  "telefono": "912345678",
-  "estado": "activo"
+  "telefono": "+56912345678",
+  "fecha_creacion": "2024-01-01T00:00:00.000Z"
 }
 ```
+
+---
+
+### 1.8 Actualizar teléfono (CU-08)
+
+```
+PATCH /api/auth/perfil/telefono
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "password_actual": "MiClave1",
+  "telefono": "+56987654321"
+}
+```
+
+Se requiere la contraseña actual para autorizar el cambio. El cambio queda registrado en el log de auditoría.
+
+**Respuesta 200:**
+```json
+{
+  "id_cliente": 1,
+  "nombre_completo": "Juan Pérez",
+  "rut": "123456785",
+  "email": "juan@test.cl",
+  "telefono": "+56987654321",
+  "fecha_creacion": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Errores:**
+| HTTP | Mensaje | Causa |
+|------|---------|-------|
+| 400 | `"La contraseña actual es requerida"` | Campo vacío |
+| 400 | `"El teléfono debe tener al menos 8 caracteres"` | Muy corto |
+| 400 | `"Formato de teléfono inválido"` | Formato incorrecto |
+| 401 | `"La contraseña actual es incorrecta"` | Password no coincide |
+| 401 | `"Sesión expirada por inactividad"` | Sesión inactiva |
+
+---
+
+### 1.9 Actualizar correo electrónico (CU-09)
+
+```
+PATCH /api/auth/perfil/email
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "password_actual": "MiClave1",
+  "email": "nuevo@correo.cl"
+}
+```
+
+Se requiere la contraseña actual para autorizar el cambio. Si el nuevo email ya está en uso por otro cliente se rechaza. El cambio queda registrado en el log de auditoría.
+
+**Respuesta 200:**
+```json
+{
+  "id_cliente": 1,
+  "nombre_completo": "Juan Pérez",
+  "rut": "123456785",
+  "email": "nuevo@correo.cl",
+  "telefono": "+56912345678",
+  "fecha_creacion": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Errores:**
+| HTTP | Mensaje | Causa |
+|------|---------|-------|
+| 400 | `"La contraseña actual es requerida"` | Campo vacío |
+| 400 | `"El correo electrónico no tiene un formato válido"` | Formato incorrecto |
+| 400 | `"El nuevo correo electrónico no puede ser igual al actual"` | Mismo email |
+| 400 | `"El correo electronico ya esta registrado por otro usuario"` | Email duplicado |
+| 401 | `"La contraseña actual es incorrecta"` | Password no coincide |
+| 401 | `"Sesión expirada por inactividad"` | Sesión inactiva |
+
+---
+
+### 1.10 Cambiar contraseña (CU-10 / CU-11)
+
+```
+PATCH /api/auth/perfil/password
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "password_actual": "MiClave1",
+  "password_nuevo": "NuevaClave2!",
+  "password_confirmacion": "NuevaClave2!"
+}
+```
+
+**Reglas de contraseña nueva (CU-11):**
+- Mínimo 8 caracteres
+- Al menos 1 mayúscula
+- Al menos 1 número
+- Al menos 1 carácter especial
+- No puede ser igual a la actual
+- Debe coincidir con `password_confirmacion`
+
+El cambio queda registrado en el log de auditoría (sin almacenar la contraseña).
+
+**Respuesta 200:**
+```json
+{
+  "mensaje": "Contrasena actualizada correctamente"
+}
+```
+
+**Errores:**
+| HTTP | Mensaje | Causa |
+|------|---------|-------|
+| 400 | `"Mínimo 8 caracteres"` | Muy corta |
+| 400 | `"Debe contener al menos una letra mayúscula"` | Falta mayúscula |
+| 400 | `"Debe contener al menos un número"` | Falta número |
+| 400 | `"Debe contener al menos un carácter especial"` | Falta especial |
+| 400 | `"Las contraseñas no coinciden"` | password_nuevo ≠ password_confirmacion |
+| 400 | `"La nueva contrasena no puede ser igual a la actual"` | Misma contraseña |
+| 401 | `"La contrasena actual es incorrecta"` | Password actual incorrecta |
+| 401 | `"Sesión expirada por inactividad"` | Sesión inactiva |
 
 ---
 

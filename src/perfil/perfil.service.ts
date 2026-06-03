@@ -220,14 +220,6 @@ export class PerfilService {
     return { mensaje: 'Contrasena actualizada correctamente' };
   }
 
-  private async assertClienteExiste(idCliente: number): Promise<void> {
-    const existe = await this.prisma.cliente.findUnique({
-      where: { id_cliente: idCliente },
-      select: { id_cliente: true },
-    });
-    if (!existe) throw new NotFoundException('Cliente no encontrado');
-  }
-
   private mapearPerfil(c: {
     id_cliente: number;
     nombre_completo: string;
