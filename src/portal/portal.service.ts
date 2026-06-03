@@ -1,4 +1,5 @@
 import {
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -78,11 +79,21 @@ export class PortalService {
       throw new NotFoundException('Cliente no encontrado');
     }
 
-    const [contratos, resumen_deuda, tickets_recientes] = await Promise.all([
-      this.getContratosVigentes(idCliente),
-      this.getResumenDeuda(idCliente),
-      this.getTickets(idCliente, 3), // solo 3 más recientes para el panel
-    ]);
+    let contratos: ContratoResumenDto[];
+    let resumen_deuda: ResumenDeudaDto;
+    let tickets_recientes: TicketsResponseDto;
+    try {
+      [contratos, resumen_deuda, tickets_recientes] = await Promise.all([
+        this.getContratosVigentes(idCliente),
+        this.getResumenDeuda(idCliente),
+        this.getTickets(idCliente, 3),
+      ]);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'El portal no está disponible temporalmente',
+      );
+    }
 
     return {
       cliente: {
