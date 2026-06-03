@@ -1,5 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service.js';
 import {
   ContratoEstadoDto,
   ContratoResumenDto,
@@ -7,13 +11,20 @@ import {
   PanelPrincipalDto,
   ResumenDeudaDto,
   TicketsResponseDto,
-} from './dto/portal-response.dto';
+} from './dto/portal-response.dto.js';
 
 @Injectable()
 export class PortalService {
   constructor(private readonly prisma: PrismaService) {}
 
-  //  CU-23: Consultar estado operativo del contrato 
+  // Estados válidos según RF-20 y CU-23
+  private readonly ESTADOS_CONTRATO_VALIDOS: string[] = [
+    'activo',
+    'suspendido',
+    'en_tramite',
+  ];
+
+  //  CU-23: Consultar estado operativo del contrato
   // Retorna el estado de TODOS los contratos del cliente (puede tener varios) y se ve si esta activo, fechas e identificador ;3.
   async getEstadoContratos(idCliente: number): Promise<ContratoEstadoDto[]> {
     const contratos = await this.prisma.contrato.findMany({
@@ -27,7 +38,23 @@ export class PortalService {
     });
 
     if (!contratos.length) {
-      throw new NotFoundException('No se encontraron contratos para este cliente');
+      throw new NotFoundException(
+        'No se encontraron contratos para este cliente',
+      );
+    }
+
+    // CU-23 Excepción 3: registrar estados no reconocidos por la regla de negocio
+    for (const c of contratos) {
+      if (!this.ESTADOS_CONTRATO_VALIDOS.includes(c.estado)) {
+        await this.prisma.log_auditoria.create({
+          data: {
+            accion: 'ESTADO_CONTRATO_INVALIDO',
+            entidad_afectada: 'contrato',
+            id_entidad_afectada: c.id_contrato,
+            valor_anterior: { estado: c.estado },
+          },
+        });
+      }
     }
 
     return contratos.map((c) => ({
@@ -110,7 +137,7 @@ export class PortalService {
         : null,
     }));
   }
-  //CU-27 / CU-28: Estado de deuda // 
+  //CU-27 / CU-28: Estado de deuda //
   // tiene_deuda = false → el frontend muestra "cuenta al día" // tiene_deuda = true → el frontend muestra el saldo y detalle.
   async getResumenDeuda(idCliente: number): Promise<ResumenDeudaDto> {
     // Traer todos los contratos del cliente para buscar sus facturas
@@ -153,6 +180,13 @@ export class PortalService {
 
     const saldo_total = facturasMapeadas.reduce((acc, f) => acc + f.monto, 0);
 
+    // CU-27 Excepción 3: saldo negativo indica inconsistencia de datos
+    if (saldo_total < 0) {
+      throw new InternalServerErrorException(
+        'Saldo inconsistente. Contacte al administrador.',
+      );
+    }
+
     return {
       tiene_deuda: facturasMapeadas.length > 0,
       saldo_total,
@@ -180,9 +214,7 @@ export class PortalService {
       estado: t.estado,
       prioridad: t.prioridad,
       descripcion: t.descripcion,
-      fecha_creacion: t.fecha_creacion
-        ? t.fecha_creacion.toISOString()
-        : '',
+      fecha_creacion: t.fecha_creacion ? t.fecha_creacion.toISOString() : '',
       fecha_cierre: t.fecha_cierre ? t.fecha_cierre.toISOString() : null,
       categoria: t.categoria_falla.nombre,
       origen: t.origen,
@@ -198,8 +230,18 @@ export class PortalService {
   // variables meses xD
   private formatPeriodo(mes: number, anio: number): string {
     const meses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
     return `${meses[mes - 1]} ${anio}`;
   }

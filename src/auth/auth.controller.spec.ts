@@ -1,11 +1,19 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
+import type { Request, Response } from 'express';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 
 describe('AuthController', () => {
   let authController: AuthController;
-  let mockAuthService: { login: jest.Mock; logout: jest.Mock };
+  let mockAuthService: {
+    login: jest.Mock;
+    logout: jest.Mock;
+    register: jest.Mock;
+    recuperarPassword: jest.Mock;
+    restablecerPassword: jest.Mock;
+  };
 
   const mockCliente = {
     id: 1,
@@ -18,15 +26,18 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     mockAuthService = {
-      login: jest.fn<any>(),
-      logout: jest.fn<any>(),
+      login: jest.fn(),
+      logout: jest.fn(),
+      register: jest.fn(),
+      recuperarPassword: jest.fn(),
+      restablecerPassword: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [{ provide: AuthService, useValue: mockAuthService }],
     })
-      .overrideGuard({ token: 'jwt' } as any)
+      .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -46,7 +57,8 @@ describe('AuthController', () => {
           rut: '12.345.678-5',
           password: 'password',
         },
-        { ip: '127.0.0.1' } as any,
+        { ip: '127.0.0.1' } as Request,
+        { cookie: jest.fn() } as unknown as Response,
       );
 
       expect(response).toEqual(result);
@@ -58,16 +70,101 @@ describe('AuthController', () => {
     });
   });
 
+  describe('POST /auth/register', () => {
+    it('call register service and return access_token + cliente', async () => {
+      const result = {
+        access_token: 'register-jwt',
+        cliente: {
+          id: 2,
+          rut: '123456785',
+          nombre_completo: 'Nuevo',
+          email: null,
+          telefono: null,
+        },
+      };
+      mockAuthService.register.mockResolvedValue(result);
+
+      const response = await authController.register(
+        {
+          rut: '12.345.678-5',
+          nombre_completo: 'Nuevo',
+          password: 'Password1',
+          password_confirmation: 'Password1',
+          email: 'nuevo@test.cl',
+          telefono: '',
+        },
+        { ip: '127.0.0.1' } as Request,
+        { cookie: jest.fn() } as unknown as Response,
+      );
+
+      expect(response).toEqual(result);
+      expect(mockAuthService.register).toHaveBeenCalledWith(
+        '12.345.678-5',
+        'Nuevo',
+        'Password1',
+        '127.0.0.1',
+        'nuevo@test.cl',
+        '',
+      );
+    });
+  });
+
+  describe('POST /auth/recuperar-password', () => {
+    it('call recuperarPassword service with RUT and IP', async () => {
+      const result = {
+        message:
+          'Si el RUT está registrado, recibirás un enlace de recuperación',
+      };
+      mockAuthService.recuperarPassword.mockResolvedValue(result);
+
+      const mockReq = { ip: '127.0.0.1' } as any;
+      const response = await authController.recuperarPassword(
+        {
+          rut: '12.345.678-5',
+        },
+        mockReq,
+      );
+
+      expect(response).toEqual(result);
+      expect(mockAuthService.recuperarPassword).toHaveBeenCalledWith(
+        '12.345.678-5',
+        '127.0.0.1',
+      );
+    });
+  });
+
+  describe('POST /auth/restablecer-password', () => {
+    it('call restablecerPassword service with token and password', async () => {
+      const result = { message: 'Contraseña restablecida exitosamente' };
+      mockAuthService.restablecerPassword.mockResolvedValue(result);
+
+      const response = await authController.restablecerPassword({
+        token: 'reset-token',
+        password: 'NewPass1',
+      });
+
+      expect(response).toEqual(result);
+      expect(mockAuthService.restablecerPassword).toHaveBeenCalledWith(
+        'reset-token',
+        'NewPass1',
+      );
+    });
+  });
+
   describe('POST /auth/logout', () => {
     it('return success message and call logout', async () => {
       mockAuthService.logout.mockImplementation(async () => {
         // en la implementación real se invalida la sesión
       });
 
-      const req = { headers: { authorization: 'Bearer test-token' } };
+      const req = {
+        headers: { authorization: 'Bearer test-token' },
+        cookies: {},
+      };
       const response = await authController.logout(
-        { id_cliente: 1 } as any,
-        req as any,
+        { id_cliente: 1 },
+        req as unknown as Request,
+        { clearCookie: jest.fn() } as unknown as Response,
       );
 
       expect(response).toEqual({ message: 'Sesión cerrada exitosamente' });
@@ -75,9 +172,9 @@ describe('AuthController', () => {
     });
   });
 
-  describe('GET /auth/me', () => {
+  describe('GET /auth/perfil', () => {
     it('return authenticated client', () => {
-      const response = authController.getProfile(mockCliente as any);
+      const response = authController.getProfile(mockCliente);
       expect(response).toEqual(mockCliente);
     });
   });

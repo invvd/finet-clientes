@@ -38,13 +38,13 @@ export interface ContratoResumenDto {
 // ─── CU-27 / CU-28: Estado de deuda ──────────────────────────────────────────
 export interface ResumenDeudaDto {
   tiene_deuda: boolean;
-  saldo_total: number;         // suma de facturas pendientes
+  saldo_total: number; // suma de facturas pendientes
   facturas_pendientes: FacturaPendienteDto[];
 }
 
 export interface FacturaPendienteDto {
   id_factura: number;
-  periodo: string;             // ej: "Mayo 2026"
+  periodo: string; // ej: "Mayo 2026"
   monto: number;
   fecha_limite_pago: string;
   estado: string;
@@ -54,7 +54,7 @@ export interface FacturaPendienteDto {
 // ─── CU-29 / CU-30: Tickets de soporte ───────────────────────────────────────
 export interface TicketsResponseDto {
   total: number;
-  tiene_tickets: boolean;      // false → CU-29 estado vacío
+  tiene_tickets: boolean; // false → CU-29 estado vacío
   tickets: TicketResumenDto[];
 }
 

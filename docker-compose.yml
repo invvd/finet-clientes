@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: finet-clientes-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: finet_clientes
+    ports:
+      - "5555:5432"
+    volumes:
+      - finet_clientes_db:/var/lib/postgresql/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: finet-clientes-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    volumes:
+      - finet_clientes_mailpit:/data
+
+volumes:
+  finet_clientes_db:
+  finet_clientes_mailpit:

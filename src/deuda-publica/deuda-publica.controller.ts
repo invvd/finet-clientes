@@ -1,11 +1,9 @@
+import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
+import { DeudaPublicaService } from './deuda-publica.service.js';
 import {
-  BadRequestException,
-  Controller,
-  Get,
-  Query,
-} from '@nestjs/common';
-import { DeudaPublicaService } from './deuda-publica.service';
-import { ConsultaDeudaAbonado, ConsultaDeudaRutDto } from './dto/deuda-publica.dto';
+  ConsultaDeudaAbonado,
+  ConsultaDeudaRutDto,
+} from './dto/deuda-publica.dto.js';
 
 /**
  * Endpoints públicos — NO requieren autenticación.
@@ -23,7 +21,7 @@ export class DeudaPublicaController {
   consultarPorRut(@Query() query: Record<string, string>) {
     const parsed = ConsultaDeudaRutDto.safeParse(query);
     if (!parsed.success) {
-      throw new BadRequestException(parsed.error.errors[0].message);
+      throw new BadRequestException(parsed.error.issues[0].message);
     }
     return this.deudaPublicaService.consultarPorRut(parsed.data.rut);
   }
@@ -39,7 +37,7 @@ export class DeudaPublicaController {
   consultarPorAbonado(@Query() query: Record<string, string>) {
     const parsed = ConsultaDeudaAbonado.safeParse(query);
     if (!parsed.success) {
-      throw new BadRequestException(parsed.error.errors[0].message);
+      throw new BadRequestException(parsed.error.issues[0].message);
     }
 
     const codigoNum = parseInt(parsed.data.codigo_abonado, 10);

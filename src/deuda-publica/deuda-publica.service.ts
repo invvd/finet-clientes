@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service.js';
 import {
   DetalleFacturaPublicaDto,
   DeudaPublicaResponseDto,
-} from './dto/deuda-publica.dto';
+} from './dto/deuda-publica.dto.js';
 
 @Injectable()
 export class DeudaPublicaService {
@@ -44,7 +44,9 @@ export class DeudaPublicaService {
    * El código de abonado corresponde al id_contrato del sistema.
    * Endpoint público — no requiere autenticación.
    */
-  async consultarPorAbonado(codigoAbonado: number): Promise<DeudaPublicaResponseDto> {
+  async consultarPorAbonado(
+    codigoAbonado: number,
+  ): Promise<DeudaPublicaResponseDto> {
     const contrato = await this.prisma.contrato.findUnique({
       where: { id_contrato: codigoAbonado },
       include: {
@@ -79,7 +81,11 @@ export class DeudaPublicaService {
     if (!idContratos.length) {
       return {
         encontrado: true,
-        cliente: { nombre_completo: nombreCompleto, rut, codigo_abonado: codigoAbonado },
+        cliente: {
+          nombre_completo: nombreCompleto,
+          rut,
+          codigo_abonado: codigoAbonado,
+        },
         tiene_deuda: false,
         saldo_total: 0,
         facturas: [],
@@ -119,7 +125,11 @@ export class DeudaPublicaService {
 
     return {
       encontrado: true,
-      cliente: { nombre_completo: nombreCompleto, rut, codigo_abonado: codigoAbonado },
+      cliente: {
+        nombre_completo: nombreCompleto,
+        rut,
+        codigo_abonado: codigoAbonado,
+      },
       tiene_deuda: facturasMapeadas.length > 0,
       saldo_total,
       facturas: facturasMapeadas,
@@ -144,8 +154,18 @@ export class DeudaPublicaService {
 
   private formatPeriodo(mes: number, anio: number): string {
     const meses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
     return `${meses[mes - 1]} ${anio}`;
   }
