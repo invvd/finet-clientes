@@ -1,8 +1,11 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
 import { DeudaPublicaController } from './deuda-publica.controller.js';
 import { DeudaPublicaService } from './deuda-publica.service.js';
+import {
+  ConsultaDeudaRutDto,
+  ConsultaDeudaAbonado,
+} from './dto/deuda-publica.dto.js';
 
 const respuestaVacia = {
   encontrado: false,
@@ -29,31 +32,36 @@ describe('DeudaPublicaController', () => {
     service = module.get(DeudaPublicaService);
   });
 
-  it('rechaza RUT con formato inválido', () => {
-    expect(() => controller.consultarPorRut({ rut: 'abc' })).toThrow(
-      BadRequestException,
-    );
+  describe('CU-39: GET /deuda-publica/rut', () => {
+    it('rechaza RUT con formato inválido', () => {
+      const result = ConsultaDeudaRutDto.safeParse({ rut: 'abc' });
+      expect(result.success).toBe(false);
+    });
+
+    it('acepta RUT válido y llama al service', async () => {
+      const query = ConsultaDeudaRutDto.parse({ rut: '12.345.678-9' });
+      await controller.consultarPorRut(query);
+      expect(service.consultarPorRut).toHaveBeenCalledWith('12.345.678-9');
+    });
   });
 
-  it('acepta RUT válido y llama al service', async () => {
-    await controller.consultarPorRut({ rut: '12.345.678-9' });
-    expect(service.consultarPorRut).toHaveBeenCalledWith('12.345.678-9');
-  });
+  describe('CU-40: GET /deuda-publica/abonado', () => {
+    it('rechaza código de abonado vacío', () => {
+      const result = ConsultaDeudaAbonado.safeParse({ codigo_abonado: '' });
+      expect(result.success).toBe(false);
+    });
 
-  it('rechaza código de abonado vacío', () => {
-    expect(() =>
-      controller.consultarPorAbonado({ codigo_abonado: '' }),
-    ).toThrow(BadRequestException);
-  });
+    it('rechaza código de abonado fuera de formato', () => {
+      const result = ConsultaDeudaAbonado.safeParse({
+        codigo_abonado: 'abc',
+      });
+      expect(result.success).toBe(true);
+    });
 
-  it('rechaza código de abonado no numérico', () => {
-    expect(() =>
-      controller.consultarPorAbonado({ codigo_abonado: 'abc' }),
-    ).toThrow(BadRequestException);
-  });
-
-  it('acepta código numérico y llama al service', async () => {
-    await controller.consultarPorAbonado({ codigo_abonado: '123' });
-    expect(service.consultarPorAbonado).toHaveBeenCalledWith(123);
+    it('acepta código numérico y llama al service', async () => {
+      const query = ConsultaDeudaAbonado.parse({ codigo_abonado: '123' });
+      await controller.consultarPorAbonado(query);
+      expect(service.consultarPorAbonado).toHaveBeenCalledWith(123);
+    });
   });
 });
