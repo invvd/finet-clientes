@@ -4,7 +4,11 @@ import type { Request } from 'express';
 import { PerfilController } from './perfil.controller.js';
 import { PerfilService } from './perfil.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
-import { ActualizarTelefonoDto, ActualizarEmailDto, CambiarPasswordDto } from './dto/perfil.dto.js';
+import {
+  ActualizarTelefonoDto,
+  ActualizarEmailDto,
+  CambiarPasswordDto,
+} from './dto/perfil.dto.js';
 
 const CLIENTE_MOCK = {
   id_cliente: 1,
@@ -76,12 +80,20 @@ describe('PerfilController', () => {
   });
 
   describe('PATCH /auth/perfil/email', () => {
-    it('CU-09: llama actualizarEmail con id y body', async () => {
-      const body = ActualizarEmailDto.parse({ email: 'nuevo@test.cl' });
+    it('CU-09: llama actualizarEmail con id, body e ip', async () => {
+      const body = ActualizarEmailDto.parse({
+        password_actual: 'Password1',
+        email: 'nuevo@test.cl',
+      });
+      const req = { ip: '127.0.0.1' } as Request;
 
-      await controller.actualizarEmail(CLIENTE_MOCK as any, body);
+      await controller.actualizarEmail(CLIENTE_MOCK as any, body, req);
 
-      expect(service.actualizarEmail).toHaveBeenCalledWith(1, body);
+      expect(service.actualizarEmail).toHaveBeenCalledWith(
+        1,
+        body,
+        '127.0.0.1',
+      );
     });
   });
 

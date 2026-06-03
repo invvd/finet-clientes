@@ -38,10 +38,12 @@ export class PerfilController {
   actualizarEmail(
     @CurrentClient() cliente: cliente,
     @Body(new ZodValidationPipe(ActualizarEmailDto)) body: unknown,
+    @Req() req: Request,
   ) {
     return this.perfilService.actualizarEmail(
       cliente.id_cliente,
       body as ActualizarEmailDto,
+      req.ip ?? '0.0.0.0',
     );
   }
 

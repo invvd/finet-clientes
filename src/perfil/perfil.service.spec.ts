@@ -51,7 +51,9 @@ describe('PerfilService', () => {
 
   describe('getPerfil', () => {
     it('CU-07: retorna los datos del perfil del cliente', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
 
       const result = await service.getPerfil(1);
 
@@ -89,7 +91,9 @@ describe('PerfilService', () => {
     });
 
     it('CU-08: actualiza telefono y retorna perfil', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
 
       const result = await service.actualizarTelefono(1, dto, '127.0.0.1');
 
@@ -103,7 +107,9 @@ describe('PerfilService', () => {
     });
 
     it('CU-08: verifica contraseña actual con bcrypt', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
 
       await service.actualizarTelefono(1, dto, '127.0.0.1');
 
@@ -114,7 +120,9 @@ describe('PerfilService', () => {
     });
 
     it('CU-08 Excepción 2: lanza UnauthorizedException si contraseña incorrecta', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
@@ -123,7 +131,9 @@ describe('PerfilService', () => {
     });
 
     it('CU-08: crea registro en log_auditoria', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
 
       await service.actualizarTelefono(1, dto, '127.0.0.1');
 
@@ -147,7 +157,8 @@ describe('PerfilService', () => {
 
       await service.actualizarTelefono(1, dto, '127.0.0.1');
 
-      const auditCall = (prisma.log_auditoria.create as jest.Mock).mock.calls[0][0];
+      const auditCall = (prisma.log_auditoria.create as jest.Mock).mock
+        .calls[0][0];
       expect(auditCall.data.valor_anterior).toBeUndefined();
     });
 
@@ -164,42 +175,115 @@ describe('PerfilService', () => {
   });
 
   describe('actualizarEmail', () => {
-    const dto = { email: 'nuevo@test.cl' };
+    const dto = {
+      password_actual: 'Password1',
+      email: 'nuevo@test.cl',
+    };
 
     beforeEach(() => {
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       (prisma.cliente.update as jest.Mock).mockResolvedValue({
         ...CLIENTE_DB_MOCK,
         email: 'nuevo@test.cl',
       });
+      (prisma.cliente.findFirst as jest.Mock).mockResolvedValue(null);
     });
 
-    it('CU-09: actualiza email y retorna perfil', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
-      (prisma.cliente.findFirst as jest.Mock).mockResolvedValue(null);
+    it('CU-09: actualiza email, verifica contraseña y retorna perfil', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
 
-      const result = await service.actualizarEmail(1, dto);
+      const result = await service.actualizarEmail(1, dto, '127.0.0.1');
 
       expect(result.email).toBe('nuevo@test.cl');
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'Password1',
+        'hashed-password',
+      );
+    });
+
+    it('CU-09 Excepción 2: lanza UnauthorizedException si contraseña incorrecta', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(
+        service.actualizarEmail(1, dto, '127.0.0.1'),
+      ).rejects.toThrow('La contraseña actual es incorrecta');
+    });
+
+    it('CU-09: lanza BadRequestException si nuevo email igual al actual', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue({
+        ...CLIENTE_DB_MOCK,
+        email: 'nuevo@test.cl',
+      });
+
+      await expect(
+        service.actualizarEmail(1, dto, '127.0.0.1'),
+      ).rejects.toThrow(
+        'El nuevo correo electrónico no puede ser igual al actual',
+      );
     });
 
     it('CU-09: lanza BadRequestException si email en uso por otro cliente', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
       (prisma.cliente.findFirst as jest.Mock).mockResolvedValue({
         id_cliente: 2,
         email: 'nuevo@test.cl',
       });
 
-      await expect(service.actualizarEmail(1, dto)).rejects.toThrow(
+      await expect(
+        service.actualizarEmail(1, dto, '127.0.0.1'),
+      ).rejects.toThrow(
         'El correo electronico ya esta registrado por otro usuario',
       );
     });
 
-    it('CU-09: lanza NotFoundException si cliente no existe', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
-
-      await expect(service.actualizarEmail(999, dto)).rejects.toThrow(
-        'Cliente no encontrado',
+    it('CU-09: crea registro en log_auditoria con valor_anterior y valor_nuevo', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
       );
+
+      await service.actualizarEmail(1, dto, '192.168.1.1');
+
+      expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: {
+          accion: 'ACTUALIZAR_EMAIL',
+          entidad_afectada: 'cliente',
+          id_entidad_afectada: 1,
+          valor_anterior: { email: 'juan@test.cl' },
+          valor_nuevo: { email: 'nuevo@test.cl' },
+          ip_origen: '192.168.1.1',
+        },
+      });
+    });
+
+    it('CU-09: valor_anterior es undefined cuando no habia email previo', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue({
+        ...CLIENTE_DB_MOCK,
+        email: null,
+      });
+
+      await service.actualizarEmail(1, dto, '127.0.0.1');
+
+      const auditCall = (prisma.log_auditoria.create as jest.Mock).mock
+        .calls[0][0];
+      expect(auditCall.data.valor_anterior).toBeUndefined();
+    });
+
+    it('CU-09: lanza NotFoundException si no tiene password_hash', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue({
+        ...CLIENTE_DB_MOCK,
+        password_portal_hash: null,
+      });
+
+      await expect(
+        service.actualizarEmail(1, dto, '127.0.0.1'),
+      ).rejects.toThrow('Cliente no encontrado');
     });
   });
 
@@ -210,7 +294,9 @@ describe('PerfilService', () => {
     };
 
     it('CU-10/11: actualiza password con bcrypt', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
       (bcrypt.compare as jest.Mock).mockClear();
       (bcrypt.compare as jest.Mock)
         .mockResolvedValueOnce(true)
@@ -232,7 +318,9 @@ describe('PerfilService', () => {
     });
 
     it('CU-10: lanza UnauthorizedException si password actual incorrecta', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.cambiarPassword(1, dto)).rejects.toThrow(
@@ -241,7 +329,9 @@ describe('PerfilService', () => {
     });
 
     it('CU-10: lanza BadRequestException si nueva password igual a actual', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_DB_MOCK);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
+        CLIENTE_DB_MOCK,
+      );
       (bcrypt.compare as jest.Mock)
         .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(true);

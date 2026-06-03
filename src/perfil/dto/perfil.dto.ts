@@ -13,6 +13,7 @@ export type ActualizarTelefonoDto = z.infer<typeof ActualizarTelefonoDto>;
 
 // ─── CU-09: Actualizar correo electrónico ─────────────────────────────────────
 export const ActualizarEmailDto = z.object({
+  password_actual: z.string().min(1, 'La contraseña actual es requerida'),
   email: z
     .string()
     .email('El correo electrónico no tiene un formato válido')

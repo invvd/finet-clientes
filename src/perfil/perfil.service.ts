@@ -102,8 +102,31 @@ export class PerfilService {
   async actualizarEmail(
     idCliente: number,
     dto: ActualizarEmailDto,
+    ip: string,
   ): Promise<PerfilResponseDto> {
-    await this.assertClienteExiste(idCliente);
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id_cliente: idCliente },
+      select: { password_portal_hash: true, email: true },
+    });
+
+    if (!cliente || !cliente.password_portal_hash) {
+      throw new NotFoundException('Cliente no encontrado');
+    }
+
+    const passwordValida = await bcrypt.compare(
+      dto.password_actual,
+      cliente.password_portal_hash,
+    );
+
+    if (!passwordValida) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
+
+    if (dto.email === cliente.email) {
+      throw new BadRequestException(
+        'El nuevo correo electrónico no puede ser igual al actual',
+      );
+    }
 
     const emailEnUso = await this.prisma.cliente.findFirst({
       where: {
@@ -128,6 +151,18 @@ export class PerfilService {
         email: true,
         telefono: true,
         fecha_creacion: true,
+      },
+    });
+
+    await this.prisma.log_auditoria.create({
+      data: {
+        accion: 'ACTUALIZAR_EMAIL',
+        entidad_afectada: 'cliente',
+        id_entidad_afectada: idCliente,
+        valor_anterior:
+          cliente.email !== null ? { email: cliente.email } : undefined,
+        valor_nuevo: { email: dto.email },
+        ip_origen: ip,
       },
     });
 

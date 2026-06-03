@@ -391,7 +391,7 @@
         "authentication": {},
         "authenticationType": null,
         "body": {
-          "text": "{\n  \"email\": \"nuevo@correo.cl\"\n}"
+          "text": "{\n  \"password_actual\": \"mi_password\",\n  \"email\": \"nuevo@correo.cl\"\n}"
         },
         "bodyType": "application/json",
         "description": "CU-09: Actualizar correo electronico de contacto.",
