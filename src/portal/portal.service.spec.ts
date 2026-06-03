@@ -253,5 +253,19 @@ describe('PortalService', () => {
         NotFoundException,
       );
     });
+
+    it('lanza mensaje amigable si una sub-consulta falla (CU-24 Excepción 2)', async () => {
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_MOCK);
+      (prisma.contrato.findMany as jest.Mock).mockRejectedValue(
+        new Error('DB connection lost'),
+      );
+
+      await expect(service.getPanelPrincipal(1)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      await expect(service.getPanelPrincipal(1)).rejects.toThrow(
+        'El portal no está disponible temporalmente',
+      );
+    });
   });
 });
