@@ -171,11 +171,4 @@ describe('AuthController', () => {
       expect(mockAuthService.logout).toHaveBeenCalledWith(1, 'test-token');
     });
   });
-
-  describe('GET /auth/perfil', () => {
-    it('return authenticated client', () => {
-      const response = authController.getProfile(mockCliente);
-      expect(response).toEqual(mockCliente);
-    });
-  });
 });

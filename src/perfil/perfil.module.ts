@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { PerfilController } from './perfil.controller';
-import { PerfilService } from './perfil.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { PerfilController } from './perfil.controller.js';
+import { PerfilService } from './perfil.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 
 @Module({
   controllers: [PerfilController],
