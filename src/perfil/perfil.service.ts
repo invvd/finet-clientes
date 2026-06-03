@@ -172,6 +172,7 @@ export class PerfilService {
   async cambiarPassword(
     idCliente: number,
     dto: CambiarPasswordDto,
+    ip: string,
   ): Promise<{ mensaje: string }> {
     const cliente = await this.prisma.cliente.findUnique({
       where: { id_cliente: idCliente },
@@ -205,6 +206,15 @@ export class PerfilService {
     await this.prisma.cliente.update({
       where: { id_cliente: idCliente },
       data: { password_portal_hash: await bcrypt.hash(dto.password_nuevo, 10) },
+    });
+
+    await this.prisma.log_auditoria.create({
+      data: {
+        accion: 'CAMBIO_PASSWORD',
+        entidad_afectada: 'cliente',
+        id_entidad_afectada: idCliente,
+        ip_origen: ip,
+      },
     });
 
     return { mensaje: 'Contrasena actualizada correctamente' };

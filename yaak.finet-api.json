@@ -430,7 +430,7 @@
         "authentication": {},
         "authenticationType": null,
         "body": {
-          "text": "{\n  \"password_actual\": \"Password1\",\n  \"password_nuevo\": \"NewPass2!\"\n}"
+          "text": "{\n  \"password_actual\": \"Password1\",\n  \"password_nuevo\": \"NewPass2!\",\n  \"password_confirmacion\": \"NewPass2!\"\n}"
         },
         "bodyType": "application/json",
         "description": "CU-10/CU-11: Cambiar contrasena con validacion de complejidad.",

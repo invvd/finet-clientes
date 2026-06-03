@@ -1,6 +1,7 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { CambiarPasswordDto } from './dto/perfil.dto.js';
 
 jest.unstable_mockModule('bcrypt', () => ({
   default: { compare: jest.fn(), hash: jest.fn() },
@@ -291,9 +292,10 @@ describe('PerfilService', () => {
     const dto = {
       password_actual: 'OldPass1',
       password_nuevo: 'NewPass2!',
+      password_confirmacion: 'NewPass2!',
     };
 
-    it('CU-10/11: actualiza password con bcrypt', async () => {
+    it('CU-10/11: actualiza password con bcrypt y crea auditoria', async () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(
         CLIENTE_DB_MOCK,
       );
@@ -304,13 +306,21 @@ describe('PerfilService', () => {
       (bcrypt.hash as jest.Mock).mockClear();
       (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
 
-      const result = await service.cambiarPassword(1, dto);
+      const result = await service.cambiarPassword(1, dto, '127.0.0.1');
 
       expect(bcrypt.compare).toHaveBeenCalledTimes(2);
       expect(bcrypt.hash).toHaveBeenCalledWith('NewPass2!', 10);
       expect(prisma.cliente.update).toHaveBeenCalledWith({
         where: { id_cliente: 1 },
         data: { password_portal_hash: 'new-hash' },
+      });
+      expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: {
+          accion: 'CAMBIO_PASSWORD',
+          entidad_afectada: 'cliente',
+          id_entidad_afectada: 1,
+          ip_origen: '127.0.0.1',
+        },
       });
       expect(result).toEqual({
         mensaje: 'Contrasena actualizada correctamente',
@@ -323,9 +333,9 @@ describe('PerfilService', () => {
       );
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.cambiarPassword(1, dto)).rejects.toThrow(
-        'La contrasena actual es incorrecta',
-      );
+      await expect(
+        service.cambiarPassword(1, dto, '127.0.0.1'),
+      ).rejects.toThrow('La contrasena actual es incorrecta');
     });
 
     it('CU-10: lanza BadRequestException si nueva password igual a actual', async () => {
@@ -336,9 +346,9 @@ describe('PerfilService', () => {
         .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(true);
 
-      await expect(service.cambiarPassword(1, dto)).rejects.toThrow(
-        'La nueva contrasena no puede ser igual a la actual',
-      );
+      await expect(
+        service.cambiarPassword(1, dto, '127.0.0.1'),
+      ).rejects.toThrow('La nueva contrasena no puede ser igual a la actual');
     });
 
     it('CU-10: lanza NotFoundException si no tiene password_hash', async () => {
@@ -347,9 +357,22 @@ describe('PerfilService', () => {
         password_portal_hash: null,
       });
 
-      await expect(service.cambiarPassword(1, dto)).rejects.toThrow(
-        'Cliente no encontrado',
-      );
+      await expect(
+        service.cambiarPassword(1, dto, '127.0.0.1'),
+      ).rejects.toThrow('Cliente no encontrado');
+    });
+
+    it('CU-10 Excepción 3: lanza error si contraseñas no coinciden', () => {
+      const result = CambiarPasswordDto.safeParse({
+        password_actual: 'OldPass1',
+        password_nuevo: 'NewPass2!',
+        password_confirmacion: 'NewPass3!',
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].path).toContain('password_confirmacion');
+      }
     });
   });
 });

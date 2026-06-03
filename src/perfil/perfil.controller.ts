@@ -51,10 +51,12 @@ export class PerfilController {
   cambiarPassword(
     @CurrentClient() cliente: cliente,
     @Body(new ZodValidationPipe(CambiarPasswordDto)) body: unknown,
+    @Req() req: Request,
   ) {
     return this.perfilService.cambiarPassword(
       cliente.id_cliente,
       body as CambiarPasswordDto,
+      req.ip ?? '0.0.0.0',
     );
   }
 }

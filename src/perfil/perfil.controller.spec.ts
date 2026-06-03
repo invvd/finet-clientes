@@ -98,15 +98,21 @@ describe('PerfilController', () => {
   });
 
   describe('PATCH /auth/perfil/password', () => {
-    it('CU-10/11: llama cambiarPassword con id y body', async () => {
+    it('CU-10/11: llama cambiarPassword con id, body e ip', async () => {
       const body = CambiarPasswordDto.parse({
-        password_actual: 'Password1',
+        password_actual: 'OldPass1',
         password_nuevo: 'NewPass2!',
+        password_confirmacion: 'NewPass2!',
       });
+      const req = { ip: '127.0.0.1' } as Request;
 
-      await controller.cambiarPassword(CLIENTE_MOCK as any, body);
+      await controller.cambiarPassword(CLIENTE_MOCK as any, body, req);
 
-      expect(service.cambiarPassword).toHaveBeenCalledWith(1, body);
+      expect(service.cambiarPassword).toHaveBeenCalledWith(
+        1,
+        body,
+        '127.0.0.1',
+      );
     });
   });
 });

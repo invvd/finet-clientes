@@ -22,15 +22,23 @@ export const ActualizarEmailDto = z.object({
 export type ActualizarEmailDto = z.infer<typeof ActualizarEmailDto>;
 
 // ─── CU-10 / CU-11: Cambiar contraseña con validación de complejidad ──────────
-export const CambiarPasswordDto = z.object({
-  password_actual: z.string().min(1, 'La contraseña actual es requerida'),
-  password_nuevo: z
-    .string()
-    .min(8, 'Mínimo 8 caracteres')
-    .regex(/[A-Z]/, 'Debe contener al menos una letra mayúscula')
-    .regex(/[0-9]/, 'Debe contener al menos un número')
-    .regex(/[^A-Za-z0-9]/, 'Debe contener al menos un carácter especial'),
-});
+export const CambiarPasswordDto = z
+  .object({
+    password_actual: z.string().min(1, 'La contraseña actual es requerida'),
+    password_nuevo: z
+      .string()
+      .min(8, 'Mínimo 8 caracteres')
+      .regex(/[A-Z]/, 'Debe contener al menos una letra mayúscula')
+      .regex(/[0-9]/, 'Debe contener al menos un número')
+      .regex(/[^A-Za-z0-9]/, 'Debe contener al menos un carácter especial'),
+    password_confirmacion: z
+      .string()
+      .min(1, 'Debe confirmar la nueva contraseña'),
+  })
+  .refine((data) => data.password_nuevo === data.password_confirmacion, {
+    message: 'Las contraseñas no coinciden',
+    path: ['password_confirmacion'],
+  });
 export type CambiarPasswordDto = z.infer<typeof CambiarPasswordDto>;
 
 // ─── CU-07: Respuesta del perfil ──────────────────────────────────────────────
