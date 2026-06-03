@@ -344,6 +344,123 @@
       },
       {
         "model": "http_request",
+        "id": "rq_PerfilTelefono",
+        "createdAt": "2026-06-03T00:00:00.000000000",
+        "updatedAt": "2026-06-03T00:00:00.000000000",
+        "workspaceId": "wk_5ik5FWC6FN",
+        "folderId": "fl_8cLk8xBPLi",
+        "authentication": {},
+        "authenticationType": null,
+        "body": {
+          "text": "{\n  \"password_actual\": \"mi_password\",\n  \"telefono\": \"+56912345678\"\n}"
+        },
+        "bodyType": "application/json",
+        "description": "CU-08: Actualizar telefono de contacto. Requiere contrasena actual.",
+        "headers": [
+          {
+            "enabled": true,
+            "name": "Content-Type",
+            "value": "application/json",
+            "id": "hd_PerfilTelCT"
+          },
+          {
+            "enabled": true,
+            "name": "Authorization",
+            "value": "Bearer ${[ JWT ]}",
+            "id": "hd_PerfilTelAuth"
+          }
+        ],
+        "method": "PATCH",
+        "name": "Perfil - Actualizar Telefono",
+        "sortPriority": -1780120512330.0,
+        "url": "${[ API_URL ]}/auth/perfil/telefono",
+        "urlParameters": [],
+        "settingSendCookies": { "enabled": false, "value": true },
+        "settingStoreCookies": { "enabled": false, "value": true },
+        "settingValidateCertificates": { "enabled": false, "value": true },
+        "settingFollowRedirects": { "enabled": false, "value": true },
+        "settingRequestTimeout": { "enabled": false, "value": 0 }
+      },
+      {
+        "model": "http_request",
+        "id": "rq_PerfilEmail",
+        "createdAt": "2026-06-03T00:00:00.000000000",
+        "updatedAt": "2026-06-03T00:00:00.000000000",
+        "workspaceId": "wk_5ik5FWC6FN",
+        "folderId": "fl_8cLk8xBPLi",
+        "authentication": {},
+        "authenticationType": null,
+        "body": {
+          "text": "{\n  \"email\": \"nuevo@correo.cl\"\n}"
+        },
+        "bodyType": "application/json",
+        "description": "CU-09: Actualizar correo electronico de contacto.",
+        "headers": [
+          {
+            "enabled": true,
+            "name": "Content-Type",
+            "value": "application/json",
+            "id": "hd_PerfilEmailCT"
+          },
+          {
+            "enabled": true,
+            "name": "Authorization",
+            "value": "Bearer ${[ JWT ]}",
+            "id": "hd_PerfilEmailAuth"
+          }
+        ],
+        "method": "PATCH",
+        "name": "Perfil - Actualizar Email",
+        "sortPriority": -1780120512329.0,
+        "url": "${[ API_URL ]}/auth/perfil/email",
+        "urlParameters": [],
+        "settingSendCookies": { "enabled": false, "value": true },
+        "settingStoreCookies": { "enabled": false, "value": true },
+        "settingValidateCertificates": { "enabled": false, "value": true },
+        "settingFollowRedirects": { "enabled": false, "value": true },
+        "settingRequestTimeout": { "enabled": false, "value": 0 }
+      },
+      {
+        "model": "http_request",
+        "id": "rq_PerfilPassword",
+        "createdAt": "2026-06-03T00:00:00.000000000",
+        "updatedAt": "2026-06-03T00:00:00.000000000",
+        "workspaceId": "wk_5ik5FWC6FN",
+        "folderId": "fl_8cLk8xBPLi",
+        "authentication": {},
+        "authenticationType": null,
+        "body": {
+          "text": "{\n  \"password_actual\": \"Password1\",\n  \"password_nuevo\": \"NewPass2!\"\n}"
+        },
+        "bodyType": "application/json",
+        "description": "CU-10/CU-11: Cambiar contrasena con validacion de complejidad.",
+        "headers": [
+          {
+            "enabled": true,
+            "name": "Content-Type",
+            "value": "application/json",
+            "id": "hd_PerfilPassCT"
+          },
+          {
+            "enabled": true,
+            "name": "Authorization",
+            "value": "Bearer ${[ JWT ]}",
+            "id": "hd_PerfilPassAuth"
+          }
+        ],
+        "method": "PATCH",
+        "name": "Perfil - Cambiar Password",
+        "sortPriority": -1780120512328.0,
+        "url": "${[ API_URL ]}/auth/perfil/password",
+        "urlParameters": [],
+        "settingSendCookies": { "enabled": false, "value": true },
+        "settingStoreCookies": { "enabled": false, "value": true },
+        "settingValidateCertificates": { "enabled": false, "value": true },
+        "settingFollowRedirects": { "enabled": false, "value": true },
+        "settingRequestTimeout": { "enabled": false, "value": 0 }
+      },
+      {
+        "model": "http_request",
         "id": "rq_yhhZrJqUJj",
         "createdAt": "2026-05-30T05:55:12.332209900",
         "updatedAt": "2026-05-30T18:17:57.468700900",
