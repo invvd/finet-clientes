@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { PerfilService } from './perfil.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentClient } from '../auth/decorators/current-client.decorator.js';
@@ -24,10 +25,12 @@ export class PerfilController {
   actualizarTelefono(
     @CurrentClient() cliente: cliente,
     @Body(new ZodValidationPipe(ActualizarTelefonoDto)) body: unknown,
+    @Req() req: Request,
   ) {
     return this.perfilService.actualizarTelefono(
       cliente.id_cliente,
       body as ActualizarTelefonoDto,
+      req.ip ?? '0.0.0.0',
     );
   }
 

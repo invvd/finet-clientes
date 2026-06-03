@@ -49,8 +49,25 @@ export class PerfilService {
   async actualizarTelefono(
     idCliente: number,
     dto: ActualizarTelefonoDto,
+    ip: string,
   ): Promise<PerfilResponseDto> {
-    await this.assertClienteExiste(idCliente);
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id_cliente: idCliente },
+      select: { password_portal_hash: true, telefono: true },
+    });
+
+    if (!cliente || !cliente.password_portal_hash) {
+      throw new NotFoundException('Cliente no encontrado');
+    }
+
+    const passwordValida = await bcrypt.compare(
+      dto.password_actual,
+      cliente.password_portal_hash,
+    );
+
+    if (!passwordValida) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
 
     const actualizado = await this.prisma.cliente.update({
       where: { id_cliente: idCliente },
@@ -62,6 +79,20 @@ export class PerfilService {
         email: true,
         telefono: true,
         fecha_creacion: true,
+      },
+    });
+
+    await this.prisma.log_auditoria.create({
+      data: {
+        accion: 'ACTUALIZAR_TELEFONO',
+        entidad_afectada: 'cliente',
+        id_entidad_afectada: idCliente,
+        valor_anterior:
+          cliente.telefono !== null
+            ? { telefono: cliente.telefono }
+            : undefined,
+        valor_nuevo: { telefono: dto.telefono },
+        ip_origen: ip,
       },
     });
 

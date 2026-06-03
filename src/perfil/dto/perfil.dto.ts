@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 // ─── CU-08: Actualizar número de teléfono ─────────────────────────────────────
 export const ActualizarTelefonoDto = z.object({
+  password_actual: z.string().min(1, 'La contraseña actual es requerida'),
   telefono: z
     .string()
     .min(8, 'El teléfono debe tener al menos 8 caracteres')
