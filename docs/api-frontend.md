@@ -531,11 +531,43 @@ Si `tiene_tickets: false` → vista de estado vacío (CU-29). Si `true` → hist
 
 ---
 
-## 3. Consulta de deuda pública (sin sesión)
+## 3. Landing Page (público)
+
+Endpoints públicos para la landing page, no requieren autenticación.
+
+### 3.1 Catálogo de planes (CU-42)
+
+```
+GET /api/landing/planes
+GET /api/landing/planes?tipo_cliente=residencial
+```
+
+Filtro opcional `tipo_cliente`. Devuelve planes activos ordenados por precio.
+
+**Respuesta 200:**
+```json
+[
+  {
+    "id_plan": 1,
+    "nombre_comercial": "Fibra 100 Megas",
+    "tipo_plan": "fibra",
+    "tipo_cliente": "residencial",
+    "velocidad_mbps": 100,
+    "precio_mensual": 14990,
+    "descripcion": "Internet fibra optica 100 Mbps"
+  }
+]
+```
+
+> [Documentacion detallada](./landing.md)
+
+---
+
+## 4. Consulta de deuda pública (sin sesión)
 
 Endpoints públicos, no requieren autenticación.
 
-### 3.1 Consultar por RUT (CU-39)
+### 4.1 Consultar por RUT (CU-39)
 
 ```
 GET /api/deuda-publica/rut?rut=12.345.678-9
@@ -581,7 +613,7 @@ Formatos de RUT aceptados: `12.345.678-9` o `12345678-9`.
 
 ---
 
-### 3.2 Consultar por código de abonado (CU-40)
+### 4.2 Consultar por código de abonado (CU-40)
 
 ```
 GET /api/deuda-publica/abonado?codigo_abonado=100
@@ -591,11 +623,11 @@ GET /api/deuda-publica/abonado?codigo_abonado=100
 
 ---
 
-## 4. Panel Admin (API Key)
+## 5. Panel Admin (API Key)
 
 Requieren header `X-API-Key: <ADMIN_API_KEY>`.
 
-### 4.1 Historial de intentos fallidos (RF-06)
+### 5.1 Historial de intentos fallidos (RF-06)
 
 ```
 GET /api/admin/intentos-fallidos?bloqueados=true&ip=192.168.1.50&page=1&limit=20
@@ -634,7 +666,7 @@ X-API-Key: finet-admin-key-2026-dev
 
 ---
 
-### 4.2 Desbloquear IP (RF-06)
+### 5.2 Desbloquear IP (RF-06)
 
 ```
 POST /api/admin/intentos-fallidos/desbloquear-ip
@@ -662,17 +694,17 @@ Si la IP no tiene bloqueos activos:
 
 ---
 
-## 5. Mecanismos de autenticación
+## 6. Mecanismos de autenticación
 
 | Tipo | Cómo se envía | Dónde se usa |
 |------|---------------|--------------|
-| **Público** | Sin auth | Login, register, recuperación, deuda pública |
+| **Público** | Sin auth | Login, register, recuperación, deuda pública, landing |
 | **JWT** | Header `Authorization: Bearer <token>` o cookie `access_token` | Portal, perfil, logout |
 | **API Key** | Header `X-API-Key: <valor>` | Admin |
 
 ---
 
-## 6. Manejo de errores general
+## 7. Manejo de errores general
 
 Todas las respuestas de error siguen este formato:
 
@@ -703,7 +735,7 @@ Todas las respuestas de error siguen este formato:
 
 ---
 
-## 7. Variables de entorno para el frontend
+## 8. Variables de entorno para el frontend
 
 ```env
 VITE_API_URL=http://localhost:4000/api
@@ -713,7 +745,7 @@ VITE_API_URL=http://localhost:4000/api
 
 ---
 
-## 8. Flujos completos de ejemplo
+## 9. Flujos completos de ejemplo
 
 ### Flujo de login + panel
 

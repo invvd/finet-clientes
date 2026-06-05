@@ -11,6 +11,7 @@ import { DeudaPublicaModule } from './deuda-publica/deuda-publica.module.js';
 import { PortalModule } from './portal/portal.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { PerfilModule } from './perfil/perfil.module.js';
+import { LandingModule } from './landing/landing.module.js';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PerfilModule } from './perfil/perfil.module.js';
     PortalModule,
     AdminModule,
     PerfilModule,
+    LandingModule,
   ],
   controllers: [AppController],
   providers: [
