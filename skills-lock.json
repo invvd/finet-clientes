@@ -22,6 +22,12 @@
       "sourceType": "autoskills-registry",
       "computedHash": "7361ab02fb6b09913e3bdd9cf61c629ed6c17de9485e6a781054e5d437ccfc29"
     },
+    "owasp-top-10": {
+      "source": "microsoft/hve-core",
+      "sourceType": "github",
+      "skillPath": ".github/skills/security/owasp-top-10/SKILL.md",
+      "computedHash": "a1c5176f2b057e9037431c388c2b5e3e5c2f48a8c110b740349f28a83657c52d"
+    },
     "prisma-cli": {
       "source": "prisma/skills",
       "sourceType": "github",
