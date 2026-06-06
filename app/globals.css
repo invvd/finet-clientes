@@ -1,13 +1,43 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-primary: #0E7C86;
+  --color-primary-bright: #1098A3;
+  --color-accent: #D9E021;
+
+  --color-hero-slide-1: #0E7C86;
+  --color-hero-slide-2: #1E3A5F;
+  --color-hero-slide-3: #0E7C86;
+
+  --color-background: #FFFFFF;
+  --color-surface: #F7F9FB;
+  --color-surface-deep: #E5E7EB;
+  --color-foreground: #0A1929;
+  --color-muted: #6B7280;
+  --color-border: #E5E7EB;
+}
+
+[data-theme="dark"] {
+  --color-primary: #2DD4BF;
+  --color-primary-bright: #5EEAD4;
+  --color-background: #0A1929;
+  --color-surface: #102A43;
+  --color-surface-deep: #061224;
+  --color-foreground: #F7F9FB;
+  --color-muted: #94A3B8;
+  --color-border: #1F3A5C;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-primary: var(--color-primary);
+  --color-accent: var(--color-accent);
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-foreground: var(--color-foreground);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
   --font-sans: var(--font-inter);
   --color-fin: #0ea5e9;
   --color-fin-50: #ecfeff;
@@ -26,8 +56,19 @@
   --color-surface-100: #334155;
 }
 
+html {
+  color-scheme: light dark;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+@layer base {
+  button {
+    cursor: pointer;
+  }
 }
