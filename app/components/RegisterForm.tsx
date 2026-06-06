@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { registerSchema } from "../utils/login-schema";
 import { api } from "../utils/api";
 import type { ApiError } from "../utils/api";
+import { useAuth } from "../_lib/auth";
+import type { Cliente } from "../_lib/auth";
 import LoginBranding from "./LoginBranding";
 import RutInput from "./RutInput";
 import PasswordInput from "./PasswordInput";
 
 export default function RegisterForm() {
   const router = useRouter();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const [nombreCompleto, setNombreCompleto] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -20,6 +23,14 @@ export default function RegisterForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push("/portal");
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  if (isLoading || isAuthenticated) return null;
 
   function validateField(field: string, value: string) {
     const current = { nombreCompleto, email, telefono, rut, password, confirmPassword, [field]: value };
@@ -63,15 +74,19 @@ export default function RegisterForm() {
     setLoading(true);
 
     try {
-      const data = await api.post<{ token: string }>("/auth/register", {
-        rut: result.data.rut,
-        nombre_completo: result.data.nombreCompleto,
-        email: result.data.email,
-        telefono: result.data.telefono,
-        password: result.data.password,
-      });
-      console.log(data);
-      router.push("/inicio-sesion");
+      const data = await api.post<{ access_token: string; cliente: Cliente }>(
+        "/auth/register",
+        {
+          rut: result.data.rut,
+          nombre_completo: result.data.nombreCompleto,
+          email: result.data.email,
+          telefono: result.data.telefono ?? "",
+          password: result.data.password,
+          password_confirmation: result.data.password,
+        }
+      );
+      login(data.cliente);
+      router.push("/portal");
     } catch (err) {
       const error = err as ApiError;
       setServerError(error.message ?? "Error al registrarse");

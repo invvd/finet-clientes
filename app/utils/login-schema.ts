@@ -56,9 +56,12 @@ export const registerSchema = z
       .email("Email inválido")
       .max(254, "El email es demasiado largo"),
     telefono: z
-      .string({ message: "El teléfono es obligatorio" })
-      .min(1, "El teléfono es obligatorio")
-      .refine((val) => validateTelefonoChileno(val), "Teléfono chileno inválido"),
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || validateTelefonoChileno(val),
+        "Teléfono chileno inválido"
+      ),
     rut: z
       .string({ message: "El RUT es obligatorio" })
       .min(1, "El RUT es obligatorio")
