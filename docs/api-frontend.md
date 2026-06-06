@@ -535,14 +535,16 @@ Si `tiene_tickets: false` → vista de estado vacío (CU-29). Si `true` → hist
 
 Endpoints públicos para la landing page, no requieren autenticación.
 
-### 3.1 Catálogo de planes (CU-42)
+### 3.1 Catálogo de planes (CU-15 / CU-17)
+
+CU-15: filtrar por segmento. CU-17: detalles técnicos y comerciales de cada plan.
 
 ```
 GET /api/landing/planes
 GET /api/landing/planes?tipo_cliente=residencial
 ```
 
-Filtro opcional `tipo_cliente`. Devuelve planes activos ordenados por precio.
+Filtro opcional `tipo_cliente`. Devuelve planes activos ordenados por precio. Cada plan incluye `nombre_comercial`, `velocidad_mbps`, `precio_mensual` y `descripcion` (características) para mostrar en las tarjetas.
 
 **Respuesta 200:**
 ```json
