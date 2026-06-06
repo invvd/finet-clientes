@@ -42,8 +42,11 @@ function formatFecha(iso: string) {
 }
 
 export default function DeudaLookupForm() {
+  const [modo, setModo] = useState<"rut" | "abonado">("rut");
   const [rut, setRut] = useState("");
   const [rutError, setRutError] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [codigoError, setCodigoError] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<DeudaData | null>(null);
@@ -58,26 +61,44 @@ export default function DeudaLookupForm() {
     }
   }
 
+  function validateCodigo(value: string) {
+    if (!value || value.trim() === "") {
+      setCodigoError("El código de abonado es obligatorio");
+    } else {
+      setCodigoError("");
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setResult(null);
 
-    const r = recoverySchema.safeParse({ rut });
-    if (!r.success) {
-      const issue = r.error.issues.find((i) => i.path[0] === "rut");
-      setRutError(issue?.message ?? "RUT inválido");
-      return;
+    if (modo === "rut") {
+      const r = recoverySchema.safeParse({ rut });
+      if (!r.success) {
+        const issue = r.error.issues.find((i) => i.path[0] === "rut");
+        setRutError(issue?.message ?? "RUT inválido");
+        return;
+      }
+      setRutError("");
+    } else {
+      if (!codigo || codigo.trim() === "") {
+        setCodigoError("El código de abonado es obligatorio");
+        return;
+      }
+      setCodigoError("");
     }
 
-    setRutError("");
     setLoading(true);
 
+    const endpoint =
+      modo === "rut"
+        ? `${API_URL}/deuda-publica/rut?rut=${encodeURIComponent(cleanRut(rut))}`
+        : `${API_URL}/deuda-publica/abonado?codigo_abonado=${encodeURIComponent(codigo.trim())}`;
+
     try {
-      const res = await fetch(
-        `${API_URL}/deuda-publica/rut?rut=${encodeURIComponent(cleanRut(rut))}`,
-        { credentials: "include" }
-      );
+      const res = await fetch(endpoint, { credentials: "include" });
 
       if (!res.ok) throw res;
 
@@ -87,6 +108,18 @@ export default function DeudaLookupForm() {
       setError("No se pudo consultar la deuda. Intenta nuevamente.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function resetAll() {
+    setResult(null);
+    setError("");
+    if (modo === "rut") {
+      setRut("");
+      setRutError("");
+    } else {
+      setCodigo("");
+      setCodigoError("");
     }
   }
 
@@ -101,9 +134,41 @@ export default function DeudaLookupForm() {
             Consultar Deuda
           </h1>
           <p className="text-sm text-[var(--color-muted)]">
-            Ingresa tu RUT para verificar deudas pendientes
+            Verifica deudas pendientes sin necesidad de iniciar sesión
           </p>
         </div>
+      </div>
+
+      {/* Toggle RUT / Abonado */}
+      <div className="flex w-full rounded-full bg-[var(--color-border)] p-1 mb-6">
+        <button
+          type="button"
+          onClick={() => {
+            setModo("rut");
+            resetAll();
+          }}
+          className={`flex-1 cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+            modo === "rut"
+              ? "bg-[var(--color-primary)] text-[var(--color-background)] shadow-sm"
+              : "text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+          }`}
+        >
+          Por RUT
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setModo("abonado");
+            resetAll();
+          }}
+          className={`flex-1 cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+            modo === "abonado"
+              ? "bg-[var(--color-primary)] text-[var(--color-background)] shadow-sm"
+              : "text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+          }`}
+        >
+          Por Código Abonado
+        </button>
       </div>
 
       <form
@@ -113,16 +178,47 @@ export default function DeudaLookupForm() {
       >
         <div className="flex gap-3 items-start">
           <div className="flex-1">
-            <RutInput
-              value={rut}
-              error={rutError}
-              onChange={(v) => {
-                setRut(v);
-                setRutError("");
-                setResult(null);
-              }}
-              onBlur={() => validateRut(rut)}
-            />
+            {modo === "rut" ? (
+              <RutInput
+                value={rut}
+                error={rutError}
+                onChange={(v) => {
+                  setRut(v);
+                  setRutError("");
+                  setResult(null);
+                }}
+                onBlur={() => validateRut(rut)}
+              />
+            ) : (
+              <div>
+                <label
+                  htmlFor="codigoAbonado"
+                  className="mb-1.5 block text-sm font-medium text-[var(--color-foreground)]"
+                >
+                  Código de Abonado
+                </label>
+                <input
+                  id="codigoAbonado"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="100"
+                  value={codigo}
+                  onChange={(e) => {
+                    setCodigo(e.target.value.replace(/\D/g, ""));
+                    setCodigoError("");
+                    setResult(null);
+                  }}
+                  onBlur={() => validateCodigo(codigo)}
+                  data-error={!!codigoError}
+                  className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors duration-200
+                    data-[error=false]:border-[var(--color-border)] data-[error=false]:bg-[var(--color-background)] data-[error=false]:text-[var(--color-foreground)] data-[error=false]:placeholder:text-[var(--color-muted)] data-[error=false]:focus-visible:outline data-[error=false]:focus-visible:outline-2 data-[error=false]:focus-visible:outline-offset-0 data-[error=false]:focus-visible:outline-[var(--color-primary)]
+                    border-red-500 bg-red-50 text-[var(--color-foreground)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-red-500`}
+                />
+                {codigoError && (
+                  <p className="mt-1 text-xs text-red-600">{codigoError}</p>
+                )}
+              </div>
+            )}
           </div>
           <button
             type="submit"
@@ -229,7 +325,9 @@ export default function DeudaLookupForm() {
             No se encontraron coincidencias
           </p>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            No existe un cliente asociado al RUT ingresado.
+            {modo === "rut"
+              ? "No existe un cliente asociado al RUT ingresado."
+              : "No existe un cliente asociado al código de abonado ingresado."}
           </p>
         </div>
       )}
