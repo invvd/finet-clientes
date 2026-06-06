@@ -5,7 +5,7 @@ export const footerColumns: FooterColumn[] = [
   {
     title: 'Acciones',
     links: [
-      { label: 'Paga tu cuenta', href: '/pagar', icon: 'credit-card' },
+      { label: 'Paga tu cuenta', href: '/consultar-deuda', icon: 'credit-card' },
       { label: 'Test de velocidad', href: '/velocidad', icon: 'gauge' },
       { label: 'Cobertura', href: '/cobertura', icon: 'map-pin' },
       { label: 'Portal Cliente', href: '/perfil', icon: 'user' },
