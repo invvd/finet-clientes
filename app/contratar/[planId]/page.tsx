@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import FormularioContratacion from "../../_components/catalog/FormularioContratacion";
 import { getLandingPlanes, getPlanById, formatPrecioMensual } from "../../_lib/api";
 import { productJsonLd, breadcrumbJsonLd } from "../../_lib/jsonld";
+import { BASE_URL } from "../../_lib/consts";
 
 type ContratarPlanPageProps = {
   params: Promise<{
@@ -50,8 +51,6 @@ export default async function ContratarPlanPage({ params }: ContratarPlanPagePro
     redirect("/planes");
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://finet.cl";
-
   return (
     <section className="px-4 py-12">
       <script
@@ -64,9 +63,9 @@ export default async function ContratarPlanPage({ params }: ContratarPlanPagePro
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: breadcrumbJsonLd([
-            { name: "Inicio", url: baseUrl },
-            { name: "Planes", url: `${baseUrl}/planes` },
-            { name: plan.nombre_comercial, url: `${baseUrl}/contratar/${plan.id_plan}` },
+            { name: "Inicio", url: BASE_URL },
+            { name: "Planes", url: `${BASE_URL}/planes` },
+            { name: plan.nombre_comercial, url: `${BASE_URL}/contratar/${plan.id_plan}` },
           ]),
         }}
       />

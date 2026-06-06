@@ -1,6 +1,5 @@
 import type { PlanBackend } from "./api";
-
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://finet.cl";
+import { BASE_URL } from "./consts";
 
 type BreadcrumbItem = { name: string; url: string };
 

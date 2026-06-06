@@ -4,13 +4,12 @@ import "./globals.css";
 import Navbar from "./_components/layout/navbar/Navbar";
 import Footer from "./_components/layout/footer/Footer";
 import { themeScript } from "./_components/layout/theme/theme-script";
+import { BASE_URL } from "./_lib/consts";
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
-
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://finet.cl";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
