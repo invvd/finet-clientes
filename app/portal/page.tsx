@@ -60,6 +60,13 @@ function formatPrecio(precio: number) {
   return `$${precio.toLocaleString("es-CL")}`;
 }
 
+function formatFechaCorta(iso: string) {
+  return new Date(iso).toLocaleDateString("es-CL", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
 function estadoBadge(estado: string) {
   const map: Record<string, { label: string; className: string }> = {
     activo: {
@@ -238,16 +245,40 @@ export default function PortalPage() {
                 Mi Deuda
               </p>
               {data.resumen_deuda.tiene_deuda ? (
-                <>
-                  <p className="text-3xl font-extrabold text-red-600">
-                    {formatPrecio(data.resumen_deuda.saldo_total)}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--color-muted)]">
-                    {data.resumen_deuda.facturas_pendientes.length} factura
-                    {data.resumen_deuda.facturas_pendientes.length !== 1 ? "s" : ""} pendiente
-                    {data.resumen_deuda.facturas_pendientes.length !== 1 ? "s" : ""}
-                  </p>
-                </>
+                (() => {
+                  const masProxima = data.resumen_deuda.facturas_pendientes
+                    .filter((f) => f.fecha_limite_pago)
+                    .sort(
+                      (a, b) =>
+                        new Date(a.fecha_limite_pago).getTime() -
+                        new Date(b.fecha_limite_pago).getTime()
+                    )[0];
+
+                  return (
+                    <>
+                      <p className="text-3xl font-extrabold text-red-600">
+                        {formatPrecio(data.resumen_deuda.saldo_total)}
+                      </p>
+                      <p className="mt-1 text-sm text-[var(--color-muted)]">
+                        {data.resumen_deuda.facturas_pendientes.length} factura
+                        {data.resumen_deuda.facturas_pendientes.length !== 1
+                          ? "s"
+                          : ""}{" "}
+                        pendiente
+                        {data.resumen_deuda.facturas_pendientes.length !== 1
+                          ? "s"
+                          : ""}
+                      </p>
+                      {masProxima && (
+                        <p className="mt-1 text-xs text-[var(--color-muted)]">
+                          {masProxima.estado === "vencida"
+                            ? `Vencida: ${formatFechaCorta(masProxima.fecha_limite_pago)}`
+                            : `Vence: ${formatFechaCorta(masProxima.fecha_limite_pago)}`}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()
               ) : (
                 <>
                   <p className="text-lg font-semibold text-green-600">
