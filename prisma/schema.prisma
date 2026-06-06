@@ -586,7 +586,7 @@ model rol {
 model sesion_portal {
   id_sesion        BigInt    @id @default(autoincrement())
   id_cliente       Int?
-  token            String    @db.VarChar(255)
+  token            String    @db.Text
   fecha_inicio     DateTime? @db.Timestamp(6)
   fecha_expiracion DateTime? @db.Timestamp(6)
   ip_origen        String?   @db.Inet
