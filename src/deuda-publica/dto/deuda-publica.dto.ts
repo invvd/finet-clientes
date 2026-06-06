@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validateRut } from '../../common/utils/rut.js';
 
 // CU-39: Consultar deuda pública por RUT
 export const ConsultaDeudaRutDto = z.object({
@@ -6,10 +7,12 @@ export const ConsultaDeudaRutDto = z.object({
     .string()
     .min(1, 'El RUT es requerido')
     .max(12)
-    .regex(
-      /^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$|^\d{7,8}-[\dkK]$/,
-      'Formato de RUT inválido. Use 12.345.678-9 o 12345678-9',
-    ),
+    .refine((val) => /^\d{1,8}[\dkK]$/.test(val), {
+      message: 'Formato inválido. Ej: 123456785',
+    })
+    .refine((val) => validateRut(val), {
+      message: 'RUT inválido — dígito verificador incorrecto',
+    }),
 });
 export type ConsultaDeudaRutDto = z.infer<typeof ConsultaDeudaRutDto>;
 

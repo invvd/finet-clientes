@@ -39,9 +39,9 @@ describe('DeudaPublicaController', () => {
     });
 
     it('acepta RUT válido y llama al service', async () => {
-      const query = ConsultaDeudaRutDto.parse({ rut: '12.345.678-9' });
+      const query = ConsultaDeudaRutDto.parse({ rut: '123456785' });
       await controller.consultarPorRut(query);
-      expect(service.consultarPorRut).toHaveBeenCalledWith('12.345.678-9');
+      expect(service.consultarPorRut).toHaveBeenCalledWith('123456785');
     });
   });
 

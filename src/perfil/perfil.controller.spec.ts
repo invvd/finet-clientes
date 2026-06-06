@@ -13,7 +13,7 @@ import {
 const CLIENTE_MOCK = {
   id_cliente: 1,
   nombre_completo: 'Juan Perez',
-  rut: '12.345.678-9',
+  rut: '123456789',
   email: 'juan@example.com',
   telefono: '+56912345678',
   estado: 'activo',
@@ -22,7 +22,7 @@ const CLIENTE_MOCK = {
 const PERFIL_MOCK = {
   id_cliente: 1,
   nombre_completo: 'Juan Perez',
-  rut: '12.345.678-9',
+  rut: '123456789',
   email: 'juan@example.com',
   telefono: '+56912345678',
   fecha_creacion: '2024-01-01T00:00:00.000Z',

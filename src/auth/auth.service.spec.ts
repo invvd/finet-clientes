@@ -83,7 +83,7 @@ describe('AuthService', () => {
       (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt-token');
 
       const result = await authService.login(
-        '12.345.678-5',
+        '123456785',
         'password',
         '127.0.0.1',
       );
@@ -97,7 +97,7 @@ describe('AuthService', () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        authService.login('99.999.999-9', 'password', '127.0.0.1'),
+        authService.login('999999999', 'password', '127.0.0.1'),
       ).rejects.toThrow('RUT o contraseña incorrectos');
     });
 
@@ -108,7 +108,7 @@ describe('AuthService', () => {
       });
 
       await expect(
-        authService.login('12.345.678-5', 'password', '127.0.0.1'),
+        authService.login('123456785', 'password', '127.0.0.1'),
       ).rejects.toThrow('RUT o contraseña incorrectos');
     });
 
@@ -117,7 +117,7 @@ describe('AuthService', () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
 
       await expect(
-        authService.login('12.345.678-5', 'wrongpassword', '127.0.0.1'),
+        authService.login('123456785', 'wrongpassword', '127.0.0.1'),
       ).rejects.toThrow('RUT o contraseña incorrectos');
     });
   });
@@ -142,7 +142,7 @@ describe('AuthService', () => {
       (jwtService.signAsync as jest.Mock).mockResolvedValue('register-jwt');
 
       const result = await authService.register(
-        '12.345.678-5',
+        '123456785',
         'Nuevo Cliente',
         'Password1',
         '127.0.0.1',
@@ -177,7 +177,7 @@ describe('AuthService', () => {
 
       await expect(
         authService.register(
-          '12.345.678-5',
+          '123456785',
           'Otro',
           'Password1',
           '0.0.0.0',
@@ -192,7 +192,7 @@ describe('AuthService', () => {
 
       await expect(
         authService.register(
-          '99.999.999-9',
+          '999999999',
           'Duplicado',
           'Password1',
           '0.0.0.0',
@@ -220,7 +220,7 @@ describe('AuthService', () => {
       (jwtService.signAsync as jest.Mock).mockResolvedValue('session-jwt');
 
       await authService.register(
-        '22.222.222-2',
+        '222222222',
         'Con Sesion',
         'Password1',
         '0.0.0.0',
@@ -255,7 +255,7 @@ describe('AuthService', () => {
 
       const beforeCall = Date.now();
       await authService.register(
-        '33.333.333-3',
+        '333333333',
         'Expiracion',
         'Password1',
         '0.0.0.0',
@@ -282,7 +282,7 @@ describe('AuthService', () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('reset-token');
 
-      const result = await authService.recuperarPassword('12.345.678-5');
+      const result = await authService.recuperarPassword('123456785');
 
       expect(result).toHaveProperty('message');
       expect(jwtService.signAsync).toHaveBeenCalledWith(
@@ -294,7 +294,7 @@ describe('AuthService', () => {
     it('return generic message when RUT not found', async () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
 
-      const result = await authService.recuperarPassword('99.999.999-9');
+      const result = await authService.recuperarPassword('999999999');
 
       expect(result).toHaveProperty('message');
       expect(jwtService.signAsync).not.toHaveBeenCalled();
@@ -376,7 +376,7 @@ describe('AuthService', () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        authService.login('12.345.678-5', 'password', '127.0.0.1'),
+        authService.login('123456785', 'password', '127.0.0.1'),
       ).rejects.toThrow('RUT o contraseña incorrectos');
 
       const createCall = (prisma.intento_fallido.create as jest.Mock).mock
@@ -392,7 +392,7 @@ describe('AuthService', () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        authService.login('99.999.999-9', 'password', '192.168.1.1'),
+        authService.login('999999999', 'password', '192.168.1.1'),
       ).rejects.toThrow('RUT o contraseña incorrectos');
 
       const createCall = (prisma.intento_fallido.create as jest.Mock).mock
@@ -409,7 +409,7 @@ describe('AuthService', () => {
       });
 
       await expect(
-        authService.login('12.345.678-5', 'password', '10.0.0.5'),
+        authService.login('123456785', 'password', '10.0.0.5'),
       ).rejects.toThrow('IP bloqueada temporalmente');
     });
 
@@ -423,7 +423,7 @@ describe('AuthService', () => {
         });
 
       await expect(
-        authService.login('12.345.678-5', 'password', '127.0.0.1'),
+        authService.login('123456785', 'password', '127.0.0.1'),
       ).rejects.toThrow('RUT bloqueado temporalmente');
     });
   });

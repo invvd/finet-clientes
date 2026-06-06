@@ -38,7 +38,7 @@ export class AuthController {
    * POST /auth/login
    *
    * @body { rut: string, password: string }
-   *   - rut: formato 12.345.678-5 o 12345678-5
+   *   - rut: formato 123456785 (sin puntos ni guion)
    *   - password: texto plano (mín 1 carácter)
    *
    * Rate limit: 5 intentos por minuto por IP.
@@ -88,7 +88,7 @@ export class AuthController {
    * POST /auth/register
    *
    * @body {
-   *   rut: string,              // formato 12.345.678-5
+   *   rut: string,              // formato 123456785 (sin puntos ni guion)
    *   nombre_completo: string,  // 2-120 caracteres
    *   email: string,            // formato válido, 120 char máx
    *   telefono?: string,        // opcional, 20 char máx
@@ -149,7 +149,7 @@ export class AuthController {
    *
    * POST /auth/recuperar-password
    *
-   * @body { rut: string }  // formato 12.345.678-5
+   * @body { rut: string }  // formato 123456785 (sin puntos ni guion)
    *
    * Por seguridad, siempre responde 200 con el mismo mensaje genérico,
    * sin revelar si el RUT existe o no.

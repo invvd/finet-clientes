@@ -54,7 +54,7 @@ describe('AuthController', () => {
 
       const response = await authController.login(
         {
-          rut: '12.345.678-5',
+          rut: '123456785',
           password: 'password',
         },
         { ip: '127.0.0.1' } as Request,
@@ -63,7 +63,7 @@ describe('AuthController', () => {
 
       expect(response).toEqual(result);
       expect(mockAuthService.login).toHaveBeenCalledWith(
-        '12.345.678-5',
+        '123456785',
         'password',
         '127.0.0.1',
       );
@@ -86,7 +86,7 @@ describe('AuthController', () => {
 
       const response = await authController.register(
         {
-          rut: '12.345.678-5',
+          rut: '123456785',
           nombre_completo: 'Nuevo',
           password: 'Password1',
           password_confirmation: 'Password1',
@@ -99,7 +99,7 @@ describe('AuthController', () => {
 
       expect(response).toEqual(result);
       expect(mockAuthService.register).toHaveBeenCalledWith(
-        '12.345.678-5',
+        '123456785',
         'Nuevo',
         'Password1',
         '127.0.0.1',
@@ -120,14 +120,14 @@ describe('AuthController', () => {
       const mockReq = { ip: '127.0.0.1' } as any;
       const response = await authController.recuperarPassword(
         {
-          rut: '12.345.678-5',
+          rut: '123456785',
         },
         mockReq,
       );
 
       expect(response).toEqual(result);
       expect(mockAuthService.recuperarPassword).toHaveBeenCalledWith(
-        '12.345.678-5',
+        '123456785',
         '127.0.0.1',
       );
     });

@@ -38,6 +38,10 @@ describe('validateRut', () => {
     '11.111.111-1',
     '7.777.777-K',
     '30.686.957-4',
+    '123456785',
+    '111111111',
+    '7777777K',
+    '306869574',
   ];
 
   for (const rut of validRuts) {
@@ -53,6 +57,8 @@ describe('validateRut', () => {
     '',
     'hola',
     '12.345.678',
+    '123456780',
+    '77777770',
   ];
 
   for (const rut of invalidRuts) {

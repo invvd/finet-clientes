@@ -63,7 +63,7 @@ describe('AdminController', () => {
       mockAdminService.getIntentosFallidos.mockResolvedValue(mockResult);
 
       await adminController.getIntentosFallidos({
-        rut: '12.345.678-5',
+        rut: '123456785',
         ip: '192.168.1.50',
         bloqueados: 'true',
         page: 1,
@@ -71,7 +71,7 @@ describe('AdminController', () => {
       });
 
       expect(mockAdminService.getIntentosFallidos).toHaveBeenCalledWith({
-        rut: '12.345.678-5',
+        rut: '123456785',
         ip: '192.168.1.50',
         bloqueados: 'true',
         page: 1,

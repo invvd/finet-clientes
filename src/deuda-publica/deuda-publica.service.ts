@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { cleanRut } from '../common/utils/rut.js';
 import {
   DetalleFacturaPublicaDto,
   DeudaPublicaResponseDto,
@@ -12,10 +13,10 @@ export class DeudaPublicaService {
   /**
    * CU-39: Consultar deuda pública mediante RUT.
    * Endpoint público — no requiere autenticación.
-   * Normaliza el RUT antes de buscar (elimina puntos, deja el guión).
+   * Limpia el RUT antes de buscar (elimina puntos y guión).
    */
   async consultarPorRut(rut: string): Promise<DeudaPublicaResponseDto> {
-    const rutNormalizado = this.normalizarRut(rut);
+    const rutNormalizado = cleanRut(rut);
 
     const cliente = await this.prisma.cliente.findUnique({
       where: { rut: rutNormalizado },
@@ -145,11 +146,6 @@ export class DeudaPublicaService {
       saldo_total: 0,
       facturas: [],
     };
-  }
-
-  /** Normaliza "12.345.678-9" → "12345678-9" */
-  private normalizarRut(rut: string): string {
-    return rut.replace(/\./g, '').toUpperCase();
   }
 
   private formatPeriodo(mes: number, anio: number): string {

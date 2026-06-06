@@ -25,7 +25,7 @@ describe('DeudaPublicaService', () => {
 
   it('retorna encontrado:false si el RUT no existe', async () => {
     (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
-    const r = await service.consultarPorRut('12.345.678-9');
+    const r = await service.consultarPorRut('123456785');
     expect(r.encontrado).toBe(false);
     expect(r.cliente).toBeNull();
   });
@@ -34,11 +34,11 @@ describe('DeudaPublicaService', () => {
     (prisma.cliente.findUnique as jest.Mock).mockResolvedValue({
       id_cliente: 1,
       nombre_completo: 'Juan Pérez',
-      rut: '12345678-9',
+      rut: '123456785',
       contrato: [{ id_contrato: 100 }],
     });
     (prisma.factura.findMany as jest.Mock).mockResolvedValue([]);
-    const r = await service.consultarPorRut('12.345.678-9');
+    const r = await service.consultarPorRut('123456785');
     expect(r.encontrado).toBe(true);
     expect(r.tiene_deuda).toBe(false);
     expect(r.saldo_total).toBe(0);
@@ -50,7 +50,7 @@ describe('DeudaPublicaService', () => {
     (prisma.cliente.findUnique as jest.Mock).mockResolvedValue({
       id_cliente: 1,
       nombre_completo: 'Juan',
-      rut: '12345678-9',
+      rut: '123456785',
       contrato: [{ id_contrato: 100 }],
     });
     (prisma.factura.findMany as jest.Mock).mockResolvedValue([
@@ -63,7 +63,7 @@ describe('DeudaPublicaService', () => {
         estado: 'vencida',
       },
     ]);
-    const r = await service.consultarPorRut('12.345.678-9');
+    const r = await service.consultarPorRut('123456785');
     expect(r.facturas[0].dias_vencida).toBeGreaterThanOrEqual(2);
     expect(r.facturas[0].dias_para_vencer).toBeNull();
   });
@@ -73,7 +73,7 @@ describe('DeudaPublicaService', () => {
     (prisma.cliente.findUnique as jest.Mock).mockResolvedValue({
       id_cliente: 1,
       nombre_completo: 'Juan',
-      rut: '12345678-9',
+      rut: '123456785',
       contrato: [{ id_contrato: 100 }],
     });
     (prisma.factura.findMany as jest.Mock).mockResolvedValue([
@@ -86,7 +86,7 @@ describe('DeudaPublicaService', () => {
         estado: 'pendiente',
       },
     ]);
-    const r = await service.consultarPorRut('12.345.678-9');
+    const r = await service.consultarPorRut('123456785');
     expect(r.facturas[0].dias_para_vencer).toBeGreaterThanOrEqual(4);
     expect(r.facturas[0].dias_vencida).toBeNull();
   });
@@ -94,7 +94,7 @@ describe('DeudaPublicaService', () => {
   it('consultarPorAbonado retorna deuda cuando el contrato existe', async () => {
     (prisma.contrato.findUnique as jest.Mock).mockResolvedValue({
       id_contrato: 100,
-      cliente: { nombre_completo: 'Juan Pérez', rut: '12345678-9' },
+      cliente: { nombre_completo: 'Juan Pérez', rut: '123456785' },
     });
     (prisma.factura.findMany as jest.Mock).mockResolvedValue([]);
     const r = await service.consultarPorAbonado(100);

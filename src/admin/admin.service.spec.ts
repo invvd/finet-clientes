@@ -76,7 +76,7 @@ describe('AdminService', () => {
 
     it('filter by RUT', async () => {
       await adminService.getIntentosFallidos({
-        rut: '12.345.678-5',
+        rut: '123456785',
         page: 1,
         limit: 20,
       });

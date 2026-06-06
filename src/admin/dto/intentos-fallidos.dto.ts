@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
 export const intentosFallidosQuerySchema = z.object({
-  rut: z.string().optional(),
+  rut: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^\d{1,8}[\dkK]$/.test(val), {
+      message: 'Formato inválido. Ej: 123456785',
+    }),
   ip: z.string().optional(),
   bloqueados: z.enum(['true', 'false']).optional(),
   desde: z.string().optional(),
