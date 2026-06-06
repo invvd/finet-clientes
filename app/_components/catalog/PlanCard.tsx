@@ -1,12 +1,29 @@
+import { formatPrecioMensual, type PlanBackend } from "../../_lib/api";
 import PrimaryButton from "../ui/PrimaryButton";
-import type { Plan } from "../../_data/planes";
 
 type PlanCardProps = {
-  plan: Plan;
+  plan: PlanBackend;
   featured?: boolean;
 };
 
+function buildFeatures(plan: PlanBackend): string[] {
+  const features: string[] = [];
+  if (plan.velocidad_mbps) {
+    features.push(
+      plan.tipo_plan === "fibra"
+        ? `Fibra optica ${plan.velocidad_mbps} Mbps simetricos`
+        : `${plan.velocidad_mbps} Mbps de velocidad`
+    );
+  }
+  features.push("Instalacion incluida");
+  features.push("Datos ilimitados");
+  features.push("Soporte local en La Pintana");
+  return features;
+}
+
 export default function PlanCard({ plan, featured }: PlanCardProps) {
+  const features = buildFeatures(plan);
+
   return (
     <article
       className={`relative border border-[var(--color-border)] p-6 rounded-xl transition-all hover:shadow-md hover:border-[var(--color-primary)] ${
@@ -18,16 +35,20 @@ export default function PlanCard({ plan, featured }: PlanCardProps) {
           Mas popular
         </span>
       )}
-      <h2 className="text-lg font-medium">{plan.nombre}</h2>
+      <h2 className="text-lg font-medium">{plan.nombre_comercial}</h2>
       <p className="text-4xl font-extrabold text-[var(--color-foreground)] mt-2">
-        {plan.precio}
+        {formatPrecioMensual(plan.precio_mensual)}
         <span className="text-sm font-normal text-[var(--color-muted)]">/mes</span>
       </p>
-      <p className="text-sm text-[var(--color-muted)] mt-1">{plan.descripcion}</p>
+      {plan.descripcion && (
+        <p className="text-sm text-[var(--color-muted)] mt-1">
+          {plan.descripcion}
+        </p>
+      )}
       <ul className="mt-4 grid gap-2 border-t border-[var(--color-border)] pt-4">
-        {plan.caracteristicas.map((caracteristica) => (
+        {features.map((feature) => (
           <li
-            key={caracteristica}
+            key={feature}
             className="flex items-start gap-2 text-sm text-[var(--color-foreground)]"
           >
             <svg
@@ -38,19 +59,23 @@ export default function PlanCard({ plan, featured }: PlanCardProps) {
               strokeWidth={2}
               aria-hidden
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
-            {caracteristica}
+            {feature}
           </li>
         ))}
       </ul>
       <div className="mt-6">
         <PrimaryButton
-          href={`/contratar/${plan.id}`}
+          href={`/contratar/${plan.id_plan}`}
           variant="solid"
           className="w-full"
         >
-          Contratar {plan.nombre}
+          Contratar {plan.nombre_comercial}
         </PrimaryButton>
       </div>
     </article>

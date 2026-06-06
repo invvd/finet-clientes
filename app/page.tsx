@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Hero } from "./_components/layout/hero/Hero";
 import PlanCard from "./_components/catalog/PlanCard";
 import PrimaryButton from "./_components/ui/PrimaryButton";
-import { getPlanes } from "./_data/planes";
+import { getLandingPlanes } from "./_lib/api";
 import {
   Zap,
   Wifi,
@@ -54,8 +54,11 @@ const comunas = [
   "San Ramon",
 ];
 
-export default function HomePage() {
-  const planes = getPlanes();
+export default async function HomePage() {
+  const planes = await getLandingPlanes();
+
+  const sorted = [...planes].sort((a, b) => a.precio_mensual - b.precio_mensual);
+  const featuredId = sorted.length >= 2 ? sorted[Math.floor(sorted.length / 2)].id_plan : null;
 
   return (
     <>
@@ -104,11 +107,11 @@ export default function HomePage() {
           </div>
           {planes.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-3">
-              {planes.map((plan) => (
+              {sorted.map((plan) => (
                 <PlanCard
-                  key={plan.id}
+                  key={plan.id_plan}
                   plan={plan}
-                  featured={plan.id === "fibra-plus"}
+                  featured={plan.id_plan === featuredId}
                 />
               ))}
             </div>

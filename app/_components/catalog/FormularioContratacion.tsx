@@ -2,10 +2,10 @@
 
 import { useState, type FormEvent } from "react";
 import PrimaryButton from "../ui/PrimaryButton";
-import type { Plan } from "../../_data/planes";
+import type { PlanBackend } from "../../_lib/api";
 
 type FormularioContratacionProps = {
-  plan: Plan;
+  plan: PlanBackend;
 };
 
 type FormState = "idle" | "loading" | "success" | "error";
@@ -55,7 +55,7 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
           Solicitud enviada
         </h2>
         <p className="text-sm text-[var(--color-muted)]">
-          Tu solicitud para <strong>{plan.nombre}</strong> ha sido recibida. Te
+          Tu solicitud para <strong>{plan.nombre_comercial}</strong> ha sido recibida. Te
           contactaremos pronto al telefono y correo proporcionados.
         </p>
         <a
@@ -73,7 +73,7 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
       onSubmit={handleSubmit}
       className="grid max-w-xl gap-4 border border-[var(--color-border)] p-6 rounded-lg"
     >
-      <input type="hidden" name="plan" value={plan.id} />
+      <input type="hidden" name="id_plan" value={plan.id_plan} />
 
       <label className="grid gap-1" htmlFor="nombreCompleto">
         Nombre completo

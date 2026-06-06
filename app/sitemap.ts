@@ -1,12 +1,12 @@
 import type { MetadataRoute } from "next";
-import { getPlanes } from "./_data/planes";
+import { getLandingPlanes } from "./_lib/api";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://finet.cl";
 
-  const planes = getPlanes();
+  const planes = await getLandingPlanes();
   const planUrls: MetadataRoute.Sitemap = planes.map((plan) => ({
-    url: `${baseUrl}/contratar/${plan.id}`,
+    url: `${baseUrl}/contratar/${plan.id_plan}`,
     lastModified: new Date(),
     changeFrequency: "weekly",
     priority: 0.7,

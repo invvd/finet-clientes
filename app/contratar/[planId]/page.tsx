@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import FormularioContratacion from "../../_components/catalog/FormularioContratacion";
-import { getPlanById, getPlanes } from "../../_data/planes";
+import { getLandingPlanes, getPlanById, formatPrecioMensual } from "../../_lib/api";
 import { productJsonLd, breadcrumbJsonLd } from "../../_lib/jsonld";
 
 type ContratarPlanPageProps = {
@@ -11,9 +11,10 @@ type ContratarPlanPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return getPlanes().map((plan) => ({
-    planId: plan.id,
+export async function generateStaticParams() {
+  const planes = await getLandingPlanes();
+  return planes.map((plan) => ({
+    planId: String(plan.id_plan),
   }));
 }
 
@@ -21,18 +22,18 @@ export async function generateMetadata({
   params,
 }: ContratarPlanPageProps): Promise<Metadata> {
   const { planId } = await params;
-  const plan = getPlanById(planId);
+  const plan = await getPlanById(Number(planId));
 
   if (!plan) {
     return { title: "Plan no encontrado" };
   }
 
   return {
-    title: `Contratar ${plan.nombre}`,
-    description: `Solicita la contratacion de ${plan.nombre} — ${plan.descripcion} por ${plan.precio}/mes. Internet fibra optica en La Pintana y Puente Alto.`,
+    title: `Contratar ${plan.nombre_comercial}`,
+    description: `Solicita la contratacion de ${plan.nombre_comercial} — ${plan.descripcion ?? "Internet fibra optica"} por $${plan.precio_mensual.toLocaleString("es-CL")}/mes. Internet fibra optica en La Pintana y Puente Alto.`,
     openGraph: {
-      title: `Contratar ${plan.nombre} | Finet`,
-      description: `${plan.nombre} por ${plan.precio}/mes. Fibra optica en La Pintana.`,
+      title: `Contratar ${plan.nombre_comercial} | Finet`,
+      description: `${plan.nombre_comercial} por $${plan.precio_mensual.toLocaleString("es-CL")}/mes. Fibra optica en La Pintana.`,
     },
     robots: {
       index: false,
@@ -43,7 +44,7 @@ export async function generateMetadata({
 
 export default async function ContratarPlanPage({ params }: ContratarPlanPageProps) {
   const { planId } = await params;
-  const plan = getPlanById(planId);
+  const plan = await getPlanById(Number(planId));
 
   if (!plan) {
     redirect("/planes");
@@ -65,7 +66,7 @@ export default async function ContratarPlanPage({ params }: ContratarPlanPagePro
           __html: breadcrumbJsonLd([
             { name: "Inicio", url: baseUrl },
             { name: "Planes", url: `${baseUrl}/planes` },
-            { name: plan.nombre, url: `${baseUrl}/contratar/${plan.id}` },
+            { name: plan.nombre_comercial, url: `${baseUrl}/contratar/${plan.id_plan}` },
           ]),
         }}
       />
@@ -84,14 +85,15 @@ export default async function ContratarPlanPage({ params }: ContratarPlanPagePro
           </li>
           <li aria-hidden>/</li>
           <li className="text-[var(--color-foreground)] truncate max-w-[200px]">
-            {plan.nombre}
+            {plan.nombre_comercial}
           </li>
         </ol>
       </nav>
       <div className="mx-auto grid max-w-7xl gap-4">
         <h1 className="text-2xl font-medium">Solicitud de contratacion</h1>
         <p className="text-[var(--color-muted)]">
-          Plan seleccionado: <strong>{plan.nombre}</strong> &mdash; {plan.precio}/mes
+          Plan seleccionado: <strong>{plan.nombre_comercial}</strong> &mdash;{" "}
+          {formatPrecioMensual(plan.precio_mensual)}/mes
         </p>
         <FormularioContratacion plan={plan} />
       </div>

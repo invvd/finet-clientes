@@ -1,28 +1,30 @@
 import type { Metadata } from "next";
 import PlanCard from "../_components/catalog/PlanCard";
-import { getPlanes } from "../_data/planes";
+import { getLandingPlanes } from "../_lib/api";
 import { itemListJsonLd } from "../_lib/jsonld";
 
 export const metadata: Metadata = {
   title: "Planes de Internet Fibra Optica",
   description:
-    "Descubre nuestros planes de Internet fibra optica desde $19.990. Fibra Hogar, Fibra Plus y Fibra Empresa en La Pintana, Puente Alto y La Florida. Contrata hoy.",
+    "Descubre nuestros planes de Internet fibra optica. Fibra Hogar, Fibra Plus y Fibra Empresa en La Pintana, Puente Alto y La Florida. Contrata hoy.",
   openGraph: {
     title: "Planes de Internet Fibra Optica | Finet",
     description:
-      "Planes desde $19.990 con fibra optica simetrica en La Pintana y Puente Alto.",
+      "Planes con fibra optica simetrica en La Pintana y Puente Alto.",
   },
 };
 
-export default function PlanesPage() {
-  const planes = getPlanes();
+export default async function PlanesPage() {
+  const planes = await getLandingPlanes();
+  const sorted = [...planes].sort((a, b) => a.precio_mensual - b.precio_mensual);
+  const featuredId = sorted.length >= 2 ? sorted[Math.floor(sorted.length / 2)].id_plan : null;
 
   return (
     <section className="px-4 py-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: itemListJsonLd(planes),
+          __html: itemListJsonLd(sorted),
         }}
       />
       <div className="mx-auto grid max-w-7xl gap-6">
@@ -33,13 +35,13 @@ export default function PlanesPage() {
             limites de datos, instalacion incluida y soporte local en La Pintana.
           </p>
         </div>
-        {planes.length > 0 ? (
+        {sorted.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-3">
-            {planes.map((plan) => (
+            {sorted.map((plan) => (
               <PlanCard
-                key={plan.id}
+                key={plan.id_plan}
                 plan={plan}
-                featured={plan.id === "fibra-plus"}
+                featured={plan.id_plan === featuredId}
               />
             ))}
           </div>

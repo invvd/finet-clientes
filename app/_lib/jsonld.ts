@@ -1,29 +1,25 @@
-import type { Plan } from "../_data/planes";
+import type { PlanBackend } from "./api";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://finet.cl";
 
-function parsePrecio(precio: string): string {
-  return precio.replace(/[$.]/g, "");
-}
-
 type BreadcrumbItem = { name: string; url: string };
 
-export function productJsonLd(plan: Plan) {
+export function productJsonLd(plan: PlanBackend) {
   return JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Product",
-    name: plan.nombre,
-    description: plan.descripcion,
+    name: plan.nombre_comercial,
+    description: plan.descripcion ?? undefined,
     brand: {
       "@type": "Brand",
       name: "Finet",
     },
     offers: {
       "@type": "Offer",
-      price: parsePrecio(plan.precio),
+      price: String(plan.precio_mensual),
       priceCurrency: "CLP",
       availability: "https://schema.org/InStock",
-      url: `${BASE_URL}/contratar/${plan.id}`,
+      url: `${BASE_URL}/contratar/${plan.id_plan}`,
     },
   });
 }
@@ -41,7 +37,7 @@ export function breadcrumbJsonLd(items: BreadcrumbItem[]) {
   });
 }
 
-export function itemListJsonLd(planes: Plan[]) {
+export function itemListJsonLd(planes: PlanBackend[]) {
   return JSON.stringify({
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -50,14 +46,14 @@ export function itemListJsonLd(planes: Plan[]) {
       position: i + 1,
       item: {
         "@type": "Product",
-        name: plan.nombre,
-        description: plan.descripcion,
+        name: plan.nombre_comercial,
+        description: plan.descripcion ?? undefined,
         offers: {
           "@type": "Offer",
-          price: parsePrecio(plan.precio),
+          price: String(plan.precio_mensual),
           priceCurrency: "CLP",
           availability: "https://schema.org/InStock",
-          url: `${BASE_URL}/contratar/${plan.id}`,
+          url: `${BASE_URL}/contratar/${plan.id_plan}`,
         },
       },
     })),
