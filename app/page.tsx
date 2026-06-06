@@ -66,10 +66,10 @@ export default async function HomePage() {
       <Hero />
 
       {/* ==================== BENEFICIOS ==================== */}
-      <section className="px-4 py-20 bg-[var(--color-surface)]">
+      <section aria-labelledby="beneficios-heading" className="px-4 py-20 bg-[var(--color-surface)]">
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[var(--color-foreground)]">
+            <h2 id="beneficios-heading" className="text-3xl font-bold text-[var(--color-foreground)]">
               Por que elegir Finet
             </h2>
             <p className="text-[var(--color-muted)] mt-3 max-w-xl mx-auto">
@@ -94,10 +94,10 @@ export default async function HomePage() {
       </section>
 
       {/* ==================== PLANES DESTACADOS ==================== */}
-      <section className="px-4 py-20">
+      <section aria-labelledby="planes-heading" className="px-4 py-20">
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[var(--color-foreground)]">
+            <h2 id="planes-heading" className="text-3xl font-bold text-[var(--color-foreground)]">
               Planes de Internet
             </h2>
             <p className="text-[var(--color-muted)] mt-3 max-w-xl mx-auto">
@@ -129,10 +129,10 @@ export default async function HomePage() {
       </section>
 
       {/* ==================== COBERTURA ==================== */}
-      <section className="px-4 py-20 bg-[var(--color-surface)]">
+      <section aria-labelledby="cobertura-heading" className="px-4 py-20 bg-[var(--color-surface)]">
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[var(--color-foreground)]">
+            <h2 id="cobertura-heading" className="text-3xl font-bold text-[var(--color-foreground)]">
               Zona de cobertura
             </h2>
             <p className="text-[var(--color-muted)] mt-3 max-w-xl mx-auto">

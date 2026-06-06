@@ -33,7 +33,8 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             <button
               aria-label="Buscar"
-              className="flex items-center justify-center w-9 h-9 rounded-md text-[var(--color-muted)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface)] transition-colors"
+              disabled
+              className="flex items-center justify-center w-9 h-9 rounded-md text-[var(--color-muted)] opacity-50 transition-colors"
             >
               <Search size={18} />
             </button>

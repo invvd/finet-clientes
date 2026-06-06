@@ -59,7 +59,7 @@ export default function AyudaPage() {
             fibra optica.
           </p>
         </div>
-        <dl className="grid gap-6">
+        <div className="grid gap-6">
           {faqs.map((faq) => (
             <details
               key={faq.question}
@@ -87,7 +87,7 @@ export default function AyudaPage() {
               </div>
             </details>
           ))}
-        </dl>
+        </div>
         <div className="text-center mt-12">
           <p className="text-sm text-[var(--color-muted)]">
             ¿No encuentras lo que buscas?{" "}
