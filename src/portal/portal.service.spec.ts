@@ -269,11 +269,20 @@ describe('PortalService', () => {
 
     it('lanza mensaje amigable si una sub-consulta falla (CU-24 Excepción 2)', async () => {
       (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(CLIENTE_MOCK);
-      (prisma.contrato.findMany as jest.Mock).mockRejectedValue(
-        new Error('DB connection lost'),
+      // getResumenDeuda tambien llama contrato.findMany — aislamos la falla
+      // solo para getContratosVigentes (que usa include) para evitar race condition
+      (prisma.contrato.findMany as jest.Mock).mockImplementation(
+        (args: Record<string, unknown>) => {
+          if (args.include) {
+            return Promise.reject(new Error('DB connection lost'));
+          }
+          return Promise.resolve([{ id_contrato: 1 }]);
+        },
       );
+      (prisma.factura.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.ticket.findMany as jest.Mock).mockResolvedValue([]);
 
-      // getContratosVigentes ahora lanza su propio InternalServerErrorException
+      // getContratosVigentes lanza su propio InternalServerErrorException
       // (CU-26 Excepción 2), que burbujea a través del panel
       await expect(service.getPanelPrincipal(1)).rejects.toThrow(
         InternalServerErrorException,

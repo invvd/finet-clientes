@@ -68,50 +68,8 @@ Authorization: Bearer <token>
 
 | HTTP | Mensaje | Causa |
 |------|---------|-------|
-| 401 | `"Sesión expirada por inactividad"` | Sesion inactiva 15 min |
-| 401 | `"Unauthorized"` | Token JWT invalido |
-| 404 | `"Cliente no encontrado"` | Cliente no existe |
-| 500 | `"El portal no está disponible temporalmente"` | Error interno al agregar datos |
-
----
-
-## 2. Estado operativo de contratos (CU-23)
-
-Devuelve el estado de TODOS los contratos del cliente. Un cliente puede tener varios contratos.
-
-```
-GET /api/portal/contratos/estado
-Authorization: Bearer <token>
-```
-
-**Respuesta 200:**
-
-```json
-[
-  {
-    "id_contrato": 100,
-    "estado": "activo",
-    "fecha_inicio": "2025-01-15T00:00:00.000Z",
-    "fecha_suspension": null
-  },
-  {
-    "id_contrato": 101,
-    "estado": "suspendido",
-    "fecha_inicio": "2025-06-01T00:00:00.000Z",
-    "fecha_suspension": "2026-04-15T00:00:00.000Z"
-  }
-]
-```
-
-**Estados posibles:** `activo`, `suspendido`, `cortado`, `inactivo`.
-
-`fecha_suspension` es `null` para contratos activos.
-
-**Errores:**
-
-| HTTP | Mensaje | Causa |
-|------|---------|-------|
-| 401 | `"Sesión expirada por inactividad"` / `"Unauthorized"` | Sesion o token |
+| 401 | `"Sesión expirada por inactividad"` / `"Unauthorized"` | Sesion o token (CU-26 Excepción 1) |
+| 500 | `"No fue posible obtener la informacion de planes en este momento"` | Error al recuperar planes (CU-26 Excepción 2) |
 | 404 | `"No se encontraron contratos para este cliente"` | Sin contratos |
 
 ---

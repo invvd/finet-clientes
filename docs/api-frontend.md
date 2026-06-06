@@ -449,6 +449,12 @@ Authorization: Bearer <token>
 
 Si hay 1 contrato → vista de plan único (CU-25). Si hay varios → vista de múltiples planes (CU-26). El frontend decide la vista según `contratos.length`.
 
+**Errores:**
+| HTTP | Mensaje | Causa |
+|------|---------|-------|
+| 401 | `"Sesión expirada por inactividad"` / `"Unauthorized"` | Sesion o token (CU-26 Excepción 1) |
+| 500 | `"No fue posible obtener la informacion de planes en este momento"` | Error al recuperar planes vigentes (CU-26 Excepción 2) |
+
 ---
 
 ### 2.4 Estado de deuda (CU-27 / CU-28)
