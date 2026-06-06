@@ -22,7 +22,7 @@ type AuthState = {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (cliente: Cliente) => void;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -57,20 +57,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCliente(clienteData);
   }, []);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (): Promise<boolean> => {
     const API_URL =
       process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
     try {
-      await fetch(`${API_URL}/auth/logout`, {
+      const res = await fetch(`${API_URL}/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
-    } catch {
-      /* ignorar error de red */
-    }
 
-    setCliente(null);
+      if (res.ok) {
+        setCliente(null);
+        return true;
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
   }, []);
 
   return (

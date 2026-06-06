@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { User, LayoutDashboard, ChevronDown, LogOut } from "lucide-react";
+import { User, LayoutDashboard, ChevronDown, LogOut, AlertCircle } from "lucide-react";
 import { useAuth } from "../../../_lib/auth";
 
 export default function UserMenu() {
   const { cliente, logout } = useAuth();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -19,6 +21,7 @@ export default function UserMenu() {
         !dropdownRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
+        setLogoutError(false);
       }
     }
     if (isOpen) {
@@ -29,7 +32,10 @@ export default function UserMenu() {
 
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") {
+        setIsOpen(false);
+        setLogoutError(false);
+      }
     }
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
@@ -38,8 +44,18 @@ export default function UserMenu() {
   }, [isOpen]);
 
   async function handleLogout() {
+    setLoggingOut(true);
+    setLogoutError(false);
+
+    const ok = await logout();
+
+    if (!ok) {
+      setLoggingOut(false);
+      setLogoutError(true);
+      return;
+    }
+
     setIsOpen(false);
-    await logout();
     router.push("/inicio-sesion");
   }
 
@@ -51,7 +67,10 @@ export default function UserMenu() {
         type="button"
         aria-expanded={isOpen}
         aria-haspopup="true"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (!isOpen) setLogoutError(false);
+        }}
         className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-background)] hover:opacity-90 transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
       >
         <User size={16} aria-hidden />
@@ -96,15 +115,28 @@ export default function UserMenu() {
             role="separator"
             className="my-1 border-t border-[var(--color-border)]"
           />
+
+          {logoutError && (
+            <li role="none" className="px-3 py-2">
+              <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                <p className="flex items-start gap-1.5">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0" aria-hidden />
+                  No fue posible cerrar la sesión. Intenta nuevamente.
+                </p>
+              </div>
+            </li>
+          )}
+
           <li role="none">
             <button
               type="button"
               role="menuitem"
+              disabled={loggingOut}
               onClick={handleLogout}
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--color-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-foreground)] transition-colors"
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--color-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-foreground)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LogOut size={16} aria-hidden />
-              Cerrar sesión
+              {loggingOut ? "Cerrando sesión..." : logoutError ? "Reintentar" : "Cerrar sesión"}
             </button>
           </li>
         </ul>
