@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginSchema } from "../utils/login-schema";
 import { api } from "../utils/api";
@@ -114,12 +115,12 @@ export default function LoginForm() {
             />
             Recordarme
           </label>
-          <a
-            href="#"
+          <Link
+            href="/recuperar-password"
             className="text-fin-400 transition-colors hover:text-fin-300"
           >
             ¿Olvidaste tu contraseña?
-          </a>
+          </Link>
         </div>
 
         <button

@@ -1,0 +1,149 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { resetPasswordSchema } from "../utils/login-schema";
+import { api } from "../utils/api";
+import type { ApiError } from "../utils/api";
+import LoginBranding from "../components/LoginBranding";
+import PasswordInput from "../components/PasswordInput";
+
+type Props = {
+  token: string;
+};
+
+export default function ResetPasswordForm({ token }: Props) {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  function validateField(field: string, value: string) {
+    const data: Record<string, string> = { password, confirmPassword, [field]: value };
+    const result = resetPasswordSchema.safeParse(data);
+    if (!result.success) {
+      const fieldError = result.error.issues.find((i) => i.path[0] === field);
+      setErrors((prev) => ({ ...prev, [field]: fieldError?.message ?? "" }));
+    } else {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setServerError("");
+
+    const result = resetPasswordSchema.safeParse({ password, confirmPassword });
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
+      return;
+    }
+
+    setErrors({});
+    setLoading(true);
+
+    try {
+      await api.post<{ message: string }>("/auth/restablecer-password", {
+        token,
+        password: result.data.password,
+      });
+      setDone(true);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setServerError(apiError.message ?? "Error al restablecer la contraseña");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <div className="rounded-2xl border border-fin-500/20 bg-surface/80 p-8 shadow-2xl shadow-fin-500/10 backdrop-blur-xl sm:p-10">
+        <LoginBranding />
+        <div className="mt-6 flex flex-col items-center text-center">
+          <CheckCircle2 size={40} className="text-fin-400" aria-hidden />
+          <h2 className="mt-4 text-lg font-semibold text-white">
+            Contraseña actualizada
+          </h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Tu contraseña ha sido restablecida exitosamente.
+          </p>
+          <Link
+            href="/inicio-sesion"
+            className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-6 py-2.5 text-sm font-semibold text-[var(--color-background)] transition-all hover:opacity-90"
+          >
+            Ir al inicio de sesión
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-fin-500/20 bg-surface/80 p-8 shadow-2xl shadow-fin-500/10 backdrop-blur-xl sm:p-10">
+      <LoginBranding />
+
+      <div className="mt-6 text-center">
+        <h2 className="text-lg font-semibold text-white">
+          Nueva contraseña
+        </h2>
+        <p className="mt-1.5 text-sm text-slate-400">
+          Ingresa tu nueva contraseña
+        </p>
+      </div>
+
+      {serverError && (
+        <div className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {serverError}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="mt-5 space-y-5" noValidate>
+        <PasswordInput
+          value={password}
+          error={errors.password}
+          onChange={(v) => {
+            setPassword(v);
+            setErrors((prev) => ({ ...prev, password: "" }));
+          }}
+          onBlur={() => validateField("password", password)}
+        />
+        <PasswordInput
+          value={confirmPassword}
+          error={errors.confirmPassword}
+          onChange={(v) => {
+            setConfirmPassword(v);
+            setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+          }}
+          onBlur={() => validateField("confirmPassword", confirmPassword)}
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-lg bg-linear-to-r from-fin-500 to-fin-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fin-500/25 transition-all duration-200 hover:from-fin-400 hover:to-fin-500 hover:shadow-fin-400/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? "Cambiando..." : "Cambiar contraseña"}
+        </button>
+      </form>
+
+      <p className="mt-6 text-center">
+        <Link
+          href="/inicio-sesion"
+          className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-300"
+        >
+          <ArrowLeft size={14} aria-hidden />
+          Volver al inicio de sesión
+        </Link>
+      </p>
+    </div>
+  );
+}

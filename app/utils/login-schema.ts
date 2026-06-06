@@ -77,6 +77,35 @@ export const registerSchema = z
     path: ["confirmPassword"],
   });
 
+export const recoverySchema = z.object({
+  rut: z
+    .string({ message: "El RUT es obligatorio" })
+    .min(1, "El RUT es obligatorio")
+    .refine((val) => validateRut(val), "RUT inválido"),
+});
+
+const passwordField = z
+  .string({ message: "La contraseña es obligatoria" })
+  .min(8, "Mínimo 8 caracteres")
+  .max(128, "La contraseña es demasiado larga")
+  .regex(/^(?=.*[A-Z])(?=.*\d).+$/, "Al menos 1 mayúscula y 1 número");
+
+export const resetPasswordSchema = z
+  .object({
+    password: passwordField,
+    confirmPassword: z
+      .string({ message: "Debes confirmar la contraseña" })
+      .min(1, "Debes confirmar la contraseña"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmPassword"],
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+export type RecoveryInput = z.infer<typeof recoverySchema>;
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
