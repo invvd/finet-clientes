@@ -16,9 +16,7 @@ async function bootstrap() {
 
   app.use(helmet());
   if (isProd) {
-    app.use(
-      helmet.hsts({ maxAge: 31536000, includeSubDomains: true }),
-    );
+    app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
   }
 
   app.use(cookieParser());
@@ -37,13 +35,10 @@ async function bootstrap() {
     throw new Error('CORS_ORIGIN is required in production');
   }
 
-  app.enableCors(
-    isProd
-      ? {
-          origin: corsOrigins,
-        }
-      : undefined,
-  );
+  app.enableCors({
+    origin: isProd ? corsOrigins : corsOrigins.length > 0 ? corsOrigins : true,
+    credentials: true,
+  });
   app.useGlobalFilters(new AllExceptionsFilter(), new HttpExceptionFilter());
 
   const port = process.env.PORT ?? 4000;
