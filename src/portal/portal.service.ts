@@ -113,24 +113,31 @@ export class PortalService {
   // CU-25: si hay 1 contrato → devuelve el nombre del plan.
   // CU-26: si hay múltiples contratos → devuelve el array completo.
   async getContratosVigentes(idCliente: number): Promise<ContratoResumenDto[]> {
-    const contratos = await this.prisma.contrato.findMany({
-      where: {
-        id_cliente: idCliente,
-        estado: { in: ['activo', 'suspendido'] },
-      },
-      include: {
-        plan: {
-          select: {
-            id_plan: true,
-            nombre_comercial: true,
-            tipo_plan: true,
-            velocidad_mbps: true,
-            precio_mensual: true,
+    const contratos = await this.prisma.contrato
+      .findMany({
+        where: {
+          id_cliente: idCliente,
+          estado: { in: ['activo', 'suspendido'] },
+        },
+        include: {
+          plan: {
+            select: {
+              id_plan: true,
+              nombre_comercial: true,
+              tipo_plan: true,
+              velocidad_mbps: true,
+              precio_mensual: true,
+            },
           },
         },
-      },
-      orderBy: { fecha_inicio: 'desc' },
-    });
+        orderBy: { fecha_inicio: 'desc' },
+      })
+      .catch(() => {
+        // CU-26 Excepción 2: error al recuperar planes vigentes
+        throw new InternalServerErrorException(
+          'No fue posible obtener la informacion de planes en este momento',
+        );
+      });
 
     return contratos.map((c) => ({
       id_contrato: c.id_contrato,

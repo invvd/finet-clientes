@@ -87,7 +87,8 @@ export class PortalController {
    *   - plan: { id_plan, nombre_comercial, tipo_plan, velocidad_mbps, precio_mensual }
    *
    * Errores:
-   *   401 - Sesión expirada por inactividad / Token JWT inválido
+   *   401 - Sesión expirada por inactividad / Token JWT inválido (CU-26 Excepción 1)
+   *   500 - No fue posible obtener la información de planes (CU-26 Excepción 2)
    */
   @Get('contratos/vigentes')
   getContratosVigentes(@CurrentClient() cliente: cliente) {

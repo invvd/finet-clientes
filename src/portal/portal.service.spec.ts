@@ -122,6 +122,19 @@ describe('PortalService', () => {
 
       expect(result).toEqual([]);
     });
+
+    it('lanza InternalServerErrorException con mensaje amigable si Prisma falla (CU-26 Excepción 2)', async () => {
+      (prisma.contrato.findMany as jest.Mock).mockRejectedValue(
+        new Error('connection refused'),
+      );
+
+      await expect(service.getContratosVigentes(1)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      await expect(service.getContratosVigentes(1)).rejects.toThrow(
+        'No fue posible obtener la informacion de planes en este momento',
+      );
+    });
   });
 
   // ─── CU-27 / CU-28: getResumenDeuda ──────────────────────────────────────
@@ -260,11 +273,13 @@ describe('PortalService', () => {
         new Error('DB connection lost'),
       );
 
+      // getContratosVigentes ahora lanza su propio InternalServerErrorException
+      // (CU-26 Excepción 2), que burbujea a través del panel
       await expect(service.getPanelPrincipal(1)).rejects.toThrow(
         InternalServerErrorException,
       );
       await expect(service.getPanelPrincipal(1)).rejects.toThrow(
-        'El portal no está disponible temporalmente',
+        'No fue posible obtener la informacion de planes en este momento',
       );
     });
   });
