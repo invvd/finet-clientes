@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { User, AlertCircle, RefreshCw } from "lucide-react";
+import ChangePasswordForm from "../components/ChangePasswordForm";
 
 type ClientePerfil = {
   id_cliente: number;
@@ -152,6 +153,12 @@ export default function PerfilPage() {
               {formatFecha(perfil.fecha_creacion)}
             </span>
           </div>
+        </div>
+      )}
+
+      {perfil && (
+        <div className="mt-8">
+          <ChangePasswordForm />
         </div>
       )}
     </div>

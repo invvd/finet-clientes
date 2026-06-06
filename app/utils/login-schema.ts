@@ -113,6 +113,30 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+export const changePasswordSchema = z
+  .object({
+    passwordActual: z
+      .string({ message: "La contraseña actual es requerida" })
+      .min(1, "La contraseña actual es requerida"),
+    passwordNuevo: z
+      .string({ message: "La nueva contraseña es obligatoria" })
+      .min(8, "Mínimo 8 caracteres")
+      .max(128, "La contraseña es demasiado larga")
+      .regex(/[A-Z]/, "Al menos 1 letra mayúscula")
+      .regex(/[0-9]/, "Al menos 1 número")
+      .regex(
+        /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+        "Al menos 1 carácter especial"
+      ),
+    passwordConfirmacion: z
+      .string({ message: "Debes confirmar la nueva contraseña" })
+      .min(1, "Debes confirmar la nueva contraseña"),
+  })
+  .refine((data) => data.passwordNuevo === data.passwordConfirmacion, {
+    message: "Las contraseñas no coinciden",
+    path: ["passwordConfirmacion"],
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -120,3 +144,5 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type RecoveryInput = z.infer<typeof recoverySchema>;
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
