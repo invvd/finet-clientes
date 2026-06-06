@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+export function cleanRut(rut: string) {
+  return rut.replace(/[^0-9kK]/g, "").toUpperCase();
+}
+
+export function cleanTelefono(telefono: string) {
+  return telefono.replace(/\s/g, "");
+}
+
 function validateRut(rut: string) {
   const cleaned = rut.replace(/[^0-9kK]/g, "").toUpperCase();
   if (cleaned.length < 3) return false;
@@ -27,7 +35,7 @@ function validateTelefonoChileno(telefono: string) {
   if (!/^\+56\d{9}$/.test(cleaned)) return false;
   const digits = cleaned.slice(3);
   const first = digits[0];
-  if (first === "9") return /^9[5-9]\d{7}$/.test(digits);
+  if (first === "9") return /^9\d{8}$/.test(digits);
   if (["2", "3", "4", "5", "6", "7", "8"].includes(first)) return true;
   return false;
 }
