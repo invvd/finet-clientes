@@ -1,21 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { loginSchema } from "../utils/login-schema";
 import { api } from "../utils/api";
 import type { ApiError } from "../utils/api";
+import { useAuth } from "../_lib/auth";
+import type { Cliente } from "../_lib/auth";
 import LoginBranding from "./LoginBranding";
 import RutInput from "./RutInput";
 import PasswordInput from "./PasswordInput";
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
+  const { login, isAuthenticated, isLoading } = useAuth();
   const [rut, setRut] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push("/portal");
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   function validateField(field: string, value: string) {
     const result = loginSchema.safeParse({ rut, password, [field]: value });
@@ -51,9 +62,12 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const data = await api.post<{ token: string }>("/auth/login", result.data);
-      console.log(data);
-      router.push("/perfil");
+      const data = await api.post<{ access_token: string; cliente: Cliente }>(
+        "/auth/login",
+        result.data
+      );
+      login(data.cliente);
+      router.push(redirect ?? "/portal");
     } catch (err) {
       const error = err as ApiError;
       setServerError(error.message ?? "Error al iniciar sesión");

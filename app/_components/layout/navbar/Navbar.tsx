@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react';
 import NavLogo from './NavLogo';
-import PortalClienteButton from './PortalClienteButton';
+import NavbarAuthArea from './NavbarAuthArea';
 import ThemeToggle from './ThemeToggle';
 import MobileMenu from './MobileMenu';
 import DesktopNavItem from './DesktopNavItem';
@@ -38,7 +38,7 @@ export default function Navbar() {
             >
               <Search size={18} />
             </button>
-            <PortalClienteButton />
+            <NavbarAuthArea />
             <MobileMenu items={navItems} />
           </div>
         </div>

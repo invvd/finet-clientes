@@ -5,6 +5,7 @@ import Navbar from "./_components/layout/navbar/Navbar";
 import Footer from "./_components/layout/footer/Footer";
 import { themeScript } from "./_components/layout/theme/theme-script";
 import { BASE_URL } from "./_lib/consts";
+import { AuthProvider } from "./_lib/auth";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -112,9 +113,11 @@ export default function RootLayout({
         >
           Saltar al contenido principal
         </a>
-        <Navbar />
-        <main id="main-content" className="flex-1">{children}</main>
-        <Footer />
+        <AuthProvider>
+          <Navbar />
+          <main id="main-content" className="flex-1">{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );
