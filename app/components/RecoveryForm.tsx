@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { recoverySchema } from "../utils/login-schema";
+import { cleanRut } from "../utils/login-schema";
 import { api } from "../utils/api";
 import type { ApiError } from "../utils/api";
 import LoginBranding from "./LoginBranding";
@@ -41,7 +42,9 @@ export default function RecoveryForm() {
     setLoading(true);
 
     try {
-      await api.post<{ message: string }>("/auth/recuperar-password", result.data);
+      await api.post<{ message: string }>("/auth/recuperar-password", {
+        rut: cleanRut(result.data.rut),
+      });
       setSent(true);
     } catch (err) {
       const apiError = err as ApiError;

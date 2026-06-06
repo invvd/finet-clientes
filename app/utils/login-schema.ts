@@ -1,7 +1,11 @@
 import { z } from "zod";
 
+export function cleanRut(rut: string) {
+  return rut.replace(/[^0-9kK]/g, "").toUpperCase();
+}
+
 function validateRut(rut: string) {
-  const cleaned = rut.replace(/[^0-9kK]/g, "").toUpperCase();
+  const cleaned = cleanRut(rut);
   if (cleaned.length < 3) return false;
 
   const body = cleaned.slice(0, -1);

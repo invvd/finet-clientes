@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { registerSchema } from "../utils/login-schema";
+import { cleanRut } from "../utils/login-schema";
 import { api } from "../utils/api";
 import type { ApiError } from "../utils/api";
 import { useAuth } from "../_lib/auth";
@@ -77,7 +78,7 @@ export default function RegisterForm() {
       const data = await api.post<{ access_token: string; cliente: Cliente }>(
         "/auth/register",
         {
-          rut: result.data.rut,
+          rut: cleanRut(result.data.rut),
           nombre_completo: result.data.nombreCompleto,
           email: result.data.email,
           telefono: result.data.telefono ?? "",

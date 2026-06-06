@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginSchema } from "../utils/login-schema";
+import { cleanRut } from "../utils/login-schema";
 import { api } from "../utils/api";
 import type { ApiError } from "../utils/api";
 import { useAuth } from "../_lib/auth";
@@ -66,7 +67,7 @@ export default function LoginForm() {
     try {
       const data = await api.post<{ access_token: string; cliente: Cliente }>(
         "/auth/login",
-        result.data
+        { rut: cleanRut(result.data.rut), password: result.data.password }
       );
       login(data.cliente);
       router.push(redirect ?? "/portal");
