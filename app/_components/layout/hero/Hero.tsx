@@ -1,7 +1,6 @@
-"Use client";
+"use client";
 
 import {useState} from "react";
-import Image from "next/image";
 import {ChevronLeft, ChevronRight} from "lucide-react";
 
 const SLIDES = [
@@ -47,7 +46,7 @@ export const Hero = () => {
                 className="flex h-full w-full transition-transform duration-400 ease-in-out"
                 style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
-                {SLIDES.map((slide, index) => (
+                {SLIDES.map((slide) => (
                     <div
                         key={slide.id}
                         className={`relative flex-shrink-0 w-full h-full flex items-center justify-center ${slide.bgColor}`}
@@ -67,17 +66,19 @@ export const Hero = () => {
                         */}
                         {/* Contenido del slide */}
                         <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-                            <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-4 drop-shadow-md">
-                                {slide.subtitle}
-                            </h1>
-                            <p className="text-lg md:text-xl text-gray-200 mb-8 max-w-2xl mx-auto drop-shadow-sm">
+                            <h2 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-4 drop-shadow-md">
+                                {slide.title}
+                            </h2>
+                            <p className="text-lg md:text-xl text-white/80 mb-8 max-w-2xl mx-auto drop-shadow-sm">
                                 {slide.subtitle}
                             </p>
 
-                            {/* Botón CTA (Call to Action) */}
-                            <button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 rounded-lg font-bold text-lg transition-colors shadow-lg">
+                            <a
+                                href="/planes"
+                                className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-3 text-base font-bold text-[var(--color-background)] hover:bg-[var(--color-primary-bright)] transition-colors shadow-lg shadow-[var(--color-primary)]/25"
+                            >
                                 Ver Planes
-                            </button>
+                            </a>
                         </div>
                     </div>
                 ))}

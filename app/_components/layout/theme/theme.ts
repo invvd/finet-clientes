@@ -8,7 +8,7 @@ export function setTheme(t: Theme): void {
   document.documentElement.dataset.theme = t;
   try {
     localStorage.setItem('theme', t);
-  } catch (e) {}
+  } catch {}
 }
 
 export function toggleTheme(): Theme {

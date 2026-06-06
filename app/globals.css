@@ -3,8 +3,8 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --color-primary: #1FB8C7;
-  --color-primary-bright: #3DD4E3;
+  --color-primary: #0E7C86;
+  --color-primary-bright: #1098A3;
   --color-accent: #D9E021;
 
   --color-background: #FFFFFF;
@@ -16,7 +16,8 @@
 }
 
 [data-theme="dark"] {
-  --color-primary: #3DD4E3;
+  --color-primary: #2DD4BF;
+  --color-primary-bright: #5EEAD4;
   --color-background: #0A1929;
   --color-surface: #102A43;
   --color-surface-deep: #061224;
@@ -45,4 +46,10 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   transition: background-color 200ms ease, color 200ms ease;
+}
+
+@layer base {
+  button {
+    cursor: pointer;
+  }
 }

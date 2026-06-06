@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Menu, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import type { NavItem } from "./nav.config";
 
@@ -10,7 +11,23 @@ type MobileMenuProps = {
 };
 
 export default function MobileMenu({ items }: MobileMenuProps) {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (href: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(href)) {
+        next.delete(href);
+      } else {
+        next.add(href);
+      }
+      return next;
+    });
+  };
+
+  const closeMobileMenu = () => setIsOpen(false);
 
   return (
     <div className="md:hidden">
@@ -20,7 +37,7 @@ export default function MobileMenu({ items }: MobileMenuProps) {
         aria-expanded={isOpen}
         aria-label={isOpen ? "Cerrar menu movil" : "Abrir menu movil"}
         className="flex h-9 w-9 items-center justify-center rounded-md text-[var(--color-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-foreground)]"
-        onClick={() => setIsOpen((currentValue) => !currentValue)}
+        onClick={() => setIsOpen((v) => !v)}
       >
         {isOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
@@ -28,20 +45,78 @@ export default function MobileMenu({ items }: MobileMenuProps) {
         id="menu-movil"
         aria-label="Navegacion principal movil"
         hidden={!isOpen}
-        className="absolute left-0 right-0 top-full border-b border-[var(--color-border)] bg-[var(--color-background)] px-4 py-3"
+        className="absolute left-0 right-0 top-full border-b border-[var(--color-border)] bg-[var(--color-background)] px-4 py-3 max-h-[80vh] overflow-y-auto"
       >
-        <ul className="grid gap-3">
-          {items.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className="block text-sm text-[var(--color-foreground)] hover:text-[var(--color-primary)]"
-                onClick={() => setIsOpen(false)}
-              >
-                {item.label}
-              </Link>
-            </li>
-          ))}
+        <ul className="grid gap-1">
+          {items.map((item) => {
+            const hasChildren = Boolean(item.children?.length);
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
+            const isExpanded = expandedGroups.has(item.href);
+
+            return (
+              <li key={item.href}>
+                {hasChildren ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      onClick={() => toggleGroup(item.href)}
+                      className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+                        isActive
+                          ? "text-[var(--color-primary)]"
+                          : "text-[var(--color-foreground)] hover:bg-[var(--color-surface)]"
+                      }`}
+                    >
+                      {item.label}
+                      <ChevronDown
+                        size={14}
+                        className={`text-[var(--color-muted)] transition-transform ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
+                        aria-hidden
+                      />
+                    </button>
+                    {isExpanded && (
+                      <ul className="ml-4 mt-1 border-l border-[var(--color-border)] pl-3 grid gap-1">
+                        {item.children!.map((child) => (
+                          <li key={child.href}>
+                            <Link
+                              href={child.href}
+                              onClick={closeMobileMenu}
+                              aria-current={
+                                pathname === child.href ? "page" : undefined
+                              }
+                              className={`block rounded-md px-3 py-2 text-sm transition-colors ${
+                                pathname === child.href
+                                  ? "text-[var(--color-primary)] bg-[var(--color-surface)]"
+                                  : "text-[var(--color-foreground)] hover:bg-[var(--color-surface)]"
+                              }`}
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={closeMobileMenu}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`block rounded-md px-3 py-2 text-sm transition-colors ${
+                      isActive
+                        ? "text-[var(--color-primary)] bg-[var(--color-surface)]"
+                        : "text-[var(--color-foreground)] hover:bg-[var(--color-surface)]"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </div>

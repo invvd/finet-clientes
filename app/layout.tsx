@@ -10,10 +10,81 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://finet.cl";
+
 export const metadata: Metadata = {
-  title: "Finet — Internet y TV",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    template: "%s | Finet — Fibra Optica en La Pintana",
+    default: "Finet — Internet Fibra Optica y TV Digital | La Pintana, Puente Alto",
+  },
   description:
-    "Conecta tu hogar con fibra óptica e Internet de alta velocidad. Planes de Internet y TV digital para La Pintana, Puente Alto, La Florida y La Granja.",
+    "Internet de fibra optica de alta velocidad desde 200 Mbps simetricos. Planes hogar y empresa en La Pintana, Puente Alto, La Florida y La Granja. Contrata en linea.",
+  keywords: [
+    "internet fibra optica",
+    "La Pintana",
+    "Puente Alto",
+    "TV digital",
+    "planes internet hogar",
+    "fibra optica sur de Santiago",
+    "Finet",
+  ],
+  authors: [{ name: "Fibernet Limitada" }],
+  creator: "Fibernet Limitada",
+  publisher: "Fibernet Limitada",
+  robots: {
+    index: true,
+    follow: true,
+    "max-snippet": 160,
+    "max-image-preview": "large",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Finet",
+    title: "Finet — Internet Fibra Optica y TV Digital",
+    description:
+      "Internet de fibra optica de alta velocidad desde 200 Mbps simetricos. Planes para hogar y empresa en La Pintana y Puente Alto.",
+    url: BASE_URL,
+    locale: "es_CL",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Finet — Internet Fibra Optica y TV Digital",
+    description:
+      "Internet de fibra optica de alta velocidad desde 200 Mbps simetricos en La Pintana y Puente Alto.",
+  },
+  alternates: {
+    canonical: BASE_URL,
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Fibernet Limitada",
+  alternateName: "Finet",
+  url: BASE_URL,
+  logo: `${BASE_URL}/brand/FinetLogo.png`,
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: "+56 9 XXXX XXXX",
+    contactType: "customer service",
+    areaServed: ["CL"],
+    availableLanguage: ["Spanish"],
+  },
+  areaServed: {
+    "@type": "City",
+    name: "La Pintana",
+  },
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "La Pintana",
+    addressRegion: "Region Metropolitana",
+    addressCountry: "CL",
+  },
 };
 
 export default function RootLayout({
@@ -29,10 +100,21 @@ export default function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
+        {/* Skip-to-content link for keyboard users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-[var(--color-primary)] focus:px-4 focus:py-2 focus:text-[var(--color-background)] focus:text-sm focus:outline-none"
+        >
+          Saltar al contenido principal
+        </a>
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">{children}</main>
         <Footer />
       </body>
     </html>
