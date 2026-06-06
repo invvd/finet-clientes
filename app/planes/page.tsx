@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import PlanCard from "../_components/catalog/PlanCard";
 import { getLandingPlanes } from "../_lib/api";
 import { itemListJsonLd } from "../_lib/jsonld";
+import PlanesClient from "../_components/catalog/PlanesClient";
 
 export const metadata: Metadata = {
   title: "Planes de Internet Fibra Optica",
@@ -17,7 +17,6 @@ export const metadata: Metadata = {
 export default async function PlanesPage() {
   const planes = await getLandingPlanes();
   const sorted = [...planes].sort((a, b) => a.precio_mensual - b.precio_mensual);
-  const featuredId = sorted.length >= 2 ? sorted[Math.floor(sorted.length / 2)].id_plan : null;
 
   return (
     <section className="px-4 py-12">
@@ -35,21 +34,7 @@ export default async function PlanesPage() {
             limites de datos, instalacion incluida y soporte local en La Pintana.
           </p>
         </div>
-        {sorted.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-3">
-            {sorted.map((plan) => (
-              <PlanCard
-                key={plan.id_plan}
-                plan={plan}
-                featured={plan.id_plan === featuredId}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-[var(--color-muted)] text-center">
-            No hay planes disponibles temporalmente.
-          </p>
-        )}
+        <PlanesClient planes={sorted} />
       </div>
     </section>
   );
