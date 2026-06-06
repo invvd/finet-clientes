@@ -16,6 +16,7 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
+  const expired = searchParams.get("expired") === "1";
   const { login, isAuthenticated, isLoading } = useAuth();
   const [rut, setRut] = useState("");
   const [password, setPassword] = useState("");
@@ -80,6 +81,12 @@ export default function LoginForm() {
   return (
     <div className="rounded-2xl border border-fin-500/20 bg-surface/80 p-8 shadow-2xl shadow-fin-500/10 backdrop-blur-xl sm:p-10">
       <LoginBranding />
+
+      {expired && (
+        <div className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          Tu sesión fue cerrada por inactividad. Ingresa nuevamente.
+        </div>
+      )}
 
       {serverError && (
         <div className="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">

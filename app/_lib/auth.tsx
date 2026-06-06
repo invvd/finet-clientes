@@ -8,6 +8,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 
 export type Cliente = {
   id_cliente: number;
@@ -30,6 +31,7 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const API_URL =
@@ -52,6 +54,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    function handleSessionExpired() {
+      setCliente(null);
+      router.push("/inicio-sesion?expired=1");
+    }
+
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () =>
+      window.removeEventListener("auth:session-expired", handleSessionExpired);
+  }, [router]);
 
   const login = useCallback((clienteData: Cliente) => {
     setCliente(clienteData);

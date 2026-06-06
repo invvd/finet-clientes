@@ -26,6 +26,16 @@ async function request<T>(
     } catch {
       message = `Error ${res.status}`;
     }
+
+    if (
+      res.status === 401 &&
+      !path.startsWith("/auth/login") &&
+      !path.startsWith("/auth/perfil") &&
+      typeof window !== "undefined"
+    ) {
+      window.dispatchEvent(new CustomEvent("auth:session-expired"));
+    }
+
     throw { message, status: res.status } as ApiError;
   }
 
