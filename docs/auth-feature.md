@@ -51,7 +51,7 @@ Content-Type: application/json
 | Codigo | Mensaje | Causa |
 |---|---|---|
 | 400 | Validation failed | RUT con formato invalido o DV incorrecto |
-| 401 | RUT o contraseña incorrectos | Credenciales invalidas |
+| 401 | RUT o contraseña incorrectos | Credenciales invalidas o cuenta no activa |
 | 401 | RUT bloqueado temporalmente | 5 intentos fallidos contra el mismo RUT en 10 min → bloqueo 15 min |
 | 401 | IP bloqueada temporalmente | 5 intentos fallidos desde la misma IP en 5 min → bloqueo 15 min |
 | 429 | ThrottlerException | Excede 5 req/min |
@@ -101,7 +101,7 @@ Content-Type: application/json
 | Codigo | Mensaje | Causa |
 |---|---|---|
 | 400 | Validation failed | Campos invalidos (RUT, email, contraseña debil) |
-| 409 | El RUT ya esta registrado | RUT duplicado |
+| 409 | No se pudo completar el registro | RUT o email duplicado |
 | 429 | ThrottlerException | Excede 3 req/min |
 
 ---
@@ -127,7 +127,7 @@ Content-Type: application/json
 ```
 
 **Comportamiento interno:**
-- RUT registrado con email → genera token JWT `type: "reset"` (15 min), envia email con enlace
+- RUT registrado con email → genera token JWT `type: "reset"` (15 min), envia email con enlace (token en fragmento `#token=...`, no visible al servidor)
 - RUT registrado sin email → registra incidente en `intento_fallido`, no envia email
 - RUT no registrado → no hace nada, mismo mensaje generico
 
@@ -415,8 +415,11 @@ curl -X POST "$BASE_URL/admin/intentos-fallidos/desbloquear-ip" \
 - Password hasheada con bcrypt (salt rounds 10)
 - Validacion Zod en todos los DTOs
 - Reset token con claim `type: "reset"` para evitar reuso de token de sesion
+- Reset token enviado en fragmento de URL (`#token=...`) para no exponerlo en logs del servidor
+- Login rechaza cuentas con estado distinto a `'activo'` (mensaje generico identico)
 - Admin protegido con `X-API-Key`
 - CORS configurable via `CORS_ORIGIN`
+- Helmet con HSTS en produccion para headers de seguridad HTTP
 
 ## Archivos clave
 

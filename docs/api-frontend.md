@@ -43,10 +43,10 @@ El backend también setea una cookie `access_token` httpOnly (7 días). Para lla
 | 400 | `"RUT inválido — dígito verificador incorrecto"` | DV no coincide |
 | 401 | `"IP bloqueada temporalmente"` | 5 intentos desde misma IP en 5 min |
 | 401 | `"RUT bloqueado temporalmente"` | 5 intentos contra ese RUT en 10 min |
-| 401 | `"RUT o contraseña incorrectos"` | Credenciales inválidas |
+| 401 | `"RUT o contraseña incorrectos"` | Credenciales inválidas o cuenta no activa |
 | 429 | `"ThrottlerException: Too Many Requests"` | +5 req/min |
 
-> **Importante:** El error 401 por credenciales incorrectas no distingue entre RUT inexistente y contraseña errónea — siempre dice `"RUT o contraseña incorrectos"`.
+> **Importante:** El error 401 por credenciales incorrectas no distingue entre RUT inexistente, cuenta no activa, y contraseña errónea — siempre dice `"RUT o contraseña incorrectos"`.
 
 ---
 
@@ -99,8 +99,7 @@ POST /api/auth/register
 | 400 | `"Contraseña debe contener al menos una mayúscula"` | Falta mayúscula |
 | 400 | `"Contraseña debe contener al menos un número"` | Falta número |
 | 400 | `"Las contraseñas no coinciden"` | password ≠ password_confirmation |
-| 409 | `"El RUT ya está registrado"` | RUT duplicado |
-| 409 | `"El email ya está registrado"` | Email duplicado |
+| 409 | `"No se pudo completar el registro"` | RUT o email duplicado |
 | 429 | Rate limit | +3 req/min |
 
 ---
@@ -728,10 +727,10 @@ Todas las respuestas de error siguen este formato:
 | HTTP | Cuándo ocurre |
 |------|---------------|
 | 400 | Validación fallida (Zod). Revisar `message` para el campo específico. |
-| 401 | No autenticado, token expirado, sesión inactiva, IP/RUT bloqueado. Redirigir a login. |
-| 409 | Conflicto (RUT o email duplicado en registro). |
+| 401 | No autenticado, token expirado, sesión inactiva, IP/RUT bloqueado, o cuenta no activa. Redirigir a login. |
+| 409 | Conflicto (registro duplicado). |
 | 429 | Rate limit excedido. Esperar y reintentar. |
-| 500 | Error interno del servidor. |
+| 500 | `"Error interno del servidor"` — error inesperado. Contactar soporte. |
 
 ### Regla de oro para el frontend:
 
@@ -794,14 +793,14 @@ await fetch(`${API_URL}/auth/recuperar-password`, {
 // Siempre responde 200 con mensaje genérico
 
 // 2. El usuario recibe email, hace clic en el link
-// El link lleva a: /restablecer-password?token=eyJhbGciOi...
+// El link lleva a: /restablecer-password#token=eyJhbGciOi...
 
 // 3. Restablecer contraseña
 const resetRes = await fetch(`${API_URL}/auth/restablecer-password`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    token: new URLSearchParams(window.location.search).get('token'),
+    token: window.location.hash.replace('#token=', ''),
     password: 'NuevaClave1',
   }),
 });

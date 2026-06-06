@@ -59,10 +59,10 @@ El backend setea una cookie `access_token` httpOnly (7 dias). Para llamadas aute
 | 400 | `"RUT inválido — dígito verificador incorrecto"` | DV no coincide |
 | 401 | `"IP bloqueada temporalmente"` | +5 intentos desde misma IP |
 | 401 | `"RUT bloqueado temporalmente"` | +5 intentos contra ese RUT |
-| 401 | `"RUT o contraseña incorrectos"` | Credenciales invalidas |
+| 401 | `"RUT o contraseña incorrectos"` | Credenciales invalidas o cuenta no activa |
 | 429 | `"ThrottlerException: Too Many Requests"` | +5 req/min |
 
-> El error 401 por credenciales nunca distingue entre RUT inexistente y contrasena erronea — siempre dice `"RUT o contraseña incorrectos"`.
+> El error 401 por credenciales nunca distingue entre RUT inexistente, cuenta no activa, y contrasena erronea — siempre dice `"RUT o contraseña incorrectos"`.
 
 ---
 
@@ -122,8 +122,7 @@ El cliente se crea con `id_empresa=1` y `estado='activo'`. Si el registro es exi
 | 400 | `"Contraseña debe contener al menos una mayúscula"` | Falta mayuscula |
 | 400 | `"Contraseña debe contener al menos un número"` | Falta numero |
 | 400 | `"Las contraseñas no coinciden"` | password ≠ password_confirmation |
-| 409 | `"El RUT ya está registrado"` | RUT duplicado |
-| 409 | `"El email ya está registrado"` | Email duplicado |
+| 409 | `"No se pudo completar el registro"` | RUT o email duplicado |
 | 429 | Rate limit | +3 req/min |
 
 ---
@@ -200,7 +199,7 @@ Al cambiar la contrasena se invalidan todas las sesiones activas del cliente.
 | HTTP | Mensaje | Causa |
 |------|---------|-------|
 | 400 | `"Token inválido o expirado"` | Token JWT expiro o es invalido |
-| 400 | `"Token inválido"` | Token no es de tipo 'reset' |
+| 400 | `"Token inválido"` | Token no es de tipo 'reset' o audiencia incorrecta |
 | 400 | `"Contraseña debe tener al menos 8 caracteres"` | Muy corta |
 | 400 | `"Contraseña debe contener al menos una mayúscula"` | Falta mayuscula |
 | 400 | `"Contraseña debe contener al menos un número"` | Falta numero |
@@ -283,10 +282,10 @@ await fetch(`${API_URL}/auth/recuperar-password`, {
 // Siempre 200 — mostrar mensaje generico al usuario
 
 // 2. El usuario recibe email, hace clic en el link
-// El link lleva a: /restablecer-password?token=eyJhbGciOi...
+// El link lleva a: /restablecer-password#token=eyJhbGciOi...
 
 // 3. Restablecer
-const token = new URLSearchParams(window.location.search).get('token');
+const token = window.location.hash.replace('#token=', '');
 const res = await fetch(`${API_URL}/auth/restablecer-password`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
