@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { registerSchema } from "../utils/login-schema";
 import { cleanRut } from "../utils/login-schema";
+import { cleanTelefono } from "../utils/login-schema";
 import { api } from "../utils/api";
 import type { ApiError } from "../utils/api";
 import { useAuth } from "../_lib/auth";
@@ -11,6 +12,7 @@ import type { Cliente } from "../_lib/auth";
 import LoginBranding from "./LoginBranding";
 import RutInput from "./RutInput";
 import PasswordInput from "./PasswordInput";
+import TelefonoInput from "./TelefonoInput";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -34,11 +36,21 @@ export default function RegisterForm() {
   if (isLoading || isAuthenticated) return null;
 
   function validateField(field: string, value: string) {
-    const current = { nombreCompleto, email, telefono, rut, password, confirmPassword, [field]: value };
+    const current = {
+      nombreCompleto,
+      email,
+      telefono,
+      rut,
+      password,
+      confirmPassword,
+      [field]: value,
+    };
     const result = registerSchema.safeParse(current);
     if (!result.success) {
       const fieldError = result.error.issues.find(
-        (i) => i.path[0] === field || (field === "confirmPassword" && i.path[0] === "confirmPassword")
+        (i) =>
+          i.path[0] === field ||
+          (field === "confirmPassword" && i.path[0] === "confirmPassword"),
       );
       setErrors((prev) => ({
         ...prev,
@@ -81,10 +93,12 @@ export default function RegisterForm() {
           rut: cleanRut(result.data.rut),
           nombre_completo: result.data.nombreCompleto,
           email: result.data.email,
-          telefono: result.data.telefono ?? "",
+          telefono: result.data.telefono
+            ? cleanTelefono(result.data.telefono)
+            : "",
           password: result.data.password,
           password_confirmation: result.data.password,
-        }
+        },
       );
       login(data.cliente);
       router.push("/portal");
@@ -164,32 +178,15 @@ export default function RegisterForm() {
           )}
         </div>
 
-        <div>
-          <label
-            htmlFor="telefono"
-            className="mb-1.5 block text-sm font-medium text-[var(--color-foreground)]"
-          >
-            Teléfono
-          </label>
-          <input
-            id="telefono"
-            type="tel"
-            placeholder="+56912345678"
-            value={telefono}
-            onChange={(e) => {
-              setTelefono(e.target.value);
-              setErrors((prev) => ({ ...prev, telefono: "" }));
-            }}
-            onBlur={() => validateField("telefono", telefono)}
-            data-error={!!errors.telefono}
-            className={`${inputClass}
-              data-[error=false]:border-[var(--color-border)] data-[error=false]:bg-[var(--color-background)] data-[error=false]:text-[var(--color-foreground)] data-[error=false]:placeholder:text-[var(--color-muted)] data-[error=false]:focus-visible:outline data-[error=false]:focus-visible:outline-2 data-[error=false]:focus-visible:outline-offset-0 data-[error=false]:focus-visible:outline-[var(--color-primary)]
-              border-red-500 bg-red-50 text-[var(--color-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-red-500`}
-          />
-          {errors.telefono && (
-            <p className="mt-1 text-xs text-red-600">{errors.telefono}</p>
-          )}
-        </div>
+        <TelefonoInput
+          value={telefono}
+          error={errors.telefono}
+          onChange={(v) => {
+            setTelefono(v);
+            setErrors((prev) => ({ ...prev, telefono: "" }));
+          }}
+          onBlur={() => validateField("telefono", telefono)}
+        />
 
         <RutInput
           value={rut}
@@ -241,7 +238,10 @@ export default function RegisterForm() {
 
       <p className="mt-6 text-center text-xs text-[var(--color-muted)]">
         Al registrarte aceptas nuestros{" "}
-        <a href="#" className="text-[var(--color-primary)] underline hover:opacity-80">
+        <a
+          href="#"
+          className="text-[var(--color-primary)] underline hover:opacity-80"
+        >
           Términos y Condiciones
         </a>
       </p>

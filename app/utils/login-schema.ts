@@ -4,6 +4,10 @@ export function cleanRut(rut: string) {
   return rut.replace(/[^0-9kK]/g, "").toUpperCase();
 }
 
+export function cleanTelefono(telefono: string) {
+  return telefono.replace(/\s/g, "");
+}
+
 function validateRut(rut: string) {
   const cleaned = cleanRut(rut);
   if (cleaned.length < 3) return false;
@@ -31,7 +35,7 @@ function validateTelefonoChileno(telefono: string) {
   if (!/^\+56\d{9}$/.test(cleaned)) return false;
   const digits = cleaned.slice(3);
   const first = digits[0];
-  if (first === "9") return /^9[5-9]\d{7}$/.test(digits);
+  if (first === "9") return /^9\d{8}$/.test(digits);
   if (["2", "3", "4", "5", "6", "7", "8"].includes(first)) return true;
   return false;
 }
@@ -64,7 +68,7 @@ export const registerSchema = z
       .optional()
       .refine(
         (val) => !val || val === "" || validateTelefonoChileno(val),
-        "Teléfono chileno inválido"
+        "Teléfono chileno inválido",
       ),
     rut: z
       .string({ message: "El RUT es obligatorio" })
@@ -109,6 +113,30 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+export const changePasswordSchema = z
+  .object({
+    passwordActual: z
+      .string({ message: "La contraseña actual es requerida" })
+      .min(1, "La contraseña actual es requerida"),
+    passwordNuevo: z
+      .string({ message: "La nueva contraseña es obligatoria" })
+      .min(8, "Mínimo 8 caracteres")
+      .max(128, "La contraseña es demasiado larga")
+      .regex(/[A-Z]/, "Al menos 1 letra mayúscula")
+      .regex(/[0-9]/, "Al menos 1 número")
+      .regex(
+        /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+        "Al menos 1 carácter especial",
+      ),
+    passwordConfirmacion: z
+      .string({ message: "Debes confirmar la nueva contraseña" })
+      .min(1, "Debes confirmar la nueva contraseña"),
+  })
+  .refine((data) => data.passwordNuevo === data.passwordConfirmacion, {
+    message: "Las contraseñas no coinciden",
+    path: ["passwordConfirmacion"],
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -116,3 +144,5 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type RecoveryInput = z.infer<typeof recoverySchema>;
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

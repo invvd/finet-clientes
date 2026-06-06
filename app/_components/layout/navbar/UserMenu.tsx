@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { User, LayoutDashboard, ChevronDown, LogOut, AlertCircle } from "lucide-react";
+import { User, ChevronDown, LogOut, AlertCircle } from "lucide-react";
 import { useAuth } from "../../../_lib/auth";
 
 export default function UserMenu() {
@@ -63,43 +63,39 @@ export default function UserMenu() {
 
   return (
     <div ref={dropdownRef} className="relative">
-      <button
-        type="button"
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-        onClick={() => {
-          setIsOpen(!isOpen);
-          if (!isOpen) setLogoutError(false);
-        }}
-        className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-background)] hover:opacity-90 transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
-      >
-        <User size={16} aria-hidden />
-        <span className="max-w-[120px] truncate">
-          Hola, {cliente.nombre_completo.split(" ")[0]}
-        </span>
-        <ChevronDown
-          size={14}
-          className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-          aria-hidden
-        />
-      </button>
+      <div className="inline-flex items-center rounded-full bg-[var(--color-primary)] text-sm font-medium text-[var(--color-background)]">
+        <Link
+          href="/portal"
+          className="inline-flex items-center gap-1.5 rounded-full pl-4 py-2 hover:opacity-90 transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+        >
+          <User size={16} aria-hidden />
+          Portal Cliente
+        </Link>
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+          aria-label="Abrir menu de usuario"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+            if (!isOpen) setLogoutError(false);
+          }}
+          className="inline-flex items-center rounded-full pr-2 py-2 pl-0 hover:opacity-90 transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+        >
+          <ChevronDown
+            size={14}
+            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+            aria-hidden
+          />
+        </button>
+      </div>
 
       {isOpen && (
         <ul
           className="absolute right-0 top-full mt-1 min-w-[200px] rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-1 shadow-lg z-50"
           role="menu"
         >
-          <li role="none">
-            <Link
-              href="/portal"
-              role="menuitem"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--color-foreground)] hover:bg-[var(--color-surface)] transition-colors"
-            >
-              <LayoutDashboard size={16} aria-hidden />
-              Mi Portal
-            </Link>
-          </li>
           <li role="none">
             <Link
               href="/perfil"

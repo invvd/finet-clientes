@@ -8,12 +8,14 @@ export default function PasswordInput({
   id = "password",
   error,
   onBlur,
+  label = "Contraseña",
 }: {
   value: string;
   onChange: (value: string) => void;
   id?: string;
   error?: string;
   onBlur?: () => void;
+  label?: string;
 }) {
   const [show, setShow] = useState(false);
 
@@ -25,7 +27,7 @@ export default function PasswordInput({
         htmlFor={id}
         className="mb-1.5 block text-sm font-medium text-[var(--color-foreground)]"
       >
-        Contraseña
+        {label}
       </label>
       <div className="relative">
         <input
