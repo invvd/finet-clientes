@@ -79,17 +79,17 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-fin-500/20 bg-surface/80 p-8 shadow-2xl shadow-fin-500/10 backdrop-blur-xl sm:p-10">
+    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-8 shadow-sm sm:p-10">
       <LoginBranding />
 
       {expired && (
-        <div className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+        <div className="mb-5 rounded-lg border border-amber-500/20 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           Tu sesión fue cerrada por inactividad. Ingresa nuevamente.
         </div>
       )}
 
       {serverError && (
-        <div className="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="mb-5 rounded-lg border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-600">
           {serverError}
         </div>
       )}
@@ -115,16 +115,16 @@ export default function LoginForm() {
         />
 
         <div className="flex items-center justify-between text-sm">
-          <label className="flex cursor-pointer items-center gap-2 text-slate-400">
+          <label className="flex cursor-pointer items-center gap-2 text-[var(--color-muted)]">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-fin-500 outline-none ring-offset-slate-900 focus:ring-2 focus:ring-fin-400/30"
+              className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
             />
             Recordarme
           </label>
           <Link
             href="/recuperar-password"
-            className="text-fin-400 transition-colors hover:text-fin-300"
+            className="text-[var(--color-primary)] transition-colors hover:opacity-80"
           >
             ¿Olvidaste tu contraseña?
           </Link>
@@ -133,15 +133,15 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-linear-to-r from-fin-500 to-fin-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fin-500/25 transition-all duration-200 hover:from-fin-400 hover:to-fin-500 hover:shadow-fin-400/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--color-background)] shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Ingresando..." : "Ingresar"}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-xs text-slate-500">
+      <p className="mt-6 text-center text-xs text-[var(--color-muted)]">
         Al ingresar aceptas nuestros{" "}
-        <a href="#" className="text-slate-400 underline hover:text-slate-300">
+        <a href="#" className="text-[var(--color-primary)] underline hover:opacity-80">
           Términos y Condiciones
         </a>
       </p>

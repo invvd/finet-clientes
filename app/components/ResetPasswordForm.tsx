@@ -66,14 +66,14 @@ export default function ResetPasswordForm({ token }: Props) {
 
   if (done) {
     return (
-      <div className="rounded-2xl border border-fin-500/20 bg-surface/80 p-8 shadow-2xl shadow-fin-500/10 backdrop-blur-xl sm:p-10">
+      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-8 shadow-sm sm:p-10">
         <LoginBranding />
         <div className="mt-6 flex flex-col items-center text-center">
-          <CheckCircle2 size={40} className="text-fin-400" aria-hidden />
-          <h2 className="mt-4 text-lg font-semibold text-white">
+          <CheckCircle2 size={40} className="text-[var(--color-primary)]" aria-hidden />
+          <h2 className="mt-4 text-lg font-semibold text-[var(--color-foreground)]">
             Contraseña actualizada
           </h2>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[var(--color-muted)]">
             Tu contraseña ha sido restablecida exitosamente.
           </p>
           <Link
@@ -88,20 +88,20 @@ export default function ResetPasswordForm({ token }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-fin-500/20 bg-surface/80 p-8 shadow-2xl shadow-fin-500/10 backdrop-blur-xl sm:p-10">
+    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-8 shadow-sm sm:p-10">
       <LoginBranding />
 
       <div className="mt-6 text-center">
-        <h2 className="text-lg font-semibold text-white">
+        <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
           Nueva contraseña
         </h2>
-        <p className="mt-1.5 text-sm text-slate-400">
+        <p className="mt-1.5 text-sm text-[var(--color-muted)]">
           Ingresa tu nueva contraseña
         </p>
       </div>
 
       {serverError && (
-        <div className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="mt-5 rounded-lg border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-600">
           {serverError}
         </div>
       )}
@@ -129,7 +129,7 @@ export default function ResetPasswordForm({ token }: Props) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-linear-to-r from-fin-500 to-fin-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fin-500/25 transition-all duration-200 hover:from-fin-400 hover:to-fin-500 hover:shadow-fin-400/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--color-background)] shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Cambiando..." : "Cambiar contraseña"}
         </button>
@@ -138,7 +138,7 @@ export default function ResetPasswordForm({ token }: Props) {
       <p className="mt-6 text-center">
         <Link
           href="/inicio-sesion"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-300"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--color-muted)] transition-colors hover:text-[var(--color-foreground)]"
         >
           <ArrowLeft size={14} aria-hidden />
           Volver al inicio de sesión

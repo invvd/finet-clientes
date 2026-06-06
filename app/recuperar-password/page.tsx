@@ -18,7 +18,7 @@ export default function RecuperarPasswordPage() {
   if (isLoading || isAuthenticated) return null;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-surface p-4">
+    <main className="flex min-h-screen items-center justify-center bg-[var(--color-surface)] p-4">
       <div className="w-full max-w-md">
         <RecoveryForm />
       </div>

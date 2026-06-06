@@ -17,11 +17,13 @@ export default function PasswordInput({
 }) {
   const [show, setShow] = useState(false);
 
+  const hasError = error !== undefined && !!error;
+
   return (
     <div>
       <label
         htmlFor={id}
-        className="mb-1.5 block text-sm font-medium text-slate-300"
+        className="mb-1.5 block text-sm font-medium text-[var(--color-foreground)]"
       >
         Contraseña
       </label>
@@ -33,14 +35,19 @@ export default function PasswordInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
-          data-error={error !== undefined && !!error}
-          className={`w-full rounded-lg border bg-slate-800/50 px-4 py-2.5 pr-11 text-sm text-white placeholder-slate-500 outline-none transition-colors duration-200 focus:ring-2 
-            ${error !== undefined ? "data-[error=false]:border-slate-700/60 data-[error=false]:focus:border-fin-400/60 data-[error=false]:focus:ring-fin-400/20 border-red-500/60 focus:border-red-400/60 focus:ring-red-400/20" : "border-slate-700/60 focus:border-fin-400/60 focus:ring-fin-400/20"}`}
+          className={`w-full rounded-lg border px-4 py-2.5 pr-11 text-sm outline-none transition-colors duration-200
+            ${
+              error === undefined
+                ? "border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-primary)]"
+                : hasError
+                  ? "border-red-500 bg-red-50 text-[var(--color-foreground)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-red-500"
+                  : "border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-primary)]"
+            }`}
         />
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-300"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)] transition-colors hover:text-[var(--color-foreground)]"
           tabIndex={-1}
           aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
         >
@@ -83,7 +90,7 @@ export default function PasswordInput({
         </button>
       </div>
       {error && (
-        <p className="mt-1 text-xs text-red-400">{error}</p>
+        <p className="mt-1 text-xs text-red-600">{error}</p>
       )}
     </div>
   );
