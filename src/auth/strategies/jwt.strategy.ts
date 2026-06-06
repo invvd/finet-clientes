@@ -1,4 +1,5 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { Request } from 'express';
@@ -7,20 +8,41 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 interface JwtPayload {
   sub: number;
   rut: string;
+  type?: string;
+  aud?: string;
+  iss?: string;
 }
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private prisma: PrismaService) {
+  private readonly logger = new Logger(JwtStrategy.name);
+
+  constructor(
+    private prisma: PrismaService,
+    configService: ConfigService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET ?? 'fallback-secret',
+      secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
       passReqToCallback: true,
     });
   }
 
   async validate(req: Request, payload: JwtPayload) {
+    if (payload.type && payload.type !== 'access') {
+      this.logger.warn(
+        `JWT rejected: invalid type=${payload.type}, sub=${payload.sub}`,
+      );
+      throw new UnauthorizedException('Tipo de token invalido');
+    }
+    if (payload.aud && payload.aud !== process.env.FRONTEND_URL) {
+      this.logger.warn(
+        `JWT rejected: invalid aud=${payload.aud}, sub=${payload.sub}`,
+      );
+      throw new UnauthorizedException('Token audience invalido');
+    }
+
     const token =
       req.headers.authorization?.replace('Bearer ', '') ||
       (req.cookies as Record<string, string> | undefined)?.access_token;
@@ -34,6 +56,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       });
 
       if (!session) {
+        this.logger.warn(`Session expired: sub=${payload.sub}`);
         throw new UnauthorizedException('Sesión expirada por inactividad');
       }
 

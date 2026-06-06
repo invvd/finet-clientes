@@ -2,18 +2,28 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   const config = app.get(ConfigService);
 
+  const isProd = config.get<string>('NODE_ENV') === 'production';
+
+  app.use(helmet());
+  if (isProd) {
+    app.use(
+      helmet.hsts({ maxAge: 31536000, includeSubDomains: true }),
+    );
+  }
+
   app.use(cookieParser());
 
   app.setGlobalPrefix('api');
-  const isProd = config.get<string>('NODE_ENV') === 'production';
   if (isProd) {
     app.set('trust proxy', 1);
   }
@@ -34,7 +44,7 @@ async function bootstrap() {
         }
       : undefined,
   );
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(new AllExceptionsFilter(), new HttpExceptionFilter());
 
   const port = process.env.PORT ?? 4000;
   await app.listen(port);

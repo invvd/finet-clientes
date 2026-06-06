@@ -19,7 +19,11 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
 
         return {
           secret,
-          signOptions: { expiresIn: '7d' },
+          signOptions: {
+            expiresIn: '7d',
+            audience: config.get<string>('FRONTEND_URL'),
+            issuer: 'finet-clientes-backend',
+          },
         };
       },
     }),

@@ -1,5 +1,6 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
@@ -30,6 +31,12 @@ describe('JwtStrategy', () => {
             cliente: {
               findUnique: jest.fn(),
             },
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            getOrThrow: jest.fn().mockReturnValue('test-jwt-secret'),
           },
         },
       ],

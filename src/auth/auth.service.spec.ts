@@ -183,7 +183,7 @@ describe('AuthService', () => {
           '0.0.0.0',
           'otro@test.cl',
         ),
-      ).rejects.toThrow('El RUT ya está registrado');
+      ).rejects.toThrow('No se pudo completar el registro');
     });
 
     it('throw ConflictException when email already exists', async () => {
@@ -198,7 +198,7 @@ describe('AuthService', () => {
           '0.0.0.0',
           'juan@test.cl',
         ),
-      ).rejects.toThrow('El email ya está registrado');
+      ).rejects.toThrow('No se pudo completar el registro');
     });
 
     it('create session after register', async () => {

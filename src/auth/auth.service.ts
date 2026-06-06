@@ -33,6 +33,9 @@ export class AuthService {
     });
 
     if (ipBloqueo?.bloqueado_hasta) {
+      this.logger.warn(
+        `Login rejected: IP ${ip} blocked until ${ipBloqueo.bloqueado_hasta.toISOString()}`,
+      );
       throw new UnauthorizedException('IP bloqueada temporalmente');
     }
 
@@ -45,6 +48,9 @@ export class AuthService {
     });
 
     if (bloqueo?.bloqueado_hasta) {
+      this.logger.warn(
+        `Login rejected: RUT ${rutLimpio} blocked until ${bloqueo.bloqueado_hasta.toISOString()}`,
+      );
       throw new UnauthorizedException('RUT bloqueado temporalmente');
     }
 
@@ -53,11 +59,22 @@ export class AuthService {
     });
 
     if (!cliente) {
+      this.logger.warn(`Login failed: RUT ${rutLimpio} not found, IP ${ip}`);
       await this.registrarIntentoFallido(rutLimpio, ip);
       throw new UnauthorizedException('RUT o contraseña incorrectos');
     }
 
+    if (cliente.estado !== 'activo') {
+      this.logger.warn(
+        `Login rejected: RUT ${rutLimpio} estado=${cliente.estado}, IP ${ip}`,
+      );
+      throw new UnauthorizedException('RUT o contraseña incorrectos');
+    }
+
     if (!cliente.password_portal_hash) {
+      this.logger.warn(
+        `Login failed: RUT ${rutLimpio} has no password, IP ${ip}`,
+      );
       await this.registrarIntentoFallido(
         rutLimpio,
         ip,
@@ -72,6 +89,9 @@ export class AuthService {
     );
 
     if (!passwordValida) {
+      this.logger.warn(
+        `Login failed: RUT ${rutLimpio} wrong password, IP ${ip}`,
+      );
       await this.registrarIntentoFallido(
         rutLimpio,
         ip,
@@ -84,7 +104,11 @@ export class AuthService {
       where: { rut_intentado: rutLimpio },
     });
 
-    const payload = { sub: cliente.id_cliente, rut: cliente.rut };
+    const payload = {
+      sub: cliente.id_cliente,
+      rut: cliente.rut,
+      type: 'access',
+    };
     const token = await this.jwtService.signAsync(payload);
 
     await this.invalidarSesionesAnteriores(cliente.id_cliente);
@@ -98,6 +122,8 @@ export class AuthService {
         ip_origen: ip,
       },
     });
+
+    this.logger.log(`Login success: RUT ${rutLimpio}, IP ${ip}`);
 
     return {
       access_token: token,
@@ -126,7 +152,10 @@ export class AuthService {
     });
 
     if (existenteRut) {
-      throw new ConflictException('El RUT ya está registrado');
+      this.logger.warn(
+        `Register failed: RUT ${rutLimpio} already exists, IP ${ip}`,
+      );
+      throw new ConflictException('No se pudo completar el registro');
     }
 
     const existenteEmail = await this.prisma.cliente.findFirst({
@@ -134,7 +163,8 @@ export class AuthService {
     });
 
     if (existenteEmail) {
-      throw new ConflictException('El email ya está registrado');
+      this.logger.warn(`Register failed: email already in use, IP ${ip}`);
+      throw new ConflictException('No se pudo completar el registro');
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -217,7 +247,7 @@ export class AuthService {
       });
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      const link = `${frontendUrl}/restablecer-password?token=${token}`;
+      const link = `${frontendUrl}/restablecer-password#token=${token}`;
 
       try {
         await this.mailService.sendPasswordReset(
@@ -258,6 +288,7 @@ export class AuthService {
       data: { password_portal_hash: passwordHash },
     });
 
+    this.logger.log(`Password reset completed for cliente id=${payload.sub}`);
     await this.invalidarSesionesAnteriores(payload.sub);
 
     if (cliente.email) {
@@ -328,6 +359,18 @@ export class AuthService {
       bloquearRut || bloquearIp
         ? new Date(ahora.getTime() + 15 * 60 * 1000)
         : null;
+
+    if (bloquearHasta) {
+      const motivo = [
+        bloquearRut && `RUT ${rutLimpio}`,
+        bloquearIp && `IP ${ip}`,
+      ]
+        .filter(Boolean)
+        .join(' y ');
+      this.logger.warn(
+        `Brute force block: ${motivo} bloqueado hasta ${bloquearHasta.toISOString()}`,
+      );
+    }
 
     await this.prisma.intento_fallido.create({
       data: {

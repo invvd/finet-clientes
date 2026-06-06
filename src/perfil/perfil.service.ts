@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -15,6 +16,8 @@ import {
 
 @Injectable()
 export class PerfilService {
+  private readonly logger = new Logger(PerfilService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getPerfil(idCliente: number): Promise<PerfilResponseDto> {
@@ -207,6 +210,8 @@ export class PerfilService {
       where: { id_cliente: idCliente },
       data: { password_portal_hash: await bcrypt.hash(dto.password_nuevo, 10) },
     });
+
+    this.logger.log(`Password changed for cliente id=${idCliente}, IP ${ip}`);
 
     await this.prisma.log_auditoria.create({
       data: {

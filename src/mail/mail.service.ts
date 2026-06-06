@@ -42,7 +42,7 @@ export class MailService {
       html,
     });
 
-    this.logger.log(`Password reset email sent to ${email}`);
+    this.logger.log('Password reset email sent');
   }
 
   async sendPasswordChanged(email: string, nombre: string) {
@@ -59,7 +59,7 @@ export class MailService {
       html,
     });
 
-    this.logger.log(`Password changed email sent to ${email}`);
+    this.logger.log('Password changed email sent');
   }
 
   private resetTemplate(nombre: string, link: string): string {
