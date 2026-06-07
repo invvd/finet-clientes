@@ -1,0 +1,347 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import {
+  LayoutDashboard,
+  Wifi,
+  AlertCircle,
+  RefreshCw,
+  Zap,
+} from "lucide-react";
+import { useAuth } from "../_lib/auth";
+import { api } from "../utils/api";
+
+type Contrato = {
+  id_contrato: number;
+  estado: string;
+  fecha_inicio: string;
+  dia_vencimiento: number;
+  plan: {
+    id_plan: number;
+    nombre_comercial: string;
+    tipo_plan: string;
+    velocidad_mbps: number;
+    precio_mensual: number;
+  } | null;
+};
+
+type Factura = {
+  id_factura: number;
+  periodo: string;
+  monto: number;
+  fecha_limite_pago: string;
+  estado: string;
+  dias_vencida: number | null;
+};
+
+type Ticket = {
+  id_ticket: number;
+  codigo_seguimiento: string;
+  estado: string;
+  prioridad: string;
+  descripcion: string;
+  fecha_creacion: string;
+  categoria: string;
+};
+
+type PanelData = {
+  cliente: {
+    id_cliente: number;
+    nombre_completo: string;
+    rut: string;
+    email: string;
+    telefono: string;
+  };
+  contratos: Contrato[];
+  resumen_deuda: {
+    tiene_deuda: boolean;
+    saldo_total: number;
+    facturas_pendientes: Factura[];
+  };
+  tickets_recientes: Ticket[];
+};
+
+function formatPrecio(precio: number) {
+  return `$${precio.toLocaleString("es-CL")}`;
+}
+
+function formatFechaCorta(iso: string) {
+  return new Date(iso).toLocaleDateString("es-CL", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function estadoBadge(estado: string) {
+  const map: Record<string, { label: string; className: string }> = {
+    activo: {
+      label: "Activo",
+      className: "bg-green-100 text-green-700 border-green-200",
+    },
+    suspendido: {
+      label: "Suspendido",
+      className: "bg-amber-100 text-amber-700 border-amber-200",
+    },
+    cortado: {
+      label: "Cortado",
+      className: "bg-red-100 text-red-700 border-red-200",
+    },
+    inactivo: {
+      label: "Inactivo",
+      className: "bg-gray-100 text-gray-600 border-gray-200",
+    },
+  };
+  return (
+    map[estado] ?? {
+      label: estado,
+      className: "bg-gray-100 text-gray-600 border-gray-200",
+    }
+  );
+}
+
+export default function PortalPage() {
+  const { cliente: authCliente } = useAuth();
+  const [data, setData] = useState<PanelData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const fetchPanel = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+
+    try {
+      const json = await api.get<PanelData>("/portal/panel");
+      setData(json);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => fetchPanel(), 0);
+    return () => clearTimeout(t);
+  }, [fetchPanel]);
+
+  const nombre =
+    data?.cliente.nombre_completo ?? authCliente?.nombre_completo ?? "";
+
+  return (
+    <div className="max-w-4xl">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+          <LayoutDashboard size={20} aria-hidden />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+            Bienvenido{nombre ? `, ${nombre.split(" ")[0]}` : ""}
+          </h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            Resumen de tus servicios
+          </p>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="border border-[var(--color-border)] rounded-xl p-6 bg-[var(--color-background)] animate-pulse"
+            >
+              <div className="h-3 w-24 rounded bg-[var(--color-border)] mb-3" />
+              <div className="h-8 w-32 rounded bg-[var(--color-border)] mb-2" />
+              <div className="h-4 w-20 rounded bg-[var(--color-border)]" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <div className="border border-red-500/20 bg-red-50 rounded-xl p-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle
+              size={20}
+              className="text-red-500 mt-0.5 shrink-0"
+              aria-hidden
+            />
+            <div>
+              <p className="text-sm font-medium text-red-700">
+                No se pudo cargar la información
+              </p>
+              <p className="mt-1 text-sm text-red-600">
+                El estado de tus servicios no pudo obtenerse en este momento.
+              </p>
+              <button
+                type="button"
+                onClick={fetchPanel}
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-red-700 hover:text-red-800 transition-colors"
+              >
+                <RefreshCw size={14} aria-hidden />
+                Reintentar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {data && !loading && (
+        <>
+          {/* Contratos */}
+          {data.contratos.length === 0 ? (
+            <div className="border border-[var(--color-border)] rounded-xl p-8 bg-[var(--color-background)] text-center">
+              <Wifi
+                size={32}
+                className="mx-auto text-[var(--color-muted)]"
+                aria-hidden
+              />
+              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+                Aún no tienes servicios contratados
+              </p>
+              <p className="mt-1 text-sm text-[var(--color-muted)]">
+                Contrata un plan para empezar.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {data.contratos.map((c) => {
+                const badge = estadoBadge(c.estado);
+                return (
+                  <div
+                    key={c.id_contrato}
+                    className="border border-[var(--color-border)] rounded-xl p-6 bg-[var(--color-background)]"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+                        Mi Plan
+                      </p>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${badge.className}`}
+                      >
+                        {badge.label}
+                      </span>
+                    </div>
+                    {c.plan ? (
+                      <>
+                        <p className="text-lg font-semibold text-[var(--color-foreground)]">
+                          {c.plan.nombre_comercial}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Zap
+                            size={14}
+                            className="text-[var(--color-muted)]"
+                            aria-hidden
+                          />
+                          <span className="text-sm text-[var(--color-muted)]">
+                            {c.plan.velocidad_mbps} Mbps
+                          </span>
+                        </div>
+                        <p className="mt-3 text-2xl font-extrabold text-[var(--color-foreground)]">
+                          {formatPrecio(c.plan.precio_mensual)}
+                          <span className="text-sm font-normal text-[var(--color-muted)]">
+                            /mes
+                          </span>
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-[var(--color-muted)]">
+                        Sin plan asociado
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Deuda + Tickets summary row */}
+          <div className="grid gap-4 sm:grid-cols-2 mt-4">
+            <div className="border border-[var(--color-border)] rounded-xl p-6 bg-[var(--color-background)]">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-3">
+                Mi Deuda
+              </p>
+              {data.resumen_deuda.tiene_deuda ? (
+                (() => {
+                  const masProxima = data.resumen_deuda.facturas_pendientes
+                    .filter((f) => f.fecha_limite_pago)
+                    .sort(
+                      (a, b) =>
+                        new Date(a.fecha_limite_pago).getTime() -
+                        new Date(b.fecha_limite_pago).getTime(),
+                    )[0];
+
+                  return (
+                    <>
+                      <p className="text-3xl font-extrabold text-red-600">
+                        {formatPrecio(data.resumen_deuda.saldo_total)}
+                      </p>
+                      <p className="mt-1 text-sm text-[var(--color-muted)]">
+                        {data.resumen_deuda.facturas_pendientes.length} factura
+                        {data.resumen_deuda.facturas_pendientes.length !== 1
+                          ? "s"
+                          : ""}{" "}
+                        pendiente
+                        {data.resumen_deuda.facturas_pendientes.length !== 1
+                          ? "s"
+                          : ""}
+                      </p>
+                      {masProxima && (
+                        <p className="mt-1 text-xs text-[var(--color-muted)]">
+                          {masProxima.estado === "vencida"
+                            ? `Vencida: ${formatFechaCorta(masProxima.fecha_limite_pago)}`
+                            : `Vence: ${formatFechaCorta(masProxima.fecha_limite_pago)}`}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <p className="text-lg font-semibold text-green-600">
+                    Estás al día
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                    Sin facturas pendientes
+                  </p>
+                </>
+              )}
+            </div>
+            <div className="border border-[var(--color-border)] rounded-xl p-6 bg-[var(--color-background)]">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-3">
+                Tickets Recientes
+              </p>
+              {data.tickets_recientes.length === 0 ? (
+                <>
+                  <p className="text-lg font-semibold text-[var(--color-foreground)]">
+                    Sin tickets
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                    No tienes solicitudes de soporte
+                  </p>
+                </>
+              ) : (
+                <ul className="space-y-2">
+                  {data.tickets_recientes.map((t) => (
+                    <li key={t.id_ticket} className="text-sm">
+                      <span className="font-medium text-[var(--color-foreground)]">
+                        {t.codigo_seguimiento}
+                      </span>
+                      <span className="text-[var(--color-muted)]">
+                        {" "}
+                        — {t.estado}
+                      </span>
+                      <p className="text-xs text-[var(--color-muted)] truncate">
+                        {t.descripcion}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
