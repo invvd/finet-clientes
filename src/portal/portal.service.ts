@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   HttpException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -16,6 +18,8 @@ import {
 
 @Injectable()
 export class PortalService {
+  private readonly logger = new Logger(PortalService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   // Estados válidos según RF-20 y CU-23
@@ -44,18 +48,48 @@ export class PortalService {
       );
     }
 
-    // CU-23 Excepción 3: registrar estados no reconocidos por la regla de negocio
+    // CU-23 Excepción 3: validar que todos los estados sean reconocidos
+    const estadosNoReconocidos: { id_contrato: number; estado: string }[] = [];
+
     for (const c of contratos) {
       if (!this.ESTADOS_CONTRATO_VALIDOS.includes(c.estado)) {
-        await this.prisma.log_auditoria.create({
-          data: {
-            accion: 'ESTADO_CONTRATO_INVALIDO',
-            entidad_afectada: 'contrato',
-            id_entidad_afectada: c.id_contrato,
-            valor_anterior: { estado: c.estado },
-          },
+        estadosNoReconocidos.push({
+          id_contrato: c.id_contrato,
+          estado: c.estado,
         });
+
+        // Registrar en log de auditoría para revisión administrativa
+        try {
+          await this.prisma.log_auditoria.create({
+            data: {
+              accion: 'ESTADO_CONTRATO_NO_RECONOCIDO',
+              entidad_afectada: 'contrato',
+              id_entidad_afectada: c.id_contrato,
+              valor_anterior: { estado_recibido: c.estado },
+              valor_nuevo: {
+                estados_permitidos: this.ESTADOS_CONTRATO_VALIDOS,
+              },
+            },
+          });
+        } catch (auditError) {
+          this.logger.error(
+            `No se pudo registrar auditoría para estado no reconocido del contrato ${c.id_contrato}`,
+            auditError,
+          );
+        }
       }
+    }
+
+    if (estadosNoReconocidos.length > 0) {
+      const ids = estadosNoReconocidos
+        .map((e) => `#${e.id_contrato} (${e.estado})`)
+        .join(', ');
+      this.logger.warn(
+        `Estados de contrato no reconocidos para cliente ${idCliente}: ${ids}`,
+      );
+      throw new BadRequestException(
+        `El estado operativo de algunos contratos no es reconocido por el sistema. Contacte al administrador. Contratos afectados: ${ids}`,
+      );
     }
 
     return contratos.map((c) => ({
@@ -158,14 +192,18 @@ export class PortalService {
   //CU-27 / CU-28: Estado de deuda //
   // tiene_deuda = false → el frontend muestra "cuenta al día" // tiene_deuda = true → el frontend muestra el saldo y detalle.
   async getResumenDeuda(idCliente: number): Promise<ResumenDeudaDto> {
-    // Traer todos los contratos del cliente para buscar sus facturas
     const contratos = await this.prisma.contrato.findMany({
       where: { id_cliente: idCliente },
       select: { id_contrato: true },
     });
 
     if (!contratos.length) {
-      return { tiene_deuda: false, saldo_total: 0, facturas_pendientes: [] };
+      return {
+        tiene_deuda: false,
+        saldo_total: 0,
+        saldo_confirmado: true,
+        facturas_pendientes: [],
+      };
     }
 
     const idContratos = contratos.map((c) => c.id_contrato);
@@ -198,16 +236,38 @@ export class PortalService {
 
     const saldo_total = facturasMapeadas.reduce((acc, f) => acc + f.monto, 0);
 
-    // CU-27 Excepción 3: saldo negativo indica inconsistencia de datos
+    // CU-27 Excepción 3: saldo inconsistente o inválido
     if (saldo_total < 0) {
-      throw new InternalServerErrorException(
-        'Saldo inconsistente. Contacte al administrador.',
+      this.logger.error(
+        `Saldo inconsistente (negativo: ${saldo_total}) para cliente ${idCliente}`,
       );
+      try {
+        await this.prisma.log_auditoria.create({
+          data: {
+            accion: 'SALDO_INCONSISTENTE',
+            entidad_afectada: 'cliente',
+            id_entidad_afectada: idCliente,
+            valor_anterior: { saldo_total },
+          },
+        });
+      } catch {
+        this.logger.error(
+          `No se pudo registrar auditoría de saldo inconsistente para cliente ${idCliente}`,
+        );
+      }
+
+      return {
+        tiene_deuda: false,
+        saldo_total: 0,
+        saldo_confirmado: false,
+        facturas_pendientes: [],
+      };
     }
 
     return {
       tiene_deuda: facturasMapeadas.length > 0,
       saldo_total,
+      saldo_confirmado: true,
       facturas_pendientes: facturasMapeadas,
     };
   }

@@ -39,6 +39,7 @@ export interface ContratoResumenDto {
 export interface ResumenDeudaDto {
   tiene_deuda: boolean;
   saldo_total: number; // suma de facturas pendientes
+  saldo_confirmado: boolean; // false si el saldo es inconsistente o inválido (CU-27 Excepción 3)
   facturas_pendientes: FacturaPendienteDto[];
 }
 

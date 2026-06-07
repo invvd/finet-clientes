@@ -6,6 +6,8 @@ import {
   Res,
   UseGuards,
   HttpCode,
+  Logger,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -27,6 +29,8 @@ import { CurrentClient } from './decorators/current-client.decorator.js';
  */
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private authService: AuthService) {}
 
   /**
@@ -218,9 +222,13 @@ export class AuthController {
    * El token se extrae del header Authorization o de la cookie access_token.
    * Si no hay token o el cliente no está autenticado, igualmente limpia la cookie.
    *
+   * CU-02 Excepción 1: si falla la conexión al sistema, se informa que no fue
+   * posible cerrar la sesión y se invita a reintentar.
+   *
    * Errores:
    *   401 - Sesión expirada por inactividad
    *   401 - Token JWT inválido
+   *   503 - No se pudo cerrar la sesión (error de conexión)
    */
   @Post('logout')
   @UseGuards(JwtAuthGuard)
@@ -233,9 +241,22 @@ export class AuthController {
     const token =
       req.headers.authorization?.replace('Bearer ', '') ||
       (req.cookies as Record<string, string> | undefined)?.access_token;
+
     if (token && cliente?.id_cliente) {
-      await this.authService.logout(cliente.id_cliente, token);
+      try {
+        await this.authService.logout(cliente.id_cliente, token);
+      } catch (error) {
+        this.logger.error(
+          `Error al cerrar sesión del cliente ${cliente.id_cliente}`,
+          error,
+        );
+        res.clearCookie('access_token', { path: '/' });
+        throw new ServiceUnavailableException(
+          'No fue posible cerrar la sesión. Por favor, reintente.',
+        );
+      }
     }
+
     res.clearCookie('access_token', { path: '/' });
     return { message: 'Sesión cerrada exitosamente' };
   }

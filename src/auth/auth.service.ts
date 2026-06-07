@@ -11,9 +11,92 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { cleanRut } from '../common/utils/rut.js';
 
+interface IntentoFallidoMemoria {
+  rut_intentado: string;
+  ip_address: string;
+  timestamp: Date;
+  bloqueado_hasta: Date | null;
+}
+
+/**
+ * Fallback en memoria para mantener el control de bloqueo por fuerza bruta
+ * cuando la base de datos no está disponible (CU-05 Excepción 1).
+ *
+ * Los registros expiran automáticamente después de 30 minutos.
+ */
+class BruteForceFallback {
+  private intentos: IntentoFallidoMemoria[] = [];
+  private readonly TTL = 30 * 60 * 1000; // 30 min
+
+  limpiarExpirados(): void {
+    const ahora = new Date();
+    const limite = new Date(ahora.getTime() - this.TTL);
+    this.intentos = this.intentos.filter((i) => i.timestamp > limite);
+  }
+
+  estaBloqueado(rut: string, ip: string): { ip: boolean; rut: boolean } {
+    this.limpiarExpirados();
+    const ahora = new Date();
+    const ipBloqueada = this.intentos.some(
+      (i) =>
+        i.ip_address === ip && i.bloqueado_hasta && i.bloqueado_hasta > ahora,
+    );
+    const rutBloqueado = this.intentos.some(
+      (i) =>
+        i.rut_intentado === rut &&
+        i.bloqueado_hasta &&
+        i.bloqueado_hasta > ahora,
+    );
+    return { ip: ipBloqueada, rut: rutBloqueado };
+  }
+
+  registrarIntento(
+    rut: string,
+    ip: string,
+  ): {
+    bloquearRut: boolean;
+    bloquearIp: boolean;
+    bloquearHasta: Date | null;
+  } {
+    this.limpiarExpirados();
+    const ahora = new Date();
+
+    const ventanaRut = new Date(ahora.getTime() - 10 * 60 * 1000);
+    const intentosRut = this.intentos.filter(
+      (i) => i.rut_intentado === rut && i.timestamp >= ventanaRut,
+    ).length;
+
+    const ventanaIp = new Date(ahora.getTime() - 5 * 60 * 1000);
+    const intentosIp = this.intentos.filter(
+      (i) => i.ip_address === ip && i.timestamp >= ventanaIp,
+    ).length;
+
+    const bloquearRut = intentosRut + 1 >= 5;
+    const bloquearIp = intentosIp + 1 >= 5;
+    const bloquearHasta =
+      bloquearRut || bloquearIp
+        ? new Date(ahora.getTime() + 15 * 60 * 1000)
+        : null;
+
+    this.intentos.push({
+      rut_intentado: rut,
+      ip_address: ip,
+      timestamp: ahora,
+      bloqueado_hasta: bloquearHasta,
+    });
+
+    return { bloquearRut, bloquearIp, bloquearHasta };
+  }
+
+  limpiarBloqueoRut(rut: string): void {
+    this.intentos = this.intentos.filter((i) => !(i.rut_intentado === rut));
+  }
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly fallback = new BruteForceFallback();
 
   constructor(
     private prisma: PrismaService,
@@ -24,34 +107,57 @@ export class AuthService {
   async login(rut: string, password: string, ip: string) {
     const rutLimpio = cleanRut(rut);
 
-    const ipBloqueo = await this.prisma.intento_fallido.findFirst({
-      where: {
-        ip_address: ip,
-        bloqueado_hasta: { gt: new Date() },
-      },
-      orderBy: { bloqueado_hasta: 'desc' },
-    });
+    // Verificar bloqueo de IP y RUT — con fallback en memoria (CU-05 Excepción 1)
+    try {
+      const ipBloqueo = await this.prisma.intento_fallido.findFirst({
+        where: {
+          ip_address: ip,
+          bloqueado_hasta: { gt: new Date() },
+        },
+        orderBy: { bloqueado_hasta: 'desc' },
+      });
 
-    if (ipBloqueo?.bloqueado_hasta) {
+      if (ipBloqueo?.bloqueado_hasta) {
+        this.logger.warn(
+          `Login rejected: IP ${ip} blocked until ${ipBloqueo.bloqueado_hasta.toISOString()}`,
+        );
+        throw new UnauthorizedException('IP bloqueada temporalmente');
+      }
+
+      const bloqueo = await this.prisma.intento_fallido.findFirst({
+        where: {
+          rut_intentado: rutLimpio,
+          bloqueado_hasta: { gt: new Date() },
+        },
+        orderBy: { bloqueado_hasta: 'desc' },
+      });
+
+      if (bloqueo?.bloqueado_hasta) {
+        this.logger.warn(
+          `Login rejected: RUT ${rutLimpio} blocked until ${bloqueo.bloqueado_hasta.toISOString()}`,
+        );
+        throw new UnauthorizedException('RUT bloqueado temporalmente');
+      }
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+
+      // CU-05 Excepción 1: DB no disponible → usar fallback en memoria
       this.logger.warn(
-        `Login rejected: IP ${ip} blocked until ${ipBloqueo.bloqueado_hasta.toISOString()}`,
+        `DB no disponible para verificar bloqueos — usando fallback en memoria`,
       );
-      throw new UnauthorizedException('IP bloqueada temporalmente');
-    }
+      const bloqueoMemoria = this.fallback.estaBloqueado(rutLimpio, ip);
 
-    const bloqueo = await this.prisma.intento_fallido.findFirst({
-      where: {
-        rut_intentado: rutLimpio,
-        bloqueado_hasta: { gt: new Date() },
-      },
-      orderBy: { bloqueado_hasta: 'desc' },
-    });
+      if (bloqueoMemoria.ip) {
+        this.logger.warn(`Login rejected (fallback): IP ${ip} bloqueada`);
+        throw new UnauthorizedException('IP bloqueada temporalmente');
+      }
 
-    if (bloqueo?.bloqueado_hasta) {
-      this.logger.warn(
-        `Login rejected: RUT ${rutLimpio} blocked until ${bloqueo.bloqueado_hasta.toISOString()}`,
-      );
-      throw new UnauthorizedException('RUT bloqueado temporalmente');
+      if (bloqueoMemoria.rut) {
+        this.logger.warn(
+          `Login rejected (fallback): RUT ${rutLimpio} bloqueado`,
+        );
+        throw new UnauthorizedException('RUT bloqueado temporalmente');
+      }
     }
 
     const cliente = await this.prisma.cliente.findUnique({
@@ -100,9 +206,14 @@ export class AuthService {
       throw new UnauthorizedException('RUT o contraseña incorrectos');
     }
 
-    await this.prisma.intento_fallido.deleteMany({
-      where: { rut_intentado: rutLimpio },
-    });
+    // Login exitoso: limpiar intentos fallidos del RUT
+    try {
+      await this.prisma.intento_fallido.deleteMany({
+        where: { rut_intentado: rutLimpio },
+      });
+    } catch {
+      this.fallback.limpiarBloqueoRut(rutLimpio);
+    }
 
     const payload = {
       sub: cliente.id_cliente,
@@ -337,49 +448,69 @@ export class AuthService {
   ) {
     const ahora = new Date();
 
-    const ventanaRut = new Date(ahora.getTime() - 10 * 60 * 1000);
-    const intentosRut = await this.prisma.intento_fallido.count({
-      where: {
-        rut_intentado: rutLimpio,
-        timestamp: { gte: ventanaRut },
-      },
-    });
+    try {
+      const ventanaRut = new Date(ahora.getTime() - 10 * 60 * 1000);
+      const intentosRut = await this.prisma.intento_fallido.count({
+        where: {
+          rut_intentado: rutLimpio,
+          timestamp: { gte: ventanaRut },
+        },
+      });
 
-    const ventanaIp = new Date(ahora.getTime() - 5 * 60 * 1000);
-    const intentosIp = await this.prisma.intento_fallido.count({
-      where: {
-        ip_address: ip,
-        timestamp: { gte: ventanaIp },
-      },
-    });
+      const ventanaIp = new Date(ahora.getTime() - 5 * 60 * 1000);
+      const intentosIp = await this.prisma.intento_fallido.count({
+        where: {
+          ip_address: ip,
+          timestamp: { gte: ventanaIp },
+        },
+      });
 
-    const bloquearRut = intentosRut + 1 >= 5;
-    const bloquearIp = intentosIp + 1 >= 5;
-    const bloquearHasta =
-      bloquearRut || bloquearIp
-        ? new Date(ahora.getTime() + 15 * 60 * 1000)
-        : null;
+      const bloquearRut = intentosRut + 1 >= 5;
+      const bloquearIp = intentosIp + 1 >= 5;
+      const bloquearHasta =
+        bloquearRut || bloquearIp
+          ? new Date(ahora.getTime() + 15 * 60 * 1000)
+          : null;
 
-    if (bloquearHasta) {
-      const motivo = [
-        bloquearRut && `RUT ${rutLimpio}`,
-        bloquearIp && `IP ${ip}`,
-      ]
-        .filter(Boolean)
-        .join(' y ');
+      if (bloquearHasta) {
+        const motivo = [
+          bloquearRut && `RUT ${rutLimpio}`,
+          bloquearIp && `IP ${ip}`,
+        ]
+          .filter(Boolean)
+          .join(' y ');
+        this.logger.warn(
+          `Brute force block: ${motivo} bloqueado hasta ${bloquearHasta.toISOString()}`,
+        );
+      }
+
+      await this.prisma.intento_fallido.create({
+        data: {
+          rut_intentado: rutLimpio,
+          id_empresa: idEmpresa ?? undefined,
+          ip_address: ip,
+          timestamp: ahora,
+          bloqueado_hasta: bloquearHasta ?? undefined,
+        },
+      });
+    } catch {
+      // CU-05 Excepción 1: DB no disponible → registrar en fallback en memoria
       this.logger.warn(
-        `Brute force block: ${motivo} bloqueado hasta ${bloquearHasta.toISOString()}`,
+        `DB no disponible para registrar intento fallido — usando fallback en memoria`,
       );
-    }
+      const resultado = this.fallback.registrarIntento(rutLimpio, ip);
 
-    await this.prisma.intento_fallido.create({
-      data: {
-        rut_intentado: rutLimpio,
-        id_empresa: idEmpresa ?? undefined,
-        ip_address: ip,
-        timestamp: ahora,
-        bloqueado_hasta: bloquearHasta ?? undefined,
-      },
-    });
+      if (resultado.bloquearHasta) {
+        const motivo = [
+          resultado.bloquearRut && `RUT ${rutLimpio}`,
+          resultado.bloquearIp && `IP ${ip}`,
+        ]
+          .filter(Boolean)
+          .join(' y ');
+        this.logger.warn(
+          `Brute force block (fallback): ${motivo} bloqueado hasta ${resultado.bloquearHasta.toISOString()}`,
+        );
+      }
+    }
   }
 }

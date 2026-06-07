@@ -9,6 +9,7 @@ export const intentosFallidosQuerySchema = z.object({
     }),
   ip: z.string().optional(),
   bloqueados: z.enum(['true', 'false']).optional(),
+  resumen: z.enum(['true', 'false']).optional(),
   desde: z.string().optional(),
   hasta: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),

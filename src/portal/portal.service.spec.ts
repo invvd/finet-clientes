@@ -1,6 +1,7 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  BadRequestException,
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -79,21 +80,26 @@ describe('PortalService', () => {
       );
     });
 
-    it('registra en log_auditoria si el estado no es reconocido (CU-23 Excepción 3)', async () => {
+    it('lanza BadRequestException y registra en log_auditoria si el estado no es reconocido (CU-23 Excepción 3)', async () => {
       const contratoInvalido = { ...CONTRATO_MOCK, estado: 'cortado' };
       (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
         contratoInvalido,
       ]);
       (prisma.log_auditoria.create as jest.Mock).mockResolvedValue({});
 
-      await service.getEstadoContratos(1);
+      await expect(service.getEstadoContratos(1)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.getEstadoContratos(1)).rejects.toThrow(
+        'no es reconocido',
+      );
 
       expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          accion: 'ESTADO_CONTRATO_INVALIDO',
+          accion: 'ESTADO_CONTRATO_NO_RECONOCIDO',
           entidad_afectada: 'contrato',
           id_entidad_afectada: 1,
-          valor_anterior: { estado: 'cortado' },
+          valor_anterior: { estado_recibido: 'cortado' },
         }),
       });
     });
@@ -179,7 +185,7 @@ describe('PortalService', () => {
       expect(result.facturas_pendientes[0].periodo).toBe('Abril 2026');
     });
 
-    it('lanza InternalServerErrorException si saldo_total es negativo (CU-27 Excepción 3)', async () => {
+    it('retorna saldo_confirmado:false sin lanzar error si saldo_total es negativo (CU-27 Excepción 3)', async () => {
       (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
         { id_contrato: 1 },
       ]);
@@ -193,10 +199,22 @@ describe('PortalService', () => {
           estado: 'pendiente',
         },
       ]);
+      (prisma.log_auditoria.create as jest.Mock).mockResolvedValue({});
 
-      await expect(service.getResumenDeuda(1)).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      const result = await service.getResumenDeuda(1);
+
+      expect(result.tiene_deuda).toBe(false);
+      expect(result.saldo_total).toBe(0);
+      expect(result.saldo_confirmado).toBe(false);
+      expect(result.facturas_pendientes).toHaveLength(0);
+
+      expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          accion: 'SALDO_INCONSISTENTE',
+          entidad_afectada: 'cliente',
+          id_entidad_afectada: 1,
+        }),
+      });
     });
   });
 
