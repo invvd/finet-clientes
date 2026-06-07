@@ -6,9 +6,12 @@ Plataforma de gestión de clientes para Fibernet Limitada (Finet) — Internet d
 
 ```
 finet-clientes/
+├── .env.example              ← Referencia de todas las variables
 ├── apps/
-│   ├── backend/          ← API REST (NestJS + Prisma + PostgreSQL)
-│   └── frontend/         ← Cliente web (Next.js + React + Tailwind)
+│   ├── controller/           ← API REST (NestJS + Prisma + PostgreSQL)
+│   │   └── .env.example      ← Variables del backend
+│   └── view/                 ← Cliente web (Next.js + React + Tailwind)
+│       └── .env.example      ← Variables del frontend
 └── README.md
 ```
 
@@ -22,21 +25,22 @@ finet-clientes/
 
 ```bash
 # Backend
-cd apps/backend
+cd apps/controller
 cp .env.example .env   # Configurar variables de entorno
 npm install
 npx prisma migrate dev
 npm run start:dev
 
 # Frontend
-cd apps/frontend
+cd apps/view
+cp .env.example .env   # Configurar variables de entorno
 npm install
 npm run dev
 ```
 
 ## Variables de entorno
 
-### Backend (`apps/backend/.env`)
+### Backend (`apps/controller/.env`)
 
 | Variable | Descripción |
 |---|---|
@@ -44,7 +48,7 @@ npm run dev
 | `JWT_SECRET` | Secreto para firmar tokens JWT |
 | `PORT` | Puerto del servidor (default: 4000) |
 
-### Frontend (`apps/frontend/.env`)
+### Frontend (`apps/view/.env`)
 
 | Variable | Descripción |
 |---|---|
