@@ -10,7 +10,7 @@ import {
   ContratacionResponseDto,
 } from './dto/contratacion.dto.js';
 
-const ESTADO_PIPELINE_CONVERTIDO = 'convertido';
+const ESTADO_PIPELINE_CONVERTIDO = 'ACTIVO';
 
 @Injectable()
 export class ContratacionesService {
