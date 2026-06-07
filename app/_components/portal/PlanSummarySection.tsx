@@ -1,4 +1,7 @@
-import type { Plan } from '@/app/portal/_lib/portal-api';
+export interface Plan {
+  id: number;
+  name: string;
+}
 
 export default function PlanSummarySection({ plans }: { plans: Plan[] }) {
   return (

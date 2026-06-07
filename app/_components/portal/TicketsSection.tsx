@@ -1,23 +1,31 @@
 import { Inbox } from 'lucide-react';
 import type { Ticket } from '@/app/portal/_lib/portal-api';
 
-const ticketStatusConfig: Record<
-  Ticket['status'],
-  { label: string; className: string }
-> = {
-  Abierto: {
+const ticketStatusConfig: Record<string, { label: string; className: string }> = {
+  abierto: {
     label: 'Abierto',
     className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   },
-  'En proceso': {
+  en_proceso: {
     label: 'En proceso',
     className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   },
-  Resuelto: {
+  resuelto: {
     label: 'Resuelto',
     className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   },
+  cerrado: {
+    label: 'Cerrado',
+    className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+  },
 };
+
+function defaultStatusConfig(status: string) {
+  return {
+    label: status,
+    className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+  };
+}
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('es-CL', {
@@ -41,22 +49,25 @@ export default function TicketsSection({ tickets }: { tickets: Ticket[] }) {
       ) : (
         <ul className="flex flex-col gap-3">
           {tickets.map((ticket) => {
-            const statusCfg = ticketStatusConfig[ticket.status];
+            const statusCfg =
+              ticketStatusConfig[ticket.estado] ?? defaultStatusConfig(ticket.estado);
             return (
               <li
-                key={ticket.code}
+                key={ticket.id_ticket}
                 className="rounded-xl border border-border bg-background p-4 flex flex-col gap-2"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-mono text-muted">{ticket.code}</span>
+                  <span className="text-xs font-mono text-muted">
+                    {ticket.codigo_seguimiento}
+                  </span>
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusCfg.className}`}
                   >
                     {statusCfg.label}
                   </span>
                 </div>
-                <p className="text-sm text-foreground">{ticket.description}</p>
-                <p className="text-xs text-muted">{formatDate(ticket.createdAt)}</p>
+                <p className="text-sm text-foreground">{ticket.descripcion}</p>
+                <p className="text-xs text-muted">{formatDate(ticket.fecha_creacion)}</p>
               </li>
             );
           })}

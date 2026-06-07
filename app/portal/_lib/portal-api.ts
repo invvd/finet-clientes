@@ -1,26 +1,29 @@
-export type ContractStatus = 'Activo' | 'En Trámite' | 'Suspendido';
-
-export interface Plan {
-  id: string;
-  name: string;
-}
-
-export interface PortalContract {
-  status: ContractStatus;
-  plans: Plan[];
-  userName: string;
+export interface Factura {
+  id_factura: number;
+  periodo: string;
+  monto: number;
+  fecha_limite_pago: string;
+  estado: string;
+  dias_vencida: number | null;
 }
 
 export interface Balance {
-  amount: number;
-  dueDate: string;
+  tiene_deuda: boolean;
+  saldo_total: number;
+  saldo_confirmado: boolean;
+  facturas_pendientes: Factura[];
 }
 
 export interface Ticket {
-  code: string;
-  status: 'Abierto' | 'En proceso' | 'Resuelto';
-  createdAt: string;
-  description: string;
+  id_ticket: number;
+  codigo_seguimiento: string;
+  estado: string;
+  prioridad: string;
+  descripcion: string;
+  fecha_creacion: string;
+  fecha_cierre: string | null;
+  categoria: string;
+  origen: string | null;
 }
 
 function apiUrl(path: string): string {
@@ -29,20 +32,15 @@ function apiUrl(path: string): string {
   return `${base}${path}`;
 }
 
-export async function getContract(): Promise<PortalContract> {
-  const res = await fetch(apiUrl('/portal/contract'), { cache: 'no-store' });
-  if (!res.ok) throw new Error('No se pudo obtener la información del contrato');
-  return res.json();
-}
-
-export async function getBalance(): Promise<Balance> {
-  const res = await fetch(apiUrl('/portal/balance'), { cache: 'no-store' });
+export async function getDeuda(): Promise<Balance> {
+  const res = await fetch(apiUrl('/portal/deuda'), { cache: 'no-store' });
   if (!res.ok) throw new Error('No se pudo obtener el estado de cuenta');
   return res.json();
 }
 
-export async function getTickets(): Promise<Ticket[]> {
-  const res = await fetch(apiUrl('/portal/tickets'), { cache: 'no-store' });
+export async function getTickets(limite?: number): Promise<Ticket[]> {
+  const params = limite ? `?limite=${limite}` : '';
+  const res = await fetch(apiUrl(`/portal/tickets${params}`), { cache: 'no-store' });
   if (!res.ok) throw new Error('No se pudo obtener el historial de tickets');
   return res.json();
 }

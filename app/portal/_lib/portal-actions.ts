@@ -15,7 +15,7 @@ function apiUrl(path: string): string {
 
 async function authHeaders(): Promise<HeadersInit> {
   const cookieStore = await cookies();
-  const token = cookieStore.get('session')?.value;
+  const token = cookieStore.get('access_token')?.value;
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;

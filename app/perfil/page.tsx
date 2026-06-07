@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { User, AlertCircle, RefreshCw } from "lucide-react";
 import ChangePasswordForm from "../components/ChangePasswordForm";
+import UpdateTelefonoForm from "../components/UpdateTelefonoForm";
+import UpdateEmailForm from "../components/UpdateEmailForm";
 
 type ClientePerfil = {
   id_cliente: number;
@@ -157,9 +159,28 @@ export default function PerfilPage() {
       )}
 
       {perfil && (
-        <div className="mt-8">
-          <ChangePasswordForm />
-        </div>
+        <>
+          <div className="mt-8 space-y-6">
+            <UpdateTelefonoForm
+              onUpdate={(nuevoTelefono) =>
+                setPerfil((prev) =>
+                  prev ? { ...prev, telefono: nuevoTelefono } : prev,
+                )
+              }
+            />
+            <UpdateEmailForm
+              currentEmail={perfil.email}
+              onUpdate={(nuevoEmail) =>
+                setPerfil((prev) =>
+                  prev ? { ...prev, email: nuevoEmail } : prev,
+                )
+              }
+            />
+          </div>
+          <div className="mt-8">
+            <ChangePasswordForm />
+          </div>
+        </>
       )}
     </div>
   );
