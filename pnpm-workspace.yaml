@@ -10,11 +10,3 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 
-onlyBuiltDependencies:
-  - '@nestjs/core'
-  - '@prisma/engines'
-  - bcrypt
-  - prisma
-  - prisma-zod-generator
-  - sharp
-  - unrs-resolver

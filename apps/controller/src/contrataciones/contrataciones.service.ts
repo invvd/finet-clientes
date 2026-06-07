@@ -10,7 +10,6 @@ import {
   ContratacionResponseDto,
 } from './dto/contratacion.dto.js';
 
-// ⚠ Confirmar con CRM cuál es el valor correcto para estado_pipeline al convertir desde web
 const ESTADO_PIPELINE_CONVERTIDO = 'convertido';
 
 @Injectable()
@@ -86,7 +85,6 @@ export class ContratacionesService {
           },
         });
 
-        // ⚠ Confirmar con CRM: estado_pipeline y si necesitan id_usuario_comercial
         await tx.prospecto.create({
           data: {
             id_empresa: 1,

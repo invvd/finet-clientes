@@ -1,4 +1,5 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ContratacionesService } from './contrataciones.service.js';
 import { ZodValidationPipe } from '../auth/pipes/zod-validation.pipe.js';
 import { ContratacionDto } from './dto/contratacion.dto.js';
@@ -15,8 +16,12 @@ export class ContratacionesController {
    * POST /contrataciones
    * Registra un nuevo cliente desde el formulario web:
    * crea cliente, dirección, contrato, orden de instalación y prospecto CRM en una sola transacción.
+   *
+   * Rate limit: 3 intentos por minuto por IP.
    */
   @Post()
+  @Throttle({ default: { limit: 3, ttl: 60 } })
+  @HttpCode(201)
   crear(
     @Body(new ZodValidationPipe(ContratacionDto))
     dto: ContratacionDto,
