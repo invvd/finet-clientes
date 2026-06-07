@@ -1,5 +1,5 @@
 {
-  "name": "finet-clientes-front",
+  "name": "@finet/view",
   "version": "0.1.0",
   "private": true,
   "scripts": {

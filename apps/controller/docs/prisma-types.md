@@ -24,7 +24,7 @@ generator zod {
 |---|---|
 | Definicion | `generator client` en `schema.prisma` |
 | Output | `generated/prisma/` |
-| Dependencia | `@prisma/client` (npm) |
+| Dependencia | `@prisma/client` (pnpm) |
 | Comando | `prisma generate` |
 
 **Archivos generados principales:**
