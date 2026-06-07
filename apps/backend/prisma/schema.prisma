@@ -1,0 +1,746 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+generator zod {
+  provider = "prisma-zod-generator"
+  output   = "../src/generated/zod"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model baja_equipo {
+  id_baja               Int            @id @default(autoincrement())
+  id_unidad             Int?
+  id_usuario            Int?
+  motivo_baja           String
+  tipo_baja             String?        @db.VarChar(20)
+  donacion_destinatario String?        @db.VarChar(150)
+  fecha_baja            DateTime?      @db.Date
+  unidad_equipo         unidad_equipo? @relation(fields: [id_unidad], references: [id_unidad], onDelete: NoAction, onUpdate: NoAction, map: "fk_baja_equipo_id_unidad")
+  usuario               usuario?       @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_baja_equipo_id_usuario")
+}
+
+model bodega {
+  id_bodega                                                             Int                     @id @default(autoincrement())
+  id_empresa                                                            Int?
+  nombre                                                                String                  @db.VarChar(60)
+  direccion                                                             String?                 @db.VarChar(200)
+  activa                                                                Boolean?                @default(true)
+  empresa                                                               empresa?                @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_bodega_id_empresa")
+  movimiento_inventario_movimiento_inventario_id_bodega_destinoTobodega movimiento_inventario[] @relation("movimiento_inventario_id_bodega_destinoTobodega")
+  movimiento_inventario_movimiento_inventario_id_bodega_origenTobodega  movimiento_inventario[] @relation("movimiento_inventario_id_bodega_origenTobodega")
+  orden_ingreso                                                         orden_ingreso[]
+  stock_consumible                                                      stock_consumible[]
+  unidad_equipo                                                         unidad_equipo[]
+}
+
+model caja_nap {
+  id_caja_nap         Int             @id @default(autoincrement())
+  id_empresa          Int?
+  id_mufa             Int?
+  identificador_unico String?         @unique @db.VarChar(50)
+  numero_poste        String?         @db.VarChar(30)
+  zona                String?         @db.VarChar(80)
+  capacidad_puertos   Int?            @db.SmallInt
+  latitud             Decimal?        @db.Decimal(9, 6)
+  longitud            Decimal?        @db.Decimal(9, 6)
+  empresa             empresa?        @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_caja_nap_id_empresa")
+  mufa                mufa?           @relation(fields: [id_mufa], references: [id_mufa], onDelete: NoAction, onUpdate: NoAction, map: "fk_caja_nap_id_mufa")
+  monitoreo_ont       monitoreo_ont[]
+  puerto_nap          puerto_nap[]
+  unidad_equipo       unidad_equipo[]
+}
+
+model canal_whatsapp {
+  id_canal           Int                  @id @default(autoincrement())
+  id_empresa         Int?
+  numero_telefono    String?              @unique @db.VarChar(20)
+  nombre_canal       String?              @db.VarChar(80)
+  activo             Boolean?             @default(true)
+  empresa            empresa?             @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_canal_whatsapp_id_empresa")
+  conversacion_bot   conversacion_bot[]
+  mensaje_whatsapp   mensaje_whatsapp[]
+  plantilla_whatsapp plantilla_whatsapp[]
+}
+
+model categoria_falla {
+  id_categoria Int      @id @default(autoincrement())
+  nombre       String   @db.VarChar(80)
+  sla_horas    Int?     @db.SmallInt
+  ticket       ticket[]
+}
+
+model cliente {
+  id_cliente             Int                      @id @default(autoincrement())
+  id_empresa             Int?
+  rut                    String?                  @unique @db.VarChar(12)
+  nombre_completo        String                   @db.VarChar(120)
+  email                  String?                  @db.VarChar(120)
+  telefono               String?                  @db.VarChar(20)
+  password_portal_hash   String?                  @db.VarChar(72)
+  estado                 String                   @db.VarChar(20)
+  es_conflictivo         Boolean?                 @default(false)
+  importado_masivo       Boolean?                 @default(false)
+  fecha_creacion         DateTime?                @default(now()) @db.Timestamp(6)
+  obs_conflictivo        String?
+  empresa                empresa?                 @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_cliente_id_empresa")
+  consentimiento_cookies consentimiento_cookies[]
+  contrato               contrato[]
+  conversacion_bot       conversacion_bot[]
+  direccion_servicio     direccion_servicio[]
+  lista_negra            lista_negra[]
+  log_notificacion       log_notificacion[]
+  mensaje_whatsapp       mensaje_whatsapp[]
+  monitoreo_ont          monitoreo_ont[]
+  orden_trabajo          orden_trabajo[]
+  pago                   pago[]
+  prospecto              prospecto?
+  puerto_nap             puerto_nap[]
+  sesion_portal          sesion_portal[]
+  ticket                 ticket[]
+  unidad_equipo          unidad_equipo[]
+}
+
+model configuracion_seo {
+  id_seo              Int       @id @default(autoincrement())
+  id_empresa          Int
+  seccion_url         String    @db.VarChar(200)
+  meta_titulo         String?   @db.VarChar(70)
+  meta_descripcion    String?   @db.VarChar(160)
+  og_tags             Json?
+  fecha_actualizacion DateTime? @default(now()) @db.Timestamp(6)
+  empresa             empresa   @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_configuracion_seo_id_empresa")
+
+  @@unique([id_empresa, seccion_url])
+}
+
+model consentimiento_cookies {
+  id_consentimiento BigInt    @id @default(autoincrement())
+  id_cliente        Int?
+  ip_anonimizada    String?   @db.VarChar(45)
+  version_documento String?   @db.VarChar(20)
+  fecha_aceptacion  DateTime? @db.Timestamp(6)
+  acepto            Boolean
+  cliente           cliente?  @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_consentimiento_cookies_id_cliente")
+}
+
+model contrato {
+  id_contrato       Int                @id @default(autoincrement())
+  id_cliente        Int?
+  id_plan           Int?
+  id_empresa        Int?
+  fecha_inicio      DateTime           @db.Date
+  dia_vencimiento   Int                @db.SmallInt
+  estado            String             @db.VarChar(20)
+  fecha_suspension  DateTime?          @db.Date
+  cliente           cliente?           @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_contrato_id_cliente")
+  empresa           empresa?           @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_contrato_id_empresa")
+  plan              plan?              @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "fk_contrato_id_plan")
+  credenciales_tvip credenciales_tvip?
+  factura           factura[]
+}
+
+model conversacion_bot {
+  id_conversacion Int             @id @default(autoincrement())
+  id_cliente      Int?
+  id_canal_wa     Int?
+  plataforma      String?         @db.VarChar(20)
+  fecha_inicio    DateTime?       @db.Timestamp(6)
+  fecha_fin       DateTime?       @db.Timestamp(6)
+  derivada_humano Boolean?        @default(false)
+  canal_whatsapp  canal_whatsapp? @relation(fields: [id_canal_wa], references: [id_canal], onDelete: NoAction, onUpdate: NoAction, map: "fk_conversacion_bot_id_canal_wa")
+  cliente         cliente?        @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_conversacion_bot_id_cliente")
+  mensaje_bot     mensaje_bot[]
+  ticket          ticket?
+}
+
+model cotizacion {
+  id_cotizacion           Int        @id @default(autoincrement())
+  id_prospecto            Int?
+  id_plan                 Int?
+  pdf_url                 String?
+  fecha_envio             DateTime?  @db.Timestamp(6)
+  factibilidad_verificada Boolean?   @default(false)
+  plan                    plan?      @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "fk_cotizacion_id_plan")
+  prospecto               prospecto? @relation(fields: [id_prospecto], references: [id_prospecto], onDelete: NoAction, onUpdate: NoAction, map: "fk_cotizacion_id_prospecto")
+}
+
+model credenciales_tvip {
+  id_credencial      Int       @id @default(autoincrement())
+  id_contrato        Int?      @unique
+  usuario_tvip       String?   @db.VarChar(80)
+  password_tvip_hash String?   @db.VarChar(72)
+  fecha_generacion   DateTime? @db.Timestamp(6)
+  contrato           contrato? @relation(fields: [id_contrato], references: [id_contrato], onDelete: NoAction, onUpdate: NoAction, map: "fk_credenciales_tvip_id_contrato")
+}
+
+model detalle_orden_ingreso {
+  id_detalle          Int            @id @default(autoincrement())
+  id_orden            Int?
+  id_tipo_equipo      Int?
+  cantidad_solicitada Int
+  cantidad_recibida   Int?           @default(0)
+  orden_ingreso       orden_ingreso? @relation(fields: [id_orden], references: [id_orden], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_orden_ingreso_id_orden")
+  tipo_equipo         tipo_equipo?   @relation(fields: [id_tipo_equipo], references: [id_tipo_equipo], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_orden_ingreso_id_tipo_equipo")
+}
+
+model direccion_servicio {
+  id_direccion       Int             @id @default(autoincrement())
+  id_cliente         Int?
+  direccion_completa String          @db.VarChar(200)
+  comuna             String          @db.VarChar(80)
+  ciudad             String?         @db.VarChar(80)
+  es_principal       Boolean?        @default(true)
+  cliente            cliente?        @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_direccion_servicio_id_cliente")
+  orden_trabajo      orden_trabajo[]
+}
+
+model empresa {
+  id_empresa                                                              Int                     @id @default(autoincrement())
+  nombre                                                                  String                  @db.VarChar(100)
+  rut_empresa                                                             String?                 @unique @db.VarChar(12)
+  esquema_db                                                              String?                 @db.VarChar(50)
+  bodega                                                                  bodega[]
+  caja_nap                                                                caja_nap[]
+  canal_whatsapp                                                          canal_whatsapp[]
+  cliente                                                                 cliente[]
+  configuracion_seo                                                       configuracion_seo[]
+  contrato                                                                contrato[]
+  intento_fallido                                                         intento_fallido[]
+  movimiento_inventario_movimiento_inventario_id_empresa_destinoToempresa movimiento_inventario[] @relation("movimiento_inventario_id_empresa_destinoToempresa")
+  movimiento_inventario_movimiento_inventario_id_empresa_origenToempresa  movimiento_inventario[] @relation("movimiento_inventario_id_empresa_origenToempresa")
+  olt                                                                     olt[]
+  orden_ingreso                                                           orden_ingreso[]
+  orden_trabajo                                                           orden_trabajo[]
+  plan                                                                    plan[]
+  prestamo_externo                                                        prestamo_externo[]
+  prospecto                                                               prospecto[]
+  punto_cobertura                                                         punto_cobertura[]
+  ticket                                                                  ticket[]
+  tipo_equipo                                                             tipo_equipo[]
+  transferencia_equipo_transferencia_equipo_id_empresa_destinoToempresa   transferencia_equipo[]  @relation("transferencia_equipo_id_empresa_destinoToempresa")
+  transferencia_equipo_transferencia_equipo_id_empresa_origenToempresa    transferencia_equipo[]  @relation("transferencia_equipo_id_empresa_origenToempresa")
+  unidad_equipo                                                           unidad_equipo[]
+  usuario                                                                 usuario[]
+}
+
+model evidencia_foto {
+  id_foto        Int            @id @default(autoincrement())
+  id_ot          Int?
+  url_cloudinary String
+  formato        String?        @db.VarChar(5)
+  tamano_kb      Int?
+  fecha_subida   DateTime?      @db.Timestamp(6)
+  orden_trabajo  orden_trabajo? @relation(fields: [id_ot], references: [id_ot], onDelete: NoAction, onUpdate: NoAction, map: "fk_evidencia_foto_id_ot")
+}
+
+model factura {
+  id_factura        Int       @id @default(autoincrement())
+  id_contrato       Int?
+  periodo_mes       Int       @db.SmallInt
+  periodo_anio      Int       @db.SmallInt
+  monto             Decimal?  @db.Decimal(10, 2)
+  fecha_emision     DateTime? @db.Date
+  fecha_limite_pago DateTime  @db.Date
+  estado            String    @db.VarChar(20)
+  contrato          contrato? @relation(fields: [id_contrato], references: [id_contrato], onDelete: NoAction, onUpdate: NoAction, map: "fk_factura_id_contrato")
+  pago              pago[]
+}
+
+model historial_conexion_ont {
+  id_historial_ont BigInt         @id @default(autoincrement())
+  id_unidad        Int?
+  evento           String?        @db.VarChar(15)
+  timestamp        DateTime?      @default(now()) @db.Timestamp(6)
+  unidad_equipo    unidad_equipo? @relation(fields: [id_unidad], references: [id_unidad], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_conexion_ont_id_unidad")
+}
+
+model historial_estado_equipo {
+  id_historial    BigInt         @id @default(autoincrement())
+  id_unidad       Int?
+  id_usuario      Int?
+  estado_anterior String?        @db.VarChar(30)
+  estado_nuevo    String?        @db.VarChar(30)
+  motivo          String?
+  fecha_hora      DateTime?      @default(now()) @db.Timestamp(6)
+  unidad_equipo   unidad_equipo? @relation(fields: [id_unidad], references: [id_unidad], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_estado_equipo_id_unidad")
+  usuario         usuario?       @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_estado_equipo_id_usuario")
+}
+
+model historial_ot {
+  id_historial_ot BigInt         @id @default(autoincrement())
+  id_ot           Int?
+  id_usuario      Int?
+  estado_anterior String?        @db.VarChar(25)
+  estado_nuevo    String?        @db.VarChar(25)
+  observaciones   String?
+  fecha_hora      DateTime?      @db.Timestamp(6)
+  orden_trabajo   orden_trabajo? @relation(fields: [id_ot], references: [id_ot], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_ot_id_ot")
+  usuario         usuario?       @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_ot_id_usuario")
+}
+
+model intento_fallido {
+  id_intento      BigInt    @id @default(autoincrement())
+  id_empresa      Int?
+  ip_address      String    @db.Inet
+  rut_intentado   String?   @db.VarChar(12)
+  timestamp       DateTime? @default(now()) @db.Timestamp(6)
+  bloqueado_hasta DateTime? @db.Timestamp(6)
+  empresa         empresa?  @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_intento_fallido_id_empresa")
+}
+
+model lista_negra {
+  id_vetado           Int       @id @default(autoincrement())
+  id_cliente          Int?
+  rut_vetado          String    @db.VarChar(12)
+  direccion_vetada    String?
+  motivo              String
+  fecha_registro      DateTime? @db.Date
+  id_usuario_registro Int?
+  cliente             cliente?  @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_lista_negra_id_cliente")
+  usuario             usuario?  @relation(fields: [id_usuario_registro], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_lista_negra_id_usuario_registro")
+}
+
+model llamada_cortes {
+  id_llamada    Int            @id @default(autoincrement())
+  id_ot         Int?           @unique
+  resultado     String         @db.VarChar(15)
+  observaciones String?
+  fecha_llamada DateTime?      @db.Timestamp(6)
+  orden_trabajo orden_trabajo? @relation(fields: [id_ot], references: [id_ot], onDelete: NoAction, onUpdate: NoAction, map: "fk_llamada_cortes_id_ot")
+}
+
+model log_auditoria {
+  id_log              BigInt    @id @default(autoincrement())
+  id_usuario          Int?
+  accion              String    @db.VarChar(100)
+  entidad_afectada    String?   @db.VarChar(80)
+  id_entidad_afectada Int?
+  valor_anterior      Json?
+  valor_nuevo         Json?
+  ip_origen           String?   @db.Inet
+  fecha_hora          DateTime? @default(now()) @db.Timestamp(6)
+  usuario             usuario?  @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_auditoria_id_usuario")
+}
+
+model log_notificacion {
+  id_notificacion        BigInt                  @id @default(autoincrement())
+  id_cliente             Int?
+  id_plantilla           Int?
+  canal                  String?                 @db.VarChar(20)
+  fecha_envio            DateTime?               @db.Timestamp(6)
+  estado_envio           String?                 @db.VarChar(20)
+  cliente                cliente?                @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_notificacion_id_cliente")
+  plantilla_notificacion plantilla_notificacion? @relation(fields: [id_plantilla], references: [id_plantilla], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_notificacion_id_plantilla")
+}
+
+model mensaje_bot {
+  id_mensaje       BigInt            @id @default(autoincrement())
+  id_conversacion  Int?
+  rol              String?           @db.VarChar(15)
+  contenido        String?
+  timestamp        DateTime?         @default(now()) @db.Timestamp(6)
+  datos_sensibles  Boolean?
+  conversacion_bot conversacion_bot? @relation(fields: [id_conversacion], references: [id_conversacion], onDelete: NoAction, onUpdate: NoAction, map: "fk_mensaje_bot_id_conversacion")
+}
+
+model mensaje_whatsapp {
+  id_mensaje_wa      BigInt              @id @default(autoincrement())
+  id_canal           Int?
+  id_cliente         Int?
+  id_plantilla_wa    Int?
+  contenido          String?
+  timestamp          DateTime?           @db.Timestamp(6)
+  origen             String?             @db.VarChar(10)
+  estado             String?             @db.VarChar(15)
+  canal_whatsapp     canal_whatsapp?     @relation(fields: [id_canal], references: [id_canal], onDelete: NoAction, onUpdate: NoAction, map: "fk_mensaje_whatsapp_id_canal")
+  cliente            cliente?            @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_mensaje_whatsapp_id_cliente")
+  plantilla_whatsapp plantilla_whatsapp? @relation(fields: [id_plantilla_wa], references: [id_plantilla_wa], onDelete: NoAction, onUpdate: NoAction, map: "fk_mensaje_whatsapp_id_plantilla_wa")
+}
+
+model monitoreo_ont {
+  id_monitoreo        BigInt         @id @default(autoincrement())
+  id_unidad           Int?
+  id_cliente          Int?
+  id_caja_nap         Int?
+  potencia_actual_dbm Decimal?       @db.Decimal(5, 2)
+  timestamp_medicion  DateTime?      @default(now()) @db.Timestamp(6)
+  estado_conexion     String?        @db.VarChar(15)
+  caja_nap            caja_nap?      @relation(fields: [id_caja_nap], references: [id_caja_nap], onDelete: NoAction, onUpdate: NoAction, map: "fk_monitoreo_ont_id_caja_nap")
+  cliente             cliente?       @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_monitoreo_ont_id_cliente")
+  unidad_equipo       unidad_equipo? @relation(fields: [id_unidad], references: [id_unidad], onDelete: NoAction, onUpdate: NoAction, map: "fk_monitoreo_ont_id_unidad")
+}
+
+model movimiento_inventario {
+  id_movimiento                                             BigInt         @id @default(autoincrement())
+  id_tipo_equipo                                            Int?
+  id_unidad                                                 Int?
+  id_empresa_origen                                         Int?
+  id_empresa_destino                                        Int?
+  id_bodega_origen                                          Int?
+  id_bodega_destino                                         Int?
+  id_usuario                                                Int?
+  tipo_movimiento                                           String?        @db.VarChar(30)
+  cantidad                                                  Decimal?       @default(1) @db.Decimal(10, 2)
+  fecha                                                     DateTime?      @db.Timestamp(6)
+  referencia_id                                             Int?
+  bodega_movimiento_inventario_id_bodega_destinoTobodega    bodega?        @relation("movimiento_inventario_id_bodega_destinoTobodega", fields: [id_bodega_destino], references: [id_bodega], onDelete: NoAction, onUpdate: NoAction, map: "fk_movimiento_inventario_id_bodega_destino")
+  bodega_movimiento_inventario_id_bodega_origenTobodega     bodega?        @relation("movimiento_inventario_id_bodega_origenTobodega", fields: [id_bodega_origen], references: [id_bodega], onDelete: NoAction, onUpdate: NoAction, map: "fk_movimiento_inventario_id_bodega_origen")
+  empresa_movimiento_inventario_id_empresa_destinoToempresa empresa?       @relation("movimiento_inventario_id_empresa_destinoToempresa", fields: [id_empresa_destino], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_movimiento_inventario_id_empresa_destino")
+  empresa_movimiento_inventario_id_empresa_origenToempresa  empresa?       @relation("movimiento_inventario_id_empresa_origenToempresa", fields: [id_empresa_origen], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_movimiento_inventario_id_empresa_origen")
+  tipo_equipo                                               tipo_equipo?   @relation(fields: [id_tipo_equipo], references: [id_tipo_equipo], onDelete: NoAction, onUpdate: NoAction, map: "fk_movimiento_inventario_id_tipo_equipo")
+  unidad_equipo                                             unidad_equipo? @relation(fields: [id_unidad], references: [id_unidad], onDelete: NoAction, onUpdate: NoAction, map: "fk_movimiento_inventario_id_unidad")
+  usuario                                                   usuario?       @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_movimiento_inventario_id_usuario")
+}
+
+model mufa {
+  id_mufa        Int          @id @default(autoincrement())
+  id_tarjeta_pon Int?
+  identificador  String?      @db.VarChar(50)
+  ubicacion      String?      @db.VarChar(200)
+  caja_nap       caja_nap[]
+  tarjeta_pon    tarjeta_pon? @relation(fields: [id_tarjeta_pon], references: [id_tarjeta], onDelete: NoAction, onUpdate: NoAction, map: "fk_mufa_id_tarjeta_pon")
+}
+
+model olt {
+  id_olt      Int           @id @default(autoincrement())
+  id_empresa  Int?
+  nombre      String?       @db.VarChar(80)
+  ubicacion   String?       @db.VarChar(200)
+  ip_gestion  String?       @db.Inet
+  empresa     empresa?      @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_olt_id_empresa")
+  tarjeta_pon tarjeta_pon[]
+}
+
+model orden_ingreso {
+  id_orden              Int                     @id @default(autoincrement())
+  id_proveedor          Int?
+  id_bodega             Int?
+  id_empresa            Int?
+  id_usuario_registro   Int?
+  fecha_creacion        DateTime?               @db.Date
+  fecha_recepcion       DateTime?               @db.Date
+  estado                String?                 @db.VarChar(25)
+  factura_proveedor     String?                 @db.VarChar(50)
+  detalle_orden_ingreso detalle_orden_ingreso[]
+  bodega                bodega?                 @relation(fields: [id_bodega], references: [id_bodega], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_ingreso_id_bodega")
+  empresa               empresa?                @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_ingreso_id_empresa")
+  proveedor             proveedor?              @relation(fields: [id_proveedor], references: [id_proveedor], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_ingreso_id_proveedor")
+  usuario               usuario?                @relation(fields: [id_usuario_registro], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_ingreso_id_usuario_registro")
+}
+
+model orden_trabajo {
+  id_ot                Int                 @id @default(autoincrement())
+  id_empresa           Int?
+  id_cliente           Int?
+  id_tecnico           Int?
+  id_tecnico_externo   Int?
+  id_direccion         Int?
+  id_ticket            Int?                @unique
+  tipo_ot              String              @db.VarChar(20)
+  prioridad            String              @db.VarChar(10)
+  estado               String              @db.VarChar(25)
+  fecha_creacion       DateTime?           @db.Timestamp(6)
+  fecha_programada     DateTime?           @db.Date
+  fecha_completada     DateTime?           @db.Timestamp(6)
+  potencia_optica_dbm  Decimal?            @db.Decimal(5, 2)
+  observaciones        String?
+  resuelto_remotamente Boolean?            @default(false)
+  evidencia_foto       evidencia_foto[]
+  historial_ot         historial_ot[]
+  llamada_cortes       llamada_cortes?
+  cliente              cliente?            @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_trabajo_id_cliente")
+  direccion_servicio   direccion_servicio? @relation(fields: [id_direccion], references: [id_direccion], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_trabajo_id_direccion")
+  empresa              empresa?            @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_trabajo_id_empresa")
+  usuario              usuario?            @relation(fields: [id_tecnico], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_trabajo_id_tecnico")
+  tecnico_externo      tecnico_externo?    @relation(fields: [id_tecnico_externo], references: [id_tecnico_ext], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_trabajo_id_tecnico_externo")
+  ticket               ticket?             @relation(fields: [id_ticket], references: [id_ticket], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_trabajo_id_ticket")
+  uso_material_ot      uso_material_ot[]
+}
+
+model pago {
+  id_pago             Int      @id @default(autoincrement())
+  id_factura          Int?
+  id_cliente          Int?
+  monto               Decimal  @db.Decimal(10, 2)
+  fecha_pago          DateTime @db.Timestamp(6)
+  codigo_transaccion  String?  @unique @db.VarChar(100)
+  pasarela            String   @db.VarChar(30)
+  token_transaccional String?  @db.VarChar(200)
+  comprobante_pdf_url String?
+  cliente             cliente? @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_pago_id_cliente")
+  factura             factura? @relation(fields: [id_factura], references: [id_factura], onDelete: NoAction, onUpdate: NoAction, map: "fk_pago_id_factura")
+}
+
+model plan {
+  id_plan          Int          @id @default(autoincrement())
+  id_empresa       Int?
+  nombre_comercial String       @db.VarChar(100)
+  tipo_plan        String       @db.VarChar(20)
+  tipo_cliente     String       @db.VarChar(20)
+  velocidad_mbps   Int?
+  precio_mensual   Decimal      @db.Decimal(10, 2)
+  descripcion      String?
+  activo           Boolean?     @default(true)
+  contrato         contrato[]
+  cotizacion       cotizacion[]
+  empresa          empresa?     @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_plan_id_empresa")
+}
+
+model plantilla_notificacion {
+  id_plantilla     Int                @id @default(autoincrement())
+  tipo_evento      String?            @db.VarChar(60)
+  canal            String             @db.VarChar(20)
+  contenido_texto  String?
+  activa           Boolean?           @default(true)
+  log_notificacion log_notificacion[]
+}
+
+model plantilla_whatsapp {
+  id_plantilla_wa  Int                @id @default(autoincrement())
+  id_canal         Int?
+  nombre_plantilla String?            @db.VarChar(80)
+  contenido        String?
+  tipo_uso         String?            @db.VarChar(40)
+  mensaje_whatsapp mensaje_whatsapp[]
+  canal_whatsapp   canal_whatsapp?    @relation(fields: [id_canal], references: [id_canal], onDelete: NoAction, onUpdate: NoAction, map: "fk_plantilla_whatsapp_id_canal")
+}
+
+model prestamo_externo {
+  id_prestamo            Int            @id @default(autoincrement())
+  id_unidad              Int?
+  id_empresa_prestamista Int?
+  destinatario           String?        @db.VarChar(100)
+  motivo                 String?
+  fecha_salida           DateTime?      @db.Date
+  fecha_retorno_esperada DateTime?      @db.Date
+  fecha_retorno_real     DateTime?      @db.Date
+  estado                 String?        @db.VarChar(20)
+  condicion_retorno      String?
+  empresa                empresa?       @relation(fields: [id_empresa_prestamista], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_prestamo_externo_id_empresa_prestamista")
+  unidad_equipo          unidad_equipo? @relation(fields: [id_unidad], references: [id_unidad], onDelete: NoAction, onUpdate: NoAction, map: "fk_prestamo_externo_id_unidad")
+}
+
+model prospecto {
+  id_prospecto           Int          @id @default(autoincrement())
+  id_empresa             Int?
+  id_usuario_comercial   Int?
+  id_cliente             Int?         @unique
+  rut                    String?      @db.VarChar(12)
+  nombre_completo        String?      @db.VarChar(120)
+  email                  String?      @db.VarChar(120)
+  telefono               String?      @db.VarChar(20)
+  direccion              String?      @db.VarChar(200)
+  estado_pipeline        String?      @db.VarChar(30)
+  motivo_perdida         String?      @db.VarChar(30)
+  tiempo_conversion_dias Int?
+  fecha_creacion         DateTime?    @db.Timestamp(6)
+  fecha_conversion       DateTime?    @db.Date
+  cotizacion             cotizacion[]
+  cliente                cliente?     @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_prospecto_id_cliente")
+  empresa                empresa?     @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_prospecto_id_empresa")
+  usuario                usuario?     @relation(fields: [id_usuario_comercial], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_prospecto_id_usuario_comercial")
+}
+
+model proveedor {
+  id_proveedor     Int             @id @default(autoincrement())
+  nombre_comercial String          @db.VarChar(100)
+  rut_proveedor    String?         @db.VarChar(12)
+  contacto         String?         @db.VarChar(80)
+  telefono         String?         @db.VarChar(20)
+  email            String?         @db.VarChar(120)
+  orden_ingreso    orden_ingreso[]
+}
+
+model puerto_nap {
+  id_puerto           Int       @id @default(autoincrement())
+  id_caja_nap         Int?
+  numero_puerto       Int?      @db.SmallInt
+  estado              String?   @db.VarChar(10)
+  id_cliente_asociado Int?
+  caja_nap            caja_nap? @relation(fields: [id_caja_nap], references: [id_caja_nap], onDelete: NoAction, onUpdate: NoAction, map: "fk_puerto_nap_id_caja_nap")
+  cliente             cliente?  @relation(fields: [id_cliente_asociado], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_puerto_nap_id_cliente_asociado")
+}
+
+model punto_cobertura {
+  id_punto           Int      @id @default(autoincrement())
+  id_empresa         Int?
+  latitud            Decimal  @db.Decimal(9, 6)
+  longitud           Decimal  @db.Decimal(9, 6)
+  densidad_cobertura Decimal? @db.Decimal(5, 2)
+  tipo_cobertura     String?  @db.VarChar(20)
+  empresa            empresa? @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_punto_cobertura_id_empresa")
+}
+
+model rol {
+  id_rol      Int           @id @default(autoincrement())
+  nombre_rol  String        @unique @db.VarChar(50)
+  descripcion String?
+  usuario_rol usuario_rol[]
+}
+
+model sesion_portal {
+  id_sesion        BigInt    @id @default(autoincrement())
+  id_cliente       Int?
+  token            String    @db.Text
+  fecha_inicio     DateTime? @db.Timestamp(6)
+  fecha_expiracion DateTime? @db.Timestamp(6)
+  ip_origen        String?   @db.Inet
+  cliente          cliente?  @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_sesion_portal_id_cliente")
+}
+
+model stock_consumible {
+  id_stock            Int          @id @default(autoincrement())
+  id_tipo_equipo      Int?
+  id_bodega           Int?
+  cantidad_disponible Decimal      @db.Decimal(10, 2)
+  umbral_minimo       Decimal?     @db.Decimal(10, 2)
+  bodega              bodega?      @relation(fields: [id_bodega], references: [id_bodega], onDelete: NoAction, onUpdate: NoAction, map: "fk_stock_consumible_id_bodega")
+  tipo_equipo         tipo_equipo? @relation(fields: [id_tipo_equipo], references: [id_tipo_equipo], onDelete: NoAction, onUpdate: NoAction, map: "fk_stock_consumible_id_tipo_equipo")
+}
+
+model tarjeta_pon {
+  id_tarjeta     Int    @id @default(autoincrement())
+  id_olt         Int?
+  numero_tarjeta Int?   @db.SmallInt
+  total_puertos  Int?   @db.SmallInt
+  mufa           mufa[]
+  olt            olt?   @relation(fields: [id_olt], references: [id_olt], onDelete: NoAction, onUpdate: NoAction, map: "fk_tarjeta_pon_id_olt")
+}
+
+model tecnico_externo {
+  id_tecnico_ext  Int             @id @default(autoincrement())
+  nombre_completo String          @db.VarChar(120)
+  empresa         String?         @db.VarChar(100)
+  telefono        String?         @db.VarChar(20)
+  activo          Boolean?        @default(true)
+  orden_trabajo   orden_trabajo[]
+}
+
+model ticket {
+  id_ticket            Int               @id @default(autoincrement())
+  id_cliente           Int?
+  id_empresa           Int?
+  id_usuario_asignado  Int?
+  id_categoria         Int
+  id_conversacion_bot  Int?              @unique
+  codigo_seguimiento   String?           @unique @db.VarChar(20)
+  prioridad            String            @db.VarChar(10)
+  estado               String            @db.VarChar(20)
+  descripcion          String?
+  fecha_creacion       DateTime?         @default(now()) @db.Timestamp(6)
+  fecha_cierre         DateTime?         @db.Timestamp(6)
+  origen               String?           @db.VarChar(20)
+  resuelto_remotamente Boolean?          @default(false)
+  orden_trabajo        orden_trabajo?
+  categoria_falla      categoria_falla   @relation(fields: [id_categoria], references: [id_categoria], onDelete: NoAction, onUpdate: NoAction, map: "fk_ticket_id_categoria")
+  cliente              cliente?          @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_ticket_id_cliente")
+  conversacion_bot     conversacion_bot? @relation(fields: [id_conversacion_bot], references: [id_conversacion], onDelete: NoAction, onUpdate: NoAction, map: "fk_ticket_id_conversacion_bot")
+  empresa              empresa?          @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_ticket_id_empresa")
+  usuario              usuario?          @relation(fields: [id_usuario_asignado], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_ticket_id_usuario_asignado")
+}
+
+model tipo_equipo {
+  id_tipo_equipo            Int                     @id @default(autoincrement())
+  id_empresa                Int?
+  nombre                    String                  @db.VarChar(100)
+  categoria                 String?                 @db.VarChar(40)
+  requiere_serie_individual Boolean?
+  ficha_tecnica_pdf_url     String?
+  activo                    Boolean?                @default(true)
+  detalle_orden_ingreso     detalle_orden_ingreso[]
+  movimiento_inventario     movimiento_inventario[]
+  stock_consumible          stock_consumible[]
+  empresa                   empresa?                @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_tipo_equipo_id_empresa")
+  unidad_equipo             unidad_equipo[]
+  uso_material_ot           uso_material_ot[]
+}
+
+model transferencia_equipo {
+  id_transferencia                                         Int       @id @default(autoincrement())
+  id_empresa_origen                                        Int?
+  id_empresa_destino                                       Int?
+  id_usuario_registro                                      Int?
+  fecha_transferencia                                      DateTime? @db.Date
+  observaciones                                            String?
+  empresa_transferencia_equipo_id_empresa_destinoToempresa empresa?  @relation("transferencia_equipo_id_empresa_destinoToempresa", fields: [id_empresa_destino], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_transferencia_equipo_id_empresa_destino")
+  empresa_transferencia_equipo_id_empresa_origenToempresa  empresa?  @relation("transferencia_equipo_id_empresa_origenToempresa", fields: [id_empresa_origen], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_transferencia_equipo_id_empresa_origen")
+  usuario                                                  usuario?  @relation(fields: [id_usuario_registro], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_transferencia_equipo_id_usuario_registro")
+}
+
+model unidad_equipo {
+  id_unidad               Int                       @id @default(autoincrement())
+  id_tipo_equipo          Int?
+  id_empresa              Int?
+  numero_serie            String                    @unique @db.VarChar(80)
+  modelo                  String?                   @db.VarChar(80)
+  estado                  String                    @db.VarChar(30)
+  fecha_adquisicion       DateTime?                 @db.Date
+  fecha_venc_garantia     DateTime?                 @db.Date
+  diagnostico_tecnico     String?
+  id_cliente_instalado    Int?
+  id_bodega_actual        Int?
+  numero_poste            String?                   @db.VarChar(30)
+  id_caja_nap             Int?
+  baja_equipo             baja_equipo[]
+  historial_conexion_ont  historial_conexion_ont[]
+  historial_estado_equipo historial_estado_equipo[]
+  monitoreo_ont           monitoreo_ont[]
+  movimiento_inventario   movimiento_inventario[]
+  prestamo_externo        prestamo_externo[]
+  bodega                  bodega?                   @relation(fields: [id_bodega_actual], references: [id_bodega], onDelete: NoAction, onUpdate: NoAction, map: "fk_unidad_equipo_id_bodega_actual")
+  caja_nap                caja_nap?                 @relation(fields: [id_caja_nap], references: [id_caja_nap], onDelete: NoAction, onUpdate: NoAction, map: "fk_unidad_equipo_id_caja_nap")
+  cliente                 cliente?                  @relation(fields: [id_cliente_instalado], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_unidad_equipo_id_cliente_instalado")
+  empresa                 empresa?                  @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_unidad_equipo_id_empresa")
+  tipo_equipo             tipo_equipo?              @relation(fields: [id_tipo_equipo], references: [id_tipo_equipo], onDelete: NoAction, onUpdate: NoAction, map: "fk_unidad_equipo_id_tipo_equipo")
+  uso_material_ot         uso_material_ot[]
+}
+
+model uso_material_ot {
+  id_uso         Int            @id @default(autoincrement())
+  id_ot          Int?
+  id_tipo_equipo Int?
+  id_unidad      Int?
+  cantidad       Decimal        @db.Decimal(10, 2)
+  orden_trabajo  orden_trabajo? @relation(fields: [id_ot], references: [id_ot], onDelete: NoAction, onUpdate: NoAction, map: "fk_uso_material_ot_id_ot")
+  tipo_equipo    tipo_equipo?   @relation(fields: [id_tipo_equipo], references: [id_tipo_equipo], onDelete: NoAction, onUpdate: NoAction, map: "fk_uso_material_ot_id_tipo_equipo")
+  unidad_equipo  unidad_equipo? @relation(fields: [id_unidad], references: [id_unidad], onDelete: NoAction, onUpdate: NoAction, map: "fk_uso_material_ot_id_unidad")
+}
+
+model usuario {
+  id_usuario              Int                       @id @default(autoincrement())
+  id_empresa              Int?
+  nombre_completo         String                    @db.VarChar(80)
+  nombre_usuario          String?                   @unique @db.VarChar(50)
+  email                   String?                   @unique @db.VarChar(120)
+  password_hash           String                    @db.VarChar(72)
+  activo                  Boolean?                  @default(true)
+  fecha_creacion          DateTime?                 @default(now()) @db.Timestamp(6)
+  es_password_temporal    Boolean?                  @default(true)
+  baja_equipo             baja_equipo[]
+  historial_estado_equipo historial_estado_equipo[]
+  historial_ot            historial_ot[]
+  lista_negra             lista_negra[]
+  log_auditoria           log_auditoria[]
+  movimiento_inventario   movimiento_inventario[]
+  orden_ingreso           orden_ingreso[]
+  orden_trabajo           orden_trabajo[]
+  prospecto               prospecto[]
+  ticket                  ticket[]
+  transferencia_equipo    transferencia_equipo[]
+  empresa                 empresa?                  @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_id_empresa")
+  usuario_rol             usuario_rol[]
+}
+
+model usuario_rol {
+  id_usuario_rol   Int       @id @default(autoincrement())
+  id_usuario       Int?
+  id_rol           Int
+  fecha_asignacion DateTime? @default(now()) @db.Date
+  rol              rol       @relation(fields: [id_rol], references: [id_rol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol_id_rol")
+  usuario          usuario?  @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol_id_usuario")
+}
