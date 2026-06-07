@@ -74,6 +74,46 @@ Authorization: Bearer <token>
 
 ---
 
+## 2. Estado de contratos (CU-23)
+
+Devuelve el estado operativo de todos los contratos del cliente.
+
+```
+GET /api/portal/contratos/estado
+Authorization: Bearer <token>
+```
+
+**Respuesta 200:**
+
+```json
+[
+  {
+    "id_contrato": 100,
+    "estado": "activo",
+    "fecha_inicio": "2025-01-15",
+    "fecha_suspension": null
+  },
+  {
+    "id_contrato": 101,
+    "estado": "suspendido",
+    "fecha_inicio": "2025-06-01",
+    "fecha_suspension": "2026-04-15"
+  }
+]
+```
+
+Estados posibles: `"activo"`, `"suspendido"`, `"cortado"`, `"inactivo"`. `fecha_suspension` es `null` si el contrato no ha sido suspendido.
+
+`fecha_inicio` y `fecha_suspension` se devuelven como strings `YYYY-MM-DD`.
+
+**Errores:**
+
+| HTTP | Mensaje | Causa |
+|------|---------|-------|
+| 401 | `"Sesión expirada por inactividad"` / `"Unauthorized"` | Sesión o token |
+
+---
+
 ## 3. Planes vigentes (CU-25 / CU-26)
 
 Devuelve los contratos activos o suspendidos con su plan comercial asociado.

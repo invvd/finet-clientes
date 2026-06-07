@@ -574,6 +574,8 @@ Filtro opcional `tipo_cliente`. Devuelve planes activos ordenados por precio. Ca
 
 Endpoints públicos, no requieren autenticación.
 
+> [Documentación detallada](./deuda-publica.md)
+
 ### 4.1 Consultar por RUT (CU-39)
 
 ```
