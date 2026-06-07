@@ -9,6 +9,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useAuth } from "../_lib/auth";
+import { api } from "../utils/api";
 
 type Contrato = {
   id_contrato: number;
@@ -60,8 +61,6 @@ type PanelData = {
   tickets_recientes: Ticket[];
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
-
 function formatPrecio(precio: number) {
   return `$${precio.toLocaleString("es-CL")}`;
 }
@@ -111,13 +110,7 @@ export default function PortalPage() {
     setError(false);
 
     try {
-      const res = await fetch(`${API_URL}/portal/panel`, {
-        credentials: "include",
-      });
-
-      if (!res.ok) throw res;
-
-      const json = await res.json();
+      const json = await api.get<PanelData>("/portal/panel");
       setData(json);
     } catch {
       setError(true);

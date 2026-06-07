@@ -5,6 +5,7 @@ import { User, AlertCircle, RefreshCw } from "lucide-react";
 import ChangePasswordForm from "../components/ChangePasswordForm";
 import UpdateTelefonoForm from "../components/UpdateTelefonoForm";
 import UpdateEmailForm from "../components/UpdateEmailForm";
+import { api } from "../utils/api";
 
 type ClientePerfil = {
   id_cliente: number;
@@ -14,8 +15,6 @@ type ClientePerfil = {
   telefono: string;
   fecha_creacion: string;
 };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 export default function PerfilPage() {
   const [perfil, setPerfil] = useState<ClientePerfil | null>(null);
@@ -27,13 +26,7 @@ export default function PerfilPage() {
     setError(false);
 
     try {
-      const res = await fetch(`${API_URL}/auth/perfil`, {
-        credentials: "include",
-      });
-
-      if (!res.ok) throw res;
-
-      const data = await res.json();
+      const data = await api.get<ClientePerfil>("/auth/perfil");
       setPerfil(data);
     } catch {
       setError(true);

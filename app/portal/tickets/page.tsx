@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { MessageSquare, AlertCircle, RefreshCw } from "lucide-react";
+import { api } from "../../utils/api";
 
 type Ticket = {
   id_ticket: number;
@@ -20,8 +21,6 @@ type TicketsData = {
   tiene_tickets: boolean;
   tickets: Ticket[];
 };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 function estadoBadge(estado: string) {
   const map: Record<string, { label: string; className: string }> = {
@@ -77,13 +76,7 @@ export default function TicketsPage() {
     setError(false);
 
     try {
-      const res = await fetch(`${API_URL}/portal/tickets`, {
-        credentials: "include",
-      });
-
-      if (!res.ok) throw res;
-
-      const json = await res.json();
+      const json = await api.get<TicketsData>("/portal/tickets");
       setData(json);
     } catch {
       setError(true);

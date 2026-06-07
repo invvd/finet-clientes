@@ -9,6 +9,7 @@ import { api } from "../utils/api";
 import type { ApiError } from "../utils/api";
 import { useAuth } from "../_lib/auth";
 import type { Cliente } from "../_lib/auth";
+import { securityLogger } from "../_lib/logger";
 import LoginBranding from "./LoginBranding";
 import RutInput from "./RutInput";
 import PasswordInput from "./PasswordInput";
@@ -73,6 +74,7 @@ export default function LoginForm() {
       router.push(redirect ?? "/portal");
     } catch (err) {
       const error = err as ApiError;
+      securityLogger.loginFailed(result.data.rut, error.message ?? "Error desconocido");
       setServerError(error.message ?? "Error al iniciar sesión");
     } finally {
       setLoading(false);

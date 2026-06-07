@@ -1,3 +1,5 @@
+import { securityLogger } from "../_lib/logger";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 type ApiError = {
@@ -27,13 +29,18 @@ async function request<T>(
       message = `Error ${res.status}`;
     }
 
-    if (
-      res.status === 401 &&
-      !path.startsWith("/auth/login") &&
-      !path.startsWith("/auth/perfil") &&
-      typeof window !== "undefined"
-    ) {
-      window.dispatchEvent(new CustomEvent("auth:session-expired"));
+    if (res.status === 401) {
+      securityLogger.unauthorized(path);
+
+      if (
+        !path.startsWith("/auth/login") &&
+        !path.startsWith("/auth/perfil") &&
+        typeof window !== "undefined"
+      ) {
+        window.dispatchEvent(new CustomEvent("auth:session-expired"));
+      }
+    } else if (res.status >= 400) {
+      securityLogger.apiError(path, res.status, message);
     }
 
     throw { message, status: res.status } as ApiError;
