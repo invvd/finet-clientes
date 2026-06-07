@@ -1,0 +1,57 @@
+# Monorepo Finet
+
+Plataforma de gestión de clientes para Fibernet Limitada (Finet) — Internet de fibra óptica en La Pintana y Puente Alto.
+
+## Estructura
+
+```
+finet-clientes/
+├── apps/
+│   ├── backend/          ← API REST (NestJS + Prisma + PostgreSQL)
+│   └── frontend/         ← Cliente web (Next.js + React + Tailwind)
+└── README.md
+```
+
+## Requisitos
+
+- Node.js >= 20
+- npm >= 10
+- PostgreSQL (para el backend)
+
+## Inicio rápido
+
+```bash
+# Backend
+cd apps/backend
+cp .env.example .env   # Configurar variables de entorno
+npm install
+npx prisma migrate dev
+npm run start:dev
+
+# Frontend
+cd apps/frontend
+npm install
+npm run dev
+```
+
+## Variables de entorno
+
+### Backend (`apps/backend/.env`)
+
+| Variable | Descripción |
+|---|---|
+| `DATABASE_URL` | URL de conexión PostgreSQL |
+| `JWT_SECRET` | Secreto para firmar tokens JWT |
+| `PORT` | Puerto del servidor (default: 4000) |
+
+### Frontend (`apps/frontend/.env`)
+
+| Variable | Descripción |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | URL de la API backend |
+| `JWT_SECRET` | Debe coincidir con el backend (validación en middleware) |
+| `NEXT_PUBLIC_SITE_URL` | URL del sitio en producción |
+
+## Licencia
+
+Propietario — Fibernet Limitada.
