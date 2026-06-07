@@ -1,5 +1,6 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
+import { ServiceUnavailableException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
@@ -169,6 +170,39 @@ describe('AuthController', () => {
 
       expect(response).toEqual({ message: 'Sesión cerrada exitosamente' });
       expect(mockAuthService.logout).toHaveBeenCalledWith(1, 'test-token');
+    });
+
+    it('lanza 503 y limpia cookie si falla la conexion a BD (CU-02 Excepción 1)', async () => {
+      mockAuthService.logout.mockRejectedValue(
+        new Error('connection refused'),
+      );
+
+      const clearCookie = jest.fn();
+      const req = {
+        headers: { authorization: 'Bearer test-token' },
+        cookies: {},
+      };
+
+      await expect(
+        authController.logout(
+          { id_cliente: 1 },
+          req as unknown as Request,
+          { clearCookie, passthrough: true } as unknown as Response,
+        ),
+      ).rejects.toThrow(ServiceUnavailableException);
+
+      await expect(
+        authController.logout(
+          { id_cliente: 1 },
+          req as unknown as Request,
+          { clearCookie, passthrough: true } as unknown as Response,
+        ),
+      ).rejects.toThrow('No fue posible cerrar la sesión');
+
+      // La cookie se limpia incluso ante el error
+      expect(clearCookie).toHaveBeenCalledWith('access_token', {
+        path: '/',
+      });
     });
   });
 });

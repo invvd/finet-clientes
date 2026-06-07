@@ -103,6 +103,34 @@ describe('PortalService', () => {
         }),
       });
     });
+
+    it('lanza BadRequestException con IDs de contratos afectados cuando hay estados mixtos (CU-23 Excepción 3)', async () => {
+      const contratoValido1 = { ...CONTRATO_MOCK, id_contrato: 1, estado: 'activo' };
+      const contratoInvalido = { ...CONTRATO_MOCK, id_contrato: 5, estado: 'cortado' };
+      const contratoValido2 = { ...CONTRATO_MOCK, id_contrato: 9, estado: 'suspendido' };
+      (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
+        contratoValido1,
+        contratoInvalido,
+        contratoValido2,
+      ]);
+      (prisma.log_auditoria.create as jest.Mock).mockResolvedValue({});
+
+      await expect(service.getEstadoContratos(1)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.getEstadoContratos(1)).rejects.toThrow(
+        '#5 (cortado)',
+      );
+
+      // Solo se registra auditoría para el contrato inválido
+      expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          accion: 'ESTADO_CONTRATO_NO_RECONOCIDO',
+          id_entidad_afectada: 5,
+          valor_anterior: { estado_recibido: 'cortado' },
+        }),
+      });
+    });
   });
 
   // ─── CU-25 / CU-26: getContratosVigentes ─────────────────────────────────

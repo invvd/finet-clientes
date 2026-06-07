@@ -427,4 +427,89 @@ describe('AuthService', () => {
       ).rejects.toThrow('RUT bloqueado temporalmente');
     });
   });
+
+  describe('bloqueo con fallback en memoria (CU-05 Excepción 1)', () => {
+    it('bloquear IP usando fallback cuando DB falla al verificar bloqueos', async () => {
+      // Simular DB caída en findFirst
+      (prisma.intento_fallido.findFirst as jest.Mock).mockRejectedValue(
+        new Error('connection refused'),
+      );
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      // DB también caída al registrar intento
+      (prisma.intento_fallido.create as jest.Mock).mockRejectedValue(
+        new Error('connection refused'),
+      );
+
+      // 5 intentos fallidos → el fallback en memoria debe bloquear la IP
+      for (let i = 0; i < 5; i++) {
+        await expect(
+          authService.login('111111111', 'wrong', '10.0.0.99'),
+        ).rejects.toThrow('RUT o contraseña incorrectos');
+      }
+
+      // El 6to intento debe ser bloqueado por IP via fallback
+      await expect(
+        authService.login('222222222', 'wrong', '10.0.0.99'),
+      ).rejects.toThrow('IP bloqueada temporalmente');
+    });
+
+    it('bloquear RUT usando fallback cuando DB falla al verificar bloqueos', async () => {
+      (prisma.intento_fallido.findFirst as jest.Mock).mockRejectedValue(
+        new Error('connection refused'),
+      );
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.intento_fallido.create as jest.Mock).mockRejectedValue(
+        new Error('connection refused'),
+      );
+
+      // 5 intentos contra el mismo RUT desde IPs distintas
+      for (let i = 0; i < 5; i++) {
+        await expect(
+          authService.login('333333333', 'wrong', `10.0.0.${100 + i}`),
+        ).rejects.toThrow('RUT o contraseña incorrectos');
+      }
+
+      // El 6to intento contra ese RUT debe ser bloqueado via fallback
+      await expect(
+        authService.login('333333333', 'wrong', '10.0.0.200'),
+      ).rejects.toThrow('RUT bloqueado temporalmente');
+    });
+
+    it('fallback no produce falsos positivos — login exitoso cuando DB responde normalmente', async () => {
+      // DB funcionando normalmente
+      (prisma.intento_fallido.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(mockCliente);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (jwtService.signAsync as jest.Mock).mockResolvedValue('jwt-token');
+
+      const result = await authService.login(
+        '123456785',
+        'password',
+        '127.0.0.1',
+      );
+      expect(result).toHaveProperty('access_token', 'jwt-token');
+      expect(result.cliente.rut).toBe('123456785');
+    });
+
+    it('fallback registra intento fallido cuando intento_fallido.create falla', async () => {
+      // findFirst de bloqueos funciona (no hay bloqueos)
+      (prisma.intento_fallido.findFirst as jest.Mock).mockResolvedValue(null);
+      // Cliente no existe
+      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      // count funciona pero create falla
+      (prisma.intento_fallido.count as jest.Mock).mockResolvedValue(0);
+      (prisma.intento_fallido.create as jest.Mock).mockRejectedValue(
+        new Error('connection refused'),
+      );
+
+      // El login debe fallar con credenciales incorrectas
+      await expect(
+        authService.login('555555555', 'wrong', '10.0.0.99'),
+      ).rejects.toThrow('RUT o contraseña incorrectos');
+
+      // El intento fue registrado en el fallback (no debería lanzar error)
+      // Verificamos que create fue llamado (aunque falló)
+      expect(prisma.intento_fallido.create).toHaveBeenCalled();
+    });
+  });
 });

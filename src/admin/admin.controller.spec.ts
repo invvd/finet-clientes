@@ -78,6 +78,40 @@ describe('AdminController', () => {
         limit: 10,
       });
     });
+
+    it('pass resumen=true to service (CU-06)', async () => {
+      const mockResult = {
+        data: [
+          {
+            ip: '192.168.1.1',
+            total_intentos: 5,
+            bloqueos_activos: 1,
+            ultimo_intento: '2026-06-01T10:00:00Z',
+            bloqueado: true,
+            bloqueado_hasta: '2026-06-01T10:15:00Z',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+      };
+      mockAdminService.getIntentosFallidos.mockResolvedValue(mockResult);
+
+      const response = await adminController.getIntentosFallidos({
+        resumen: 'true',
+        bloqueados: 'true',
+        page: 1,
+        limit: 20,
+      });
+
+      expect(response).toEqual(mockResult);
+      expect(mockAdminService.getIntentosFallidos).toHaveBeenCalledWith({
+        resumen: 'true',
+        bloqueados: 'true',
+        page: 1,
+        limit: 20,
+      });
+    });
   });
 
   describe('POST /admin/intentos-fallidos/desbloquear-ip', () => {

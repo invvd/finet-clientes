@@ -186,7 +186,7 @@ export class AdminService {
         if (r.bloqueado_hasta && r.bloqueado_hasta > ahora) {
           existente.bloqueos_activos++;
         }
-        if (r.timestamp > existente.ultimo_intento) {
+        if (r.timestamp && r.timestamp > existente.ultimo_intento) {
           existente.ultimo_intento = r.timestamp;
         }
         // Mantener el bloqueo más lejano
@@ -205,7 +205,7 @@ export class AdminService {
           ip: r.ip_address,
           total_intentos: 1,
           bloqueos_activos: bloqueado ? 1 : 0,
-          ultimo_intento: r.timestamp,
+          ultimo_intento: r.timestamp ?? new Date(0),
           bloqueado,
           bloqueado_hasta: bloqueado ? r.bloqueado_hasta : null,
         });

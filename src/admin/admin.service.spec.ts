@@ -205,4 +205,116 @@ describe('AdminService', () => {
       expect(mockPrisma.log_auditoria.create).toHaveBeenCalled();
     });
   });
+
+  describe('getIntentosFallidos (modo resumen — CU-06)', () => {
+    it('agrupa por IP con conteo de intentos y estado de bloqueo', async () => {
+      const ahora = new Date();
+      const futuro = new Date(ahora.getTime() + 600_000);
+      const mockData = [
+        {
+          ip_address: '192.168.1.10',
+          bloqueado_hasta: null,
+          timestamp: new Date('2026-06-01T10:00:00Z'),
+        },
+        {
+          ip_address: '192.168.1.10',
+          bloqueado_hasta: null,
+          timestamp: new Date('2026-06-01T11:00:00Z'),
+        },
+        {
+          ip_address: '192.168.1.10',
+          bloqueado_hasta: futuro,
+          timestamp: new Date('2026-06-01T12:00:00Z'),
+        },
+        {
+          ip_address: '10.0.0.50',
+          bloqueado_hasta: null,
+          timestamp: new Date('2026-06-01T09:00:00Z'),
+        },
+      ];
+      mockPrisma.intento_fallido.findMany.mockResolvedValue(mockData);
+
+      const result = await adminService.getIntentosFallidos({
+        resumen: 'true',
+        page: 1,
+        limit: 20,
+      });
+
+      expect(result.total).toBe(2);
+      expect(Array.isArray(result.data)).toBe(true);
+
+      const ip10 = result.data.find(
+        (r: { ip: string }) => r.ip === '192.168.1.10',
+      );
+      expect(ip10).toBeDefined();
+      expect(ip10.total_intentos).toBe(3);
+      expect(ip10.bloqueos_activos).toBe(1);
+      expect(ip10.bloqueado).toBe(true);
+
+      const ip50 = result.data.find(
+        (r: { ip: string }) => r.ip === '10.0.0.50',
+      );
+      expect(ip50).toBeDefined();
+      expect(ip50.total_intentos).toBe(1);
+      expect(ip50.bloqueos_activos).toBe(0);
+      expect(ip50.bloqueado).toBe(false);
+      expect(ip50.bloqueado_hasta).toBeNull();
+    });
+
+    it('resumen respeta filtros (RUT, bloqueados, fechas)', async () => {
+      mockPrisma.intento_fallido.findMany.mockResolvedValue([]);
+
+      await adminService.getIntentosFallidos({
+        resumen: 'true',
+        rut: '123456785',
+        bloqueados: 'true',
+        desde: '2026-06-01',
+        page: 1,
+        limit: 20,
+      });
+
+      const where = (mockPrisma.intento_fallido.findMany as jest.Mock).mock
+        .calls[0][0].where;
+      expect(where.rut_intentado).toBe('123456785');
+      expect(where.bloqueado_hasta).toEqual({ gt: expect.any(Date) });
+      expect(where.timestamp).toBeDefined();
+    });
+
+    it('resumen pagina correctamente sobre datos agrupados en memoria', async () => {
+      const mockData = Array.from({ length: 10 }, (_, i) => ({
+        ip_address: `10.0.0.${i + 1}`,
+        bloqueado_hasta: null,
+        timestamp: new Date(`2026-06-01T${String(i).padStart(2, '0')}:00:00Z`),
+      }));
+      mockPrisma.intento_fallido.findMany.mockResolvedValue(mockData);
+
+      const result = await adminService.getIntentosFallidos({
+        resumen: 'true',
+        page: 1,
+        limit: 3,
+      });
+
+      expect(result.total).toBe(10);
+      expect(result.data).toHaveLength(3);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(3);
+    });
+
+    it('resumen retorna data vacía cuando no hay registros', async () => {
+      mockPrisma.intento_fallido.findMany.mockResolvedValue([]);
+
+      const result = await adminService.getIntentosFallidos({
+        resumen: 'true',
+        page: 1,
+        limit: 20,
+      });
+
+      expect(result).toEqual({
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+      });
+    });
+  });
 });
