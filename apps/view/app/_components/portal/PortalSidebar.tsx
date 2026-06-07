@@ -22,7 +22,7 @@ export default function PortalSidebar({ open, onClose }: Props) {
 
   function isActive(href: string) {
     if (href === "/perfil") return pathname.startsWith("/perfil");
-    if (href === "/portal") return pathname === "/portal" || pathname.startsWith("/portal/");
+    if (href === "/portal") return pathname === "/portal";
     return pathname.startsWith(href);
   }
 
