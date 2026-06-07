@@ -6,37 +6,56 @@ Plataforma de gestión de clientes para Fibernet Limitada (Finet) — Internet d
 
 ```
 finet-clientes/
+├── pnpm-workspace.yaml        ← Workspace pnpm (apps/*)
+├── package.json               ← Scripts del monorepo
+├── .env.example               ← Referencia de todas las variables
 ├── apps/
-│   ├── backend/          ← API REST (NestJS + Prisma + PostgreSQL)
-│   └── frontend/         ← Cliente web (Next.js + React + Tailwind)
+│   ├── controller/            ← @finet/controller — API REST (NestJS + Prisma + PostgreSQL)
+│   │   └── .env.example       ← Variables del backend
+│   └── view/                  ← @finet/view — Cliente web (Next.js + React + Tailwind)
+│       └── .env.example       ← Variables del frontend
 └── README.md
 ```
 
 ## Requisitos
 
 - Node.js >= 20
-- npm >= 10
+- pnpm >= 9
 - PostgreSQL (para el backend)
 
 ## Inicio rápido
 
 ```bash
-# Backend
-cd apps/backend
-cp .env.example .env   # Configurar variables de entorno
-npm install
-npx prisma migrate dev
-npm run start:dev
+# Instalar dependencias de todo el monorepo (desde raíz)
+pnpm install
 
-# Frontend
-cd apps/frontend
-npm install
-npm run dev
+# Configurar variables de entorno
+cp apps/controller/.env.example apps/controller/.env
+cp apps/view/.env.example apps/view/.env
+
+# Base de datos (migraciones + generate)
+pnpm -C apps/controller prisma migrate dev
+
+# Desarrollo (ambos apps en paralelo)
+pnpm dev
 ```
+
+## Comandos
+
+| Comando | Descripción |
+|---|---|
+| `pnpm install` | Instalar dependencias de todos los paquetes |
+| `pnpm dev` | Levantar backend + frontend en paralelo |
+| `pnpm dev:controller` | Solo backend (NestJS) |
+| `pnpm dev:view` | Solo frontend (Next.js) |
+| `pnpm build` | Build de todos los paquetes |
+| `pnpm lint` | Lint de todos los paquetes |
+| `pnpm test` | Tests de todos los paquetes |
+| `pnpm -C apps/controller prisma ...` | Comandos Prisma (migrate, generate, studio) |
 
 ## Variables de entorno
 
-### Backend (`apps/backend/.env`)
+### Backend (`apps/controller/.env`)
 
 | Variable | Descripción |
 |---|---|
@@ -44,7 +63,7 @@ npm run dev
 | `JWT_SECRET` | Secreto para firmar tokens JWT |
 | `PORT` | Puerto del servidor (default: 4000) |
 
-### Frontend (`apps/frontend/.env`)
+### Frontend (`apps/view/.env`)
 
 | Variable | Descripción |
 |---|---|

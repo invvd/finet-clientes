@@ -1,0 +1,18 @@
+{
+  "name": "finet-clientes",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "dev:controller": "pnpm -C apps/controller start:dev",
+    "dev:view": "pnpm -C apps/view dev",
+    "build": "pnpm -r build",
+    "build:controller": "pnpm -C apps/controller build",
+    "build:view": "pnpm -C apps/view build",
+    "start": "pnpm -r start",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "test:cov": "pnpm -r test:cov",
+    "format": "pnpm -r format",
+    "clean": "pnpm -r exec rm -rf dist .next coverage"
+  }
+}

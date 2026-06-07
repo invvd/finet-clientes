@@ -1,5 +1,5 @@
 {
-  "name": "finet-clientes-backend",
+  "name": "@finet/controller",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -7,6 +7,7 @@
   "type": "module",
   "license": "UNLICENSED",
   "scripts": {
+    "dev": "nest start --watch",
     "build": "nest build",
     "postgenerate": "node scripts/fix-prisma-client.mjs",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
