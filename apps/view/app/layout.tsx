@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Hanken_Grotesk, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./_components/layout/navbar/Navbar";
 import Footer from "./_components/layout/footer/Footer";
@@ -7,8 +7,13 @@ import { themeScript } from "./_components/layout/theme/theme-script";
 import { BASE_URL } from "./_lib/consts";
 import { AuthProvider } from "./_lib/auth";
 
-const inter = Inter({
-  variable: "--font-inter",
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
@@ -95,7 +100,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} h-full antialiased`}
+      className={`${hanken.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
