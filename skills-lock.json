@@ -1,21 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "nodejs-backend-patterns": {
-      "source": "wshobson/agents",
-      "sourceType": "autoskills-registry",
-      "computedHash": "710a5e6f83c46e8f6c43356df55c143a7375c4414559a581654ce51709138c55"
-    },
-    "nodejs-best-practices": {
-      "source": "sickn33/antigravity-awesome-skills",
-      "sourceType": "autoskills-registry",
-      "computedHash": "7361ab02fb6b09913e3bdd9cf61c629ed6c17de9485e6a781054e5d437ccfc29"
-    },
-    "typescript-advanced-types": {
-      "source": "wshobson/agents",
-      "sourceType": "autoskills-registry",
-      "computedHash": "5ca0e177c6aaaba1889255691224daafdb7d71f317cc70bede1590d3907ded42"
-    },
     "accessibility": {
       "source": "addyosmani/web-quality-skills",
       "sourceType": "autoskills-registry",
@@ -26,11 +11,21 @@
       "sourceType": "autoskills-registry",
       "computedHash": "c124390cc3441844903ada94cb5820b23d922f2d0ad34e01e029e410197c8a32"
     },
+    "contextual-commit": {
+      "source": "berserkdisruptors/contextual-commits",
+      "sourceType": "github",
+      "skillPath": "skills/contextual-commit/SKILL.md",
+      "computedHash": "dc5c28c5be1263ce8eb499981825435dc1904a37d917b5b793d613a49be508ce"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
-      "sourceType": "github",
-      "skillPath": "skills/frontend-design/SKILL.md",
-      "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+      "sourceType": "autoskills-registry",
+      "computedHash": "82fb11a63fb1e35ee2469516ed02d54695f783115b1540c0e783197af4240a3a"
+    },
+    "nestjs-best-practices": {
+      "source": "kadajett/agent-nestjs-skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "7f14f088a79090183152c2aa556f708b2f5b7d0dacfb0ad339df2d498ba52aa3"
     },
     "next-best-practices": {
       "source": "vercel-labs/next-skills",
@@ -47,10 +42,64 @@
       "sourceType": "autoskills-registry",
       "computedHash": "265833561c41038b4a626585b46186cff859b7f9b2254ae6b88d01648790a7b4"
     },
+    "nodejs-backend-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "autoskills-registry",
+      "computedHash": "710a5e6f83c46e8f6c43356df55c143a7375c4414559a581654ce51709138c55"
+    },
+    "nodejs-best-practices": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "7361ab02fb6b09913e3bdd9cf61c629ed6c17de9485e6a781054e5d437ccfc29"
+    },
+    "owasp-top-10": {
+      "source": "microsoft/hve-core",
+      "sourceType": "github",
+      "skillPath": ".github/skills/security/owasp-top-10/SKILL.md",
+      "computedHash": "a1c5176f2b057e9037431c388c2b5e3e5c2f48a8c110b740349f28a83657c52d"
+    },
+    "prisma-cli": {
+      "source": "prisma/skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "d2b4e410bb24df07e0a399cf1fd70ca6a2f696079f7e6445eb602116566d2278"
+    },
+    "prisma-client-api": {
+      "source": "prisma/skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "922d6b5b4eb4387e72e409fa063f8e1bffb9037aed595cba0d3c257f418b6c18"
+    },
+    "prisma-database-setup": {
+      "source": "prisma/skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "50c6cbc7090ef356c026cb76352952b83b65bee8b3f3c7ac337461f5b352e9b9"
+    },
+    "prisma-driver-adapter-implementation": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-driver-adapter-implementation/SKILL.md",
+      "computedHash": "86034220752575ac0551aa3d579ed0bdfb90616000ae5703bf11e47b655ec7d1"
+    },
+    "prisma-postgres": {
+      "source": "prisma/skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "3adda04ae85b8593cfca45d48d5d410ddffb2797ea53f6dc9dfe34b8d71d35e9"
+    },
+    "prisma-postgres-setup": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-postgres-setup/SKILL.md",
+      "computedHash": "c89d3aa91285d8e4964fcaa5238c99a3d3c20b617e032e731cf632330a85a5a6"
+    },
     "react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "autoskills-registry",
       "computedHash": "502eb06700e2c3cb1bd7f710860528f72281320bd5171a2087b05a090b573dc1"
+    },
+    "recall": {
+      "source": "berserkdisruptors/contextual-commits",
+      "sourceType": "github",
+      "skillPath": "skills/recall/SKILL.md",
+      "computedHash": "73c535f4ee936f843395957d40ceea93f382021a7e3f836625b0c4b393fc0f44"
     },
     "seo": {
       "source": "addyosmani/web-quality-skills",
@@ -62,58 +111,15 @@
       "sourceType": "autoskills-registry",
       "computedHash": "8fd534b64b3f305ade80c207e2f9ba4338d5e409e355af9f724c36764b6709c1"
     },
-    "contextual-commit": {
-      "source": "berserkdisruptors/contextual-commits",
-      "sourceType": "github",
-      "skillPath": "skills/contextual-commit/SKILL.md",
-      "computedHash": "dc5c28c5be1263ce8eb499981825435dc1904a37d917b5b793d613a49be508ce"
-    },
-    "nestjs-best-practices": {
-      "source": "kadajett/agent-nestjs-skills",
+    "typescript-advanced-types": {
+      "source": "wshobson/agents",
       "sourceType": "autoskills-registry",
-      "computedHash": "7f14f088a79090183152c2aa556f708b2f5b7d0dacfb0ad339df2d498ba52aa3"
+      "computedHash": "5ca0e177c6aaaba1889255691224daafdb7d71f317cc70bede1590d3907ded42"
     },
-    "owasp-top-10": {
-      "source": "microsoft/hve-core",
-      "sourceType": "github",
-      "skillPath": ".github/skills/security/owasp-top-10/SKILL.md",
-      "computedHash": "a1c5176f2b057e9037431c388c2b5e3e5c2f48a8c110b740349f28a83657c52d"
-    },
-    "prisma-cli": {
-      "source": "prisma/skills",
-      "sourceType": "github",
-      "skillPath": "prisma-cli/SKILL.md",
-      "computedHash": "f91df0be8d0ac0f12c5402b5c53da12a31b284e5501dba027086bb12db879903"
-    },
-    "prisma-client-api": {
-      "source": "prisma/skills",
-      "sourceType": "github",
-      "skillPath": "prisma-client-api/SKILL.md",
-      "computedHash": "7825288518e0722b497de03367a1aee477fc61b0b488d456b9b6257294c005ae"
-    },
-    "prisma-driver-adapter-implementation": {
-      "source": "prisma/skills",
-      "sourceType": "github",
-      "skillPath": "prisma-driver-adapter-implementation/SKILL.md",
-      "computedHash": "86034220752575ac0551aa3d579ed0bdfb90616000ae5703bf11e47b655ec7d1"
-    },
-    "prisma-postgres": {
-      "source": "prisma/skills",
-      "sourceType": "github",
-      "skillPath": "prisma-postgres/SKILL.md",
-      "computedHash": "fd8f16f26e2cce1dd3e8e7916dcddbffddf295003eba86141f53e9d2d9d2bc0c"
-    },
-    "prisma-postgres-setup": {
-      "source": "prisma/skills",
-      "sourceType": "github",
-      "skillPath": "prisma-postgres-setup/SKILL.md",
-      "computedHash": "c89d3aa91285d8e4964fcaa5238c99a3d3c20b617e032e731cf632330a85a5a6"
-    },
-    "recall": {
-      "source": "berserkdisruptors/contextual-commits",
-      "sourceType": "github",
-      "skillPath": "skills/recall/SKILL.md",
-      "computedHash": "73c535f4ee936f843395957d40ceea93f382021a7e3f836625b0c4b393fc0f44"
+    "zod": {
+      "source": "pproenca/dot-skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "aa8a97195b07763d37494b511f48be90979fd6826c031956c831cfc58f6a24b8"
     }
   }
 }
