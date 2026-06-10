@@ -7,14 +7,14 @@ type AuthSwitchProps = {
 
 export default function AuthSwitch({ active, onChange }: AuthSwitchProps) {
   return (
-    <div className="mb-8 flex w-full rounded-full bg-[var(--color-border)] p-1">
+    <div className="mb-8 flex w-full rounded-lg bg-border p-1">
       <button
         type="button"
         onClick={() => onChange("login")}
-        className={`flex-1 cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+        className={`flex-1 cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 ${
           active === "login"
-            ? "bg-[var(--color-primary)] text-[var(--color-background)] shadow-sm"
-            : "text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+            ? "bg-primary text-background shadow-sm"
+            : "text-muted hover:text-foreground"
         }`}
       >
         Iniciar Sesión
@@ -22,10 +22,10 @@ export default function AuthSwitch({ active, onChange }: AuthSwitchProps) {
       <button
         type="button"
         onClick={() => onChange("register")}
-        className={`flex-1 cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+        className={`flex-1 cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 ${
           active === "register"
-            ? "bg-[var(--color-primary)] text-[var(--color-background)] shadow-sm"
-            : "text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+            ? "bg-primary text-background shadow-sm"
+            : "text-muted hover:text-foreground"
         }`}
       >
         Registrarse

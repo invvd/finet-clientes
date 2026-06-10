@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Hanken_Grotesk, Geist_Mono } from "next/font/google";
+import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import Navbar from "./_components/layout/navbar/Navbar";
 import Footer from "./_components/layout/footer/Footer";
@@ -9,11 +9,6 @@ import { AuthProvider } from "./_lib/auth";
 
 const hanken = Hanken_Grotesk({
   variable: "--font-hanken",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
@@ -100,7 +95,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${hanken.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${hanken.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -114,7 +109,7 @@ export default function RootLayout({
         {/* Skip-to-content link for keyboard users */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-[var(--color-primary)] focus:px-4 focus:py-2 focus:text-[var(--color-background)] focus:text-sm focus:outline-none"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-background focus:text-sm focus:outline-none"
         >
           Saltar al contenido principal
         </a>

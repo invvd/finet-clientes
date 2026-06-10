@@ -50,20 +50,20 @@ export default function DesktopNavItem({ item }: DesktopNavItemProps) {
             onClick={() => setIsOpen(!isOpen)}
             className={`inline-flex items-center gap-0.5 text-sm transition-colors ${
               isActive
-                ? "text-[var(--color-primary)]"
-                : "text-[var(--color-foreground)] hover:text-[var(--color-primary)]"
+                ? "text-primary"
+                : "text-foreground hover:text-primary"
             }`}
           >
             {item.label}
             <ChevronDown
               size={14}
-              className={`text-[var(--color-muted)] transition-transform ${isOpen ? "rotate-180" : ""}`}
+              className={`text-muted transition-transform ${isOpen ? "rotate-180" : ""}`}
               aria-hidden
             />
           </button>
           {isOpen && (
             <ul
-              className="absolute left-0 top-full mt-1 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] p-1 shadow-lg z-50"
+              className="absolute left-0 top-full mt-1 min-w-[180px] rounded-lg border border-border bg-background p-1 shadow-lg z-50"
               role="menu"
             >
               {item.children!.map((child) => (
@@ -74,8 +74,8 @@ export default function DesktopNavItem({ item }: DesktopNavItemProps) {
                     onClick={() => setIsOpen(false)}
                     className={`block rounded-md px-3 py-2 text-sm transition-colors ${
                       pathname === child.href
-                        ? "text-[var(--color-primary)] bg-[var(--color-surface)]"
-                        : "text-[var(--color-foreground)] hover:bg-[var(--color-surface)]"
+                        ? "text-primary bg-surface"
+                        : "text-foreground hover:bg-surface"
                     }`}
                   >
                     {child.label}
@@ -91,8 +91,8 @@ export default function DesktopNavItem({ item }: DesktopNavItemProps) {
           aria-current={isActive ? "page" : undefined}
           className={`text-sm transition-colors ${
             isActive
-              ? "text-[var(--color-primary)]"
-              : "text-[var(--color-foreground)] hover:text-[var(--color-primary)]"
+              ? "text-primary"
+              : "text-foreground hover:text-primary"
           }`}
         >
           {item.label}

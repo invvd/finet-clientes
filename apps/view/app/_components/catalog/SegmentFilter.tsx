@@ -27,8 +27,8 @@ export default function SegmentFilter({ value, onChange }: SegmentFilterProps) {
             onClick={() => onChange(opcion.value)}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
               isActive
-                ? "bg-[var(--color-primary)] text-[var(--color-background)]"
-                : "border border-[var(--color-border)] text-[var(--color-foreground)] hover:border-[var(--color-primary)]"
+                ? "bg-primary text-background"
+                : "border border-border text-foreground hover:border-primary"
             }`}
           >
             {opcion.label}

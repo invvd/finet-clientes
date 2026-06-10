@@ -3,9 +3,9 @@ import { legalLinks } from './footer.config';
 
 export default function Copyright() {
   return (
-    <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-deep)] px-4 py-4">
+    <div className="border-t border-border bg-surface-deep px-4 py-4">
       <div className="mx-auto max-w-7xl flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-[var(--color-muted)]">
+        <p className="text-xs text-muted">
           © 2026 Fibernet Limitada — Todos los derechos reservados
         </p>
         <nav aria-label="Links legales">
@@ -17,7 +17,7 @@ export default function Copyright() {
                   <Link
                     href={link.href}
                     {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    className="text-xs text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors"
+                    className="text-xs text-muted hover:text-foreground transition-colors"
                   >
                     {link.label}
                   </Link>

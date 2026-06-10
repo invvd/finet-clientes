@@ -43,7 +43,7 @@ export const Hero = () => {
     <section
       aria-roledescription="carrusel"
       aria-label="Planes destacados"
-      className="relative w-full h-[60vh] md:h-[70vh] overflow-hidden bg-[var(--color-surface)]"
+      className="relative w-full h-[60vh] md:h-[70vh] overflow-hidden bg-surface"
     >
       <div
         className="flex h-full w-full"
@@ -74,7 +74,7 @@ export const Hero = () => {
                 <a
                   href="/planes"
                   tabIndex={isActive ? 0 : -1}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-8 py-3 text-base font-bold text-[var(--color-background)] hover:bg-[var(--color-primary-bright)] transition-colors shadow-lg shadow-[var(--color-primary)]/25"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3 text-base font-bold text-background hover:bg-primary-bright transition-colors shadow-lg shadow-primary/25"
                 >
                   Ver Planes
                 </a>

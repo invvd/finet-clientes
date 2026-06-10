@@ -70,27 +70,27 @@ export default async function ContratarPlanPage({ params }: ContratarPlanPagePro
         }}
       />
       <nav aria-label="Breadcrumb" className="mx-auto max-w-7xl mb-4">
-        <ol className="flex items-center gap-2 text-sm text-[var(--color-muted)]">
+        <ol className="flex items-center gap-2 text-sm text-muted">
           <li>
-            <Link href="/" className="hover:text-[var(--color-foreground)] transition-colors">
+            <Link href="/" className="hover:text-foreground transition-colors">
               Inicio
             </Link>
           </li>
           <li aria-hidden>/</li>
           <li>
-            <Link href="/planes" className="hover:text-[var(--color-foreground)] transition-colors">
+            <Link href="/planes" className="hover:text-foreground transition-colors">
               Planes
             </Link>
           </li>
           <li aria-hidden>/</li>
-          <li className="text-[var(--color-foreground)] truncate max-w-[200px]">
+          <li className="text-foreground truncate max-w-[200px]">
             {plan.nombre_comercial}
           </li>
         </ol>
       </nav>
       <div className="mx-auto grid max-w-7xl gap-4">
         <h1 className="text-2xl font-medium">Solicitud de contratacion</h1>
-        <p className="text-[var(--color-muted)]">
+        <p className="text-muted">
           Plan seleccionado: <strong>{plan.nombre_comercial}</strong> &mdash;{" "}
           {formatPrecioMensual(plan.precio_mensual)}/mes
         </p>

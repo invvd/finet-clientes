@@ -1,29 +1,18 @@
 import { Inbox } from 'lucide-react';
 import type { Ticket } from '@/app/portal/_lib/portal-api';
+import StatusBadge, { type StatusTone } from '@/app/_components/ui/StatusBadge';
 
-const ticketStatusConfig: Record<string, { label: string; className: string }> = {
-  abierto: {
-    label: 'Abierto',
-    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  },
-  en_proceso: {
-    label: 'En proceso',
-    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  },
-  resuelto: {
-    label: 'Resuelto',
-    className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  },
-  cerrado: {
-    label: 'Cerrado',
-    className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-  },
+const ticketStatusConfig: Record<string, { label: string; tone: StatusTone }> = {
+  abierto: { label: 'Abierto', tone: 'info' },
+  en_proceso: { label: 'En proceso', tone: 'warning' },
+  resuelto: { label: 'Resuelto', tone: 'success' },
+  cerrado: { label: 'Cerrado', tone: 'neutral' },
 };
 
-function defaultStatusConfig(status: string) {
+function defaultStatusConfig(status: string): { label: string; tone: StatusTone } {
   return {
     label: status,
-    className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    tone: 'neutral',
   };
 }
 
@@ -57,14 +46,10 @@ export default function TicketsSection({ tickets }: { tickets: Ticket[] }) {
                 className="rounded-xl border border-border bg-background p-4 flex flex-col gap-2"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-mono text-muted">
+                  <span className="text-xs text-muted">
                     {ticket.codigo_seguimiento}
                   </span>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusCfg.className}`}
-                  >
-                    {statusCfg.label}
-                  </span>
+                  <StatusBadge tone={statusCfg.tone}>{statusCfg.label}</StatusBadge>
                 </div>
                 <p className="text-sm text-foreground">{ticket.descripcion}</p>
                 <p className="text-xs text-muted">{formatDate(ticket.fecha_creacion)}</p>

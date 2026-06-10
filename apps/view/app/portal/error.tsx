@@ -11,7 +11,7 @@ export default function PortalError({
 }) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 flex flex-col items-center gap-4 text-center">
-      <AlertTriangle className="text-yellow-500" size={40} strokeWidth={1.5} />
+      <AlertTriangle className="text-warning" size={40} strokeWidth={1.5} />
       <h2 className="text-lg font-semibold text-foreground">No pudimos cargar tu portal</h2>
       <p className="text-sm text-muted max-w-sm">{error.message}</p>
       <button

@@ -29,7 +29,7 @@ export default async function PlanesPage() {
       <div className="mx-auto grid max-w-7xl gap-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold">Planes de Internet Fibra Optica</h1>
-          <p className="text-[var(--color-muted)] mt-2 max-w-2xl mx-auto">
+          <p className="text-muted mt-2 max-w-2xl mx-auto">
             Conexion simetrica de alta velocidad para tu hogar o empresa. Sin
             limites de datos, instalacion incluida y soporte local en La Pintana.
           </p>

@@ -66,13 +66,13 @@ export default async function HomePage() {
       <Hero />
 
       {/* ==================== BENEFICIOS ==================== */}
-      <section aria-labelledby="beneficios-heading" className="px-4 py-20 bg-[var(--color-surface)]">
+      <section aria-labelledby="beneficios-heading" className="px-4 py-20 bg-surface">
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-12">
-            <h2 id="beneficios-heading" className="text-3xl font-bold text-[var(--color-foreground)]">
+            <h2 id="beneficios-heading" className="text-3xl font-bold text-foreground">
               Por que elegir Finet
             </h2>
-            <p className="text-[var(--color-muted)] mt-3 max-w-xl mx-auto">
+            <p className="text-muted mt-3 max-w-xl mx-auto">
               Internet de fibra optica pensado para tu hogar, con la mejor
               relacion precio-calidad del sur de Santiago.
             </p>
@@ -80,13 +80,13 @@ export default async function HomePage() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             {beneficios.map((b) => (
               <div key={b.title} className="text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] mb-4">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 text-primary mb-4">
                   <b.icon size={28} strokeWidth={1.5} />
                 </div>
-                <h3 className="font-semibold text-[var(--color-foreground)]">
+                <h3 className="font-semibold text-foreground">
                   {b.title}
                 </h3>
-                <p className="text-sm text-[var(--color-muted)] mt-2">{b.desc}</p>
+                <p className="text-sm text-muted mt-2">{b.desc}</p>
               </div>
             ))}
           </div>
@@ -97,10 +97,10 @@ export default async function HomePage() {
       <section aria-labelledby="planes-heading" className="px-4 py-20">
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-12">
-            <h2 id="planes-heading" className="text-3xl font-bold text-[var(--color-foreground)]">
+            <h2 id="planes-heading" className="text-3xl font-bold text-foreground">
               Planes de Internet
             </h2>
-            <p className="text-[var(--color-muted)] mt-3 max-w-xl mx-auto">
+            <p className="text-muted mt-3 max-w-xl mx-auto">
               Conexion simetrica sin limites de datos. Instalacion incluida en
               todas las comunas con cobertura.
             </p>
@@ -116,7 +116,7 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <p className="text-[var(--color-muted)] text-center">
+            <p className="text-muted text-center">
               No hay planes disponibles temporalmente.
             </p>
           )}
@@ -129,13 +129,13 @@ export default async function HomePage() {
       </section>
 
       {/* ==================== COBERTURA ==================== */}
-      <section aria-labelledby="cobertura-heading" className="px-4 py-20 bg-[var(--color-surface)]">
+      <section aria-labelledby="cobertura-heading" className="px-4 py-20 bg-surface">
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-12">
-            <h2 id="cobertura-heading" className="text-3xl font-bold text-[var(--color-foreground)]">
+            <h2 id="cobertura-heading" className="text-3xl font-bold text-foreground">
               Zona de cobertura
             </h2>
-            <p className="text-[var(--color-muted)] mt-3 max-w-xl mx-auto">
+            <p className="text-muted mt-3 max-w-xl mx-auto">
               Estamos presentes en las siguientes comunas del sur de Santiago.
               Consulta disponibilidad en tu direccion.
             </p>
@@ -144,13 +144,13 @@ export default async function HomePage() {
             {comunas.map((comuna) => (
               <div
                 key={comuna}
-                className="flex items-center gap-3 border border-[var(--color-border)] rounded-xl p-4 bg-[var(--color-background)]"
+                className="flex items-center gap-3 border border-border rounded-xl p-4 bg-background"
               >
                 <MapPin
                   size={20}
-                  className="shrink-0 text-[var(--color-primary)]"
+                  className="shrink-0 text-primary"
                 />
-                <span className="font-medium text-[var(--color-foreground)]">
+                <span className="font-medium text-foreground">
                   {comuna}
                 </span>
               </div>
@@ -162,10 +162,10 @@ export default async function HomePage() {
       {/* ==================== CTA FINAL ==================== */}
       <section className="px-4 py-20">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold text-[var(--color-foreground)]">
+          <h2 className="text-3xl font-bold text-foreground">
             Listo para conectarte?
           </h2>
-          <p className="text-[var(--color-muted)] mt-3">
+          <p className="text-muted mt-3">
             Elige tu plan y solicita la instalacion hoy. Te contactamos en
             menos de 24 horas.
           </p>

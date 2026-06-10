@@ -30,7 +30,7 @@ export default function SocialLinks() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={social.label}
-            className="flex items-center justify-center w-9 h-9 rounded-full border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-full border border-border text-muted hover:text-primary hover:border-primary transition-colors"
           >
             <InstagramIcon size={18} />
           </a>

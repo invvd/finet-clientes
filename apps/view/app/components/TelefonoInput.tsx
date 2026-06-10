@@ -21,7 +21,7 @@ export default function TelefonoInput({
     <div>
       <label
         htmlFor="telefono"
-        className="mb-1.5 block text-sm font-medium text-[var(--color-foreground)]"
+        className="mb-1.5 block text-sm font-medium text-foreground"
       >
         Teléfono
       </label>
@@ -36,11 +36,11 @@ export default function TelefonoInput({
         onBlur={onBlur}
         data-error={!!error}
         className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors duration-200
-          data-[error=false]:border-[var(--color-border)] data-[error=false]:bg-[var(--color-background)] data-[error=false]:text-[var(--color-foreground)] data-[error=false]:placeholder:text-[var(--color-muted)] data-[error=false]:focus-visible:outline data-[error=false]:focus-visible:outline-2 data-[error=false]:focus-visible:outline-offset-0 data-[error=false]:focus-visible:outline-[var(--color-primary)]
-          border-red-500 bg-red-50 text-[var(--color-foreground)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-red-500`}
+          data-[error=false]:border-border data-[error=false]:bg-background data-[error=false]:text-foreground data-[error=false]:placeholder:text-muted data-[error=false]:focus-visible:outline data-[error=false]:focus-visible:outline-2 data-[error=false]:focus-visible:outline-offset-0 data-[error=false]:focus-visible:outline-primary
+          border-error bg-error-container text-foreground focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-error`}
       />
       {error && (
-        <p className="mt-1 text-xs text-red-600">{error}</p>
+        <p className="mt-1 text-xs text-error">{error}</p>
       )}
     </div>
   );

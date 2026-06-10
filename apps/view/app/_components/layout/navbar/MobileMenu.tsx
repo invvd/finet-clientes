@@ -36,7 +36,7 @@ export default function MobileMenu({ items }: MobileMenuProps) {
         aria-controls="menu-movil"
         aria-expanded={isOpen}
         aria-label={isOpen ? "Cerrar menu movil" : "Abrir menu movil"}
-        className="flex h-9 w-9 items-center justify-center rounded-md text-[var(--color-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-foreground)]"
+        className="flex h-9 w-9 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-foreground"
         onClick={() => setIsOpen((v) => !v)}
       >
         {isOpen ? <X size={18} /> : <Menu size={18} />}
@@ -45,7 +45,7 @@ export default function MobileMenu({ items }: MobileMenuProps) {
         id="menu-movil"
         aria-label="Navegacion principal movil"
         hidden={!isOpen}
-        className="absolute left-0 right-0 top-full border-b border-[var(--color-border)] bg-[var(--color-background)] px-4 py-3 max-h-[80vh] overflow-y-auto"
+        className="absolute left-0 right-0 top-full border-b border-border bg-background px-4 py-3 max-h-[80vh] overflow-y-auto"
       >
         <ul className="grid gap-1">
           {items.map((item) => {
@@ -64,21 +64,21 @@ export default function MobileMenu({ items }: MobileMenuProps) {
                       onClick={() => toggleGroup(item.href)}
                       className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
                         isActive
-                          ? "text-[var(--color-primary)]"
-                          : "text-[var(--color-foreground)] hover:bg-[var(--color-surface)]"
+                          ? "text-primary"
+                          : "text-foreground hover:bg-surface"
                       }`}
                     >
                       {item.label}
                       <ChevronDown
                         size={14}
-                        className={`text-[var(--color-muted)] transition-transform ${
+                        className={`text-muted transition-transform ${
                           isExpanded ? "rotate-180" : ""
                         }`}
                         aria-hidden
                       />
                     </button>
                     {isExpanded && (
-                      <ul className="ml-4 mt-1 border-l border-[var(--color-border)] pl-3 grid gap-1">
+                      <ul className="ml-4 mt-1 border-l border-border pl-3 grid gap-1">
                         {item.children!.map((child) => (
                           <li key={child.href}>
                             <Link
@@ -89,8 +89,8 @@ export default function MobileMenu({ items }: MobileMenuProps) {
                               }
                               className={`block rounded-md px-3 py-2 text-sm transition-colors ${
                                 pathname === child.href
-                                  ? "text-[var(--color-primary)] bg-[var(--color-surface)]"
-                                  : "text-[var(--color-foreground)] hover:bg-[var(--color-surface)]"
+                                  ? "text-primary bg-surface"
+                                  : "text-foreground hover:bg-surface"
                               }`}
                             >
                               {child.label}
@@ -107,8 +107,8 @@ export default function MobileMenu({ items }: MobileMenuProps) {
                     aria-current={isActive ? "page" : undefined}
                     className={`block rounded-md px-3 py-2 text-sm transition-colors ${
                       isActive
-                        ? "text-[var(--color-primary)] bg-[var(--color-surface)]"
-                        : "text-[var(--color-foreground)] hover:bg-[var(--color-surface)]"
+                        ? "text-primary bg-surface"
+                        : "text-foreground hover:bg-surface"
                     }`}
                   >
                     {item.label}
