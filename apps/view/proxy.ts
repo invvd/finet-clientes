@@ -25,7 +25,7 @@ async function verifyToken(token: string): Promise<JWTPayload | null> {
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtected = PROTECTED_PATHS.some(
@@ -58,6 +58,6 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = {
+export const proxyConfig = {
   matcher: ["/portal/:path*", "/perfil/:path*"],
 };
