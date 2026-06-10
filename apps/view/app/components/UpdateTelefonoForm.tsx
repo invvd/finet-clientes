@@ -22,7 +22,7 @@ export default function UpdateTelefonoForm({
   function validateTelefono(value: string) {
     const cleaned = cleanTelefono(value);
     if (cleaned.length < 8) return "El teléfono debe tener al menos 8 caracteres";
-    if (cleaned.length > 20) return "El teléfono es demasiado largo";
+    if (cleaned.length > 12) return "El teléfono es demasiado largo";
     if (!/^\+?[\d\s\-()]+$/.test(value)) return "Formato de teléfono inválido";
     return "";
   }
@@ -118,9 +118,11 @@ export default function UpdateTelefonoForm({
           <input
             id="telefono"
             type="tel"
+            maxLength={12}
             value={telefono}
             onChange={(e) => {
-              setTelefono(e.target.value);
+              const cleaned = e.target.value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+              setTelefono(!cleaned || cleaned.startsWith("+") ? cleaned : "+" + cleaned);
               setErrors((prev) => ({ ...prev, telefono: "" }));
               setDone(false);
             }}

@@ -1,19 +1,9 @@
 "use client";
 
 function formatTelefono(value: string) {
-  const digits = value.replace(/\D/g, "");
-
-  if (!digits) return "";
-
-  if (digits.startsWith("56")) {
-    const rest = digits.slice(2, 11);
-    if (rest.length <= 4) return `+56 ${rest}`;
-    return `+56 ${rest.slice(0, 4)} ${rest.slice(4, 8)}`;
-  }
-
-  const rest = digits.slice(0, 9);
-  if (rest.length <= 4) return `+56 ${rest}`;
-  return `+56 ${rest.slice(0, 4)} ${rest.slice(4, 8)}`;
+  const cleaned = value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+  if (!cleaned) return "";
+  return cleaned.startsWith("+") ? cleaned : "+" + cleaned;
 }
 
 export default function TelefonoInput({
@@ -39,7 +29,8 @@ export default function TelefonoInput({
         id="telefono"
         type="tel"
         inputMode="numeric"
-        placeholder="+56 9 1234 5678"
+        placeholder="+56912345678"
+        maxLength={12}
         value={value}
         onChange={(e) => onChange(formatTelefono(e.target.value))}
         onBlur={onBlur}
