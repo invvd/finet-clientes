@@ -50,17 +50,17 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
 
   if (status === "success") {
     return (
-      <div className="grid max-w-xl gap-4 border border-[var(--color-primary)] bg-[var(--color-primary)]/10 p-6 rounded-lg" role="alert">
-        <h2 className="text-lg font-medium text-[var(--color-foreground)]">
+      <div className="grid max-w-xl gap-4 border border-success bg-success-container p-6 rounded-lg" role="alert">
+        <h2 className="text-lg font-medium text-on-success-container">
           Solicitud enviada
         </h2>
-        <p className="text-sm text-[var(--color-muted)]">
+        <p className="text-sm text-on-success-container">
           Tu solicitud para <strong>{plan.nombre_comercial}</strong> ha sido recibida. Te
           contactaremos pronto al telefono y correo proporcionados.
         </p>
         <a
           href="/planes"
-          className="text-sm text-[var(--color-primary)] hover:underline"
+          className="text-sm text-primary hover:underline"
         >
           &larr; Volver a planes
         </a>
@@ -71,7 +71,7 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid max-w-xl gap-4 border border-[var(--color-border)] p-6 rounded-lg"
+      className="grid max-w-xl gap-4 border border-border p-6 rounded-lg"
     >
       <input type="hidden" name="id_plan" value={plan.id_plan} />
 
@@ -84,7 +84,7 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
           placeholder="Nombre1 Nombre2 Ap1 Ap2"
           pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+){1,3}"
           title="Nombre1 Nombre2 Ap1 Ap2. Respetar tildes. Max 4 palabras visibles."
-          className="border border-[var(--color-border)] bg-[var(--color-background)] p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-primary)]"
+          className="border border-border bg-background p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary"
         />
       </label>
 
@@ -97,7 +97,7 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
           placeholder="XX.XXX.XXX-X"
           pattern="[0-9]{1,2}\.[0-9]{3}\.[0-9]{3}-[0-9K]"
           title="XX.XXX.XXX-X"
-          className="border border-[var(--color-border)] bg-[var(--color-background)] p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-primary)]"
+          className="border border-border bg-background p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary"
         />
       </label>
 
@@ -111,7 +111,7 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
           placeholder="usuario@dominio.cl"
           pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
           title="usuario@dominio.cl, siempre en minusculas"
-          className="border border-[var(--color-border)] bg-[var(--color-background)] p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-primary)]"
+          className="border border-border bg-background p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary"
         />
       </label>
 
@@ -125,11 +125,11 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
           placeholder="+56 9 XXXX XXXX"
           pattern="\+56 9 [0-9]{4} [0-9]{4}"
           title="+56 9 XXXX XXXX"
-          className="border border-[var(--color-border)] bg-[var(--color-background)] p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-primary)]"
+          className="border border-border bg-background p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary"
         />
       </label>
 
-      <fieldset className="grid gap-4 border border-[var(--color-border)] p-4 rounded-md">
+      <fieldset className="grid gap-4 border border-border p-4 rounded-md">
         <legend className="px-1 text-sm">Direccion de instalacion</legend>
 
         <label className="grid gap-1" htmlFor="calleNumero">
@@ -139,7 +139,7 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
             name="calleNumero"
             required
             placeholder="Nombre Calle N°XXX"
-            className="border border-[var(--color-border)] bg-[var(--color-background)] p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-primary)]"
+            className="border border-border bg-background p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary"
           />
         </label>
 
@@ -151,20 +151,20 @@ export default function FormularioContratacion({ plan }: FormularioContratacionP
             required
             placeholder="Nombre oficial"
             title="Title Case. Usar catalogo oficial de comunas."
-            className="border border-[var(--color-border)] bg-[var(--color-background)] p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--color-primary)]"
+            className="border border-border bg-background p-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary"
           />
         </label>
       </fieldset>
 
       {status === "error" && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-error" role="alert">
           {errorMessage}
         </p>
       )}
 
       <PrimaryButton
         type="submit"
-        variant="solid"
+        variant="conversion"
         disabled={status === "loading"}
         className="w-full"
       >

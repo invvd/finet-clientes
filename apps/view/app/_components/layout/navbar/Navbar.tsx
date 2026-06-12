@@ -9,10 +9,10 @@ import { navItems, audienceSwitch } from './nav.config';
 
 export default function Navbar() {
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-background)]/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
       <div className="mx-auto max-w-7xl">
         {/* Top strip: audience switch + theme toggle */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-1.5 text-xs">
+        <div className="flex items-center justify-between border-b border-border px-4 py-1.5 text-xs">
           <AudienceSwitch items={audienceSwitch} />
           <ThemeToggle />
         </div>
@@ -34,7 +34,7 @@ export default function Navbar() {
             <button
               aria-label="Buscar"
               disabled
-              className="flex items-center justify-center w-9 h-9 rounded-md text-[var(--color-muted)] opacity-50 transition-colors"
+              className="flex items-center justify-center w-9 h-9 rounded-md text-muted opacity-50 transition-colors"
             >
               <Search size={18} />
             </button>

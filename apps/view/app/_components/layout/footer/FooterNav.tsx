@@ -20,7 +20,7 @@ export default function FooterNav() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
         {footerColumns.map((col) => (
           <div key={col.title}>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-foreground)]">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground">
               {col.title}
             </h3>
             <ul className="space-y-2">
@@ -43,7 +43,7 @@ export default function FooterNav() {
                       <Link
                         href={link.href}
                         {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                        className="inline-flex items-center gap-1.5 text-sm text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors"
+                        className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors"
                       >
                         {link.icon && iconMap[link.icon]}
                         {link.label}

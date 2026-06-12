@@ -32,28 +32,28 @@ export default function RestablecerPasswordPage() {
 
   if (!token) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--color-surface)] p-4">
+      <main className="flex min-h-screen items-center justify-center bg-surface p-4">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-8 shadow-sm sm:p-10">
+          <div className="rounded-2xl border border-border bg-background p-8 shadow-sm sm:p-10">
             <LoginBranding />
             <div className="mt-6 flex flex-col items-center text-center">
-              <AlertCircle size={40} className="text-red-500" aria-hidden />
-              <h2 className="mt-4 text-lg font-semibold text-[var(--color-foreground)]">
+              <AlertCircle size={40} className="text-error" aria-hidden />
+              <h2 className="mt-4 text-lg font-semibold text-foreground">
                 Enlace inválido o expirado
               </h2>
-              <p className="mt-2 text-sm text-[var(--color-muted)]">
+              <p className="mt-2 text-sm text-muted">
                 El enlace de recuperación no es válido o ha expirado. Solicita
                 uno nuevo.
               </p>
               <Link
                 href="/recuperar-password"
-                className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-6 py-2.5 text-sm font-semibold text-[var(--color-background)] transition-all hover:opacity-90"
+                className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-background transition-all hover:opacity-90"
               >
                 Solicitar nuevo enlace
               </Link>
               <Link
                 href="/inicio-sesion"
-                className="mt-3 inline-flex items-center gap-1.5 text-sm text-[var(--color-muted)] transition-colors hover:text-[var(--color-foreground)]"
+                className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
               >
                 <ArrowLeft size={14} aria-hidden />
                 Volver al inicio de sesión
@@ -66,7 +66,7 @@ export default function RestablecerPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--color-surface)] p-4">
+    <main className="flex min-h-screen items-center justify-center bg-surface p-4">
       <div className="w-full max-w-md">
         <ResetPasswordForm token={token} />
       </div>

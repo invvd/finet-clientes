@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../_lib/auth";
 import { api } from "../utils/api";
+import StatusBadge, { type StatusTone } from "@/app/_components/ui/StatusBadge";
 
 type Contrato = {
   id_contrato: number;
@@ -72,31 +73,14 @@ function formatFechaCorta(iso: string) {
   });
 }
 
-function estadoBadge(estado: string) {
-  const map: Record<string, { label: string; className: string }> = {
-    activo: {
-      label: "Activo",
-      className: "bg-green-100 text-green-700 border-green-200",
-    },
-    suspendido: {
-      label: "Suspendido",
-      className: "bg-amber-100 text-amber-700 border-amber-200",
-    },
-    cortado: {
-      label: "Cortado",
-      className: "bg-red-100 text-red-700 border-red-200",
-    },
-    inactivo: {
-      label: "Inactivo",
-      className: "bg-gray-100 text-gray-600 border-gray-200",
-    },
+function estadoBadge(estado: string): { label: string; tone: StatusTone } {
+  const map: Record<string, { label: string; tone: StatusTone }> = {
+    activo: { label: "Activo", tone: "success" },
+    suspendido: { label: "Suspendido", tone: "warning" },
+    cortado: { label: "Cortado", tone: "error" },
+    inactivo: { label: "Inactivo", tone: "neutral" },
   };
-  return (
-    map[estado] ?? {
-      label: estado,
-      className: "bg-gray-100 text-gray-600 border-gray-200",
-    }
-  );
+  return map[estado] ?? { label: estado, tone: "neutral" };
 }
 
 export default function PortalPage() {
@@ -130,14 +114,14 @@ export default function PortalPage() {
   return (
     <div className="max-w-4xl">
       <div className="flex items-center gap-3 mb-8">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
           <LayoutDashboard size={20} aria-hidden />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className="text-2xl font-bold text-foreground">
             Bienvenido{nombre ? `, ${nombre.split(" ")[0]}` : ""}
           </h1>
-          <p className="text-sm text-[var(--color-muted)]">
+          <p className="text-sm text-muted">
             Resumen de tus servicios
           </p>
         </div>
@@ -148,35 +132,35 @@ export default function PortalPage() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="border border-[var(--color-border)] rounded-xl p-6 bg-[var(--color-background)] animate-pulse"
+              className="border border-border rounded-xl p-6 bg-background animate-pulse"
             >
-              <div className="h-3 w-24 rounded bg-[var(--color-border)] mb-3" />
-              <div className="h-8 w-32 rounded bg-[var(--color-border)] mb-2" />
-              <div className="h-4 w-20 rounded bg-[var(--color-border)]" />
+              <div className="h-3 w-24 rounded bg-border mb-3" />
+              <div className="h-8 w-32 rounded bg-border mb-2" />
+              <div className="h-4 w-20 rounded bg-border" />
             </div>
           ))}
         </div>
       )}
 
       {error && (
-        <div className="border border-red-500/20 bg-red-50 rounded-xl p-6">
+        <div className="border border-error bg-error-container rounded-xl p-6">
           <div className="flex items-start gap-3">
             <AlertCircle
               size={20}
-              className="text-red-500 mt-0.5 shrink-0"
+              className="text-error mt-0.5 shrink-0"
               aria-hidden
             />
             <div>
-              <p className="text-sm font-medium text-red-700">
+              <p className="text-sm font-medium text-on-error-container">
                 No se pudo cargar la información
               </p>
-              <p className="mt-1 text-sm text-red-600">
+              <p className="mt-1 text-sm text-on-error-container">
                 El estado de tus servicios no pudo obtenerse en este momento.
               </p>
               <button
                 type="button"
                 onClick={fetchPanel}
-                className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-red-700 hover:text-red-800 transition-colors"
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-on-error-container hover:brightness-110 transition-[filter]"
               >
                 <RefreshCw size={14} aria-hidden />
                 Reintentar
@@ -190,16 +174,16 @@ export default function PortalPage() {
         <>
           {/* Contratos */}
           {data.contratos.length === 0 ? (
-            <div className="border border-[var(--color-border)] rounded-xl p-8 bg-[var(--color-background)] text-center">
+            <div className="border border-border rounded-xl p-8 bg-background text-center">
               <Wifi
                 size={32}
-                className="mx-auto text-[var(--color-muted)]"
+                className="mx-auto text-muted"
                 aria-hidden
               />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+              <p className="mt-3 text-sm font-medium text-foreground">
                 Aún no tienes servicios contratados
               </p>
-              <p className="mt-1 text-sm text-[var(--color-muted)]">
+              <p className="mt-1 text-sm text-muted">
                 Contrata un plan para empezar.
               </p>
             </div>
@@ -210,42 +194,38 @@ export default function PortalPage() {
                 return (
                   <div
                     key={c.id_contrato}
-                    className="border border-[var(--color-border)] rounded-xl p-6 bg-[var(--color-background)]"
+                    className="border border-border rounded-xl p-6 bg-background"
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                         Mi Plan
                       </p>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${badge.className}`}
-                      >
-                        {badge.label}
-                      </span>
+                      <StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
                     </div>
                     {c.plan ? (
                       <>
-                        <p className="text-lg font-semibold text-[var(--color-foreground)]">
+                        <p className="text-lg font-semibold text-foreground">
                           {c.plan.nombre_comercial}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <Zap
                             size={14}
-                            className="text-[var(--color-muted)]"
+                            className="text-muted"
                             aria-hidden
                           />
-                          <span className="text-sm text-[var(--color-muted)]">
+                          <span className="text-sm text-muted">
                             {c.plan.velocidad_mbps} Mbps
                           </span>
                         </div>
-                        <p className="mt-3 text-2xl font-extrabold text-[var(--color-foreground)]">
+                        <p className="mt-3 text-2xl font-extrabold text-foreground">
                           {formatPrecio(c.plan.precio_mensual)}
-                          <span className="text-sm font-normal text-[var(--color-muted)]">
+                          <span className="text-sm font-normal text-muted">
                             /mes
                           </span>
                         </p>
                       </>
                     ) : (
-                      <p className="text-sm text-[var(--color-muted)]">
+                      <p className="text-sm text-muted">
                         Sin plan asociado
                       </p>
                     )}
@@ -257,8 +237,8 @@ export default function PortalPage() {
 
           {/* Deuda + Tickets summary row */}
           <div className="grid gap-4 sm:grid-cols-2 mt-4">
-            <div className="border border-[var(--color-border)] rounded-xl p-6 bg-[var(--color-background)]">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-3">
+            <div className="border border-border rounded-xl p-6 bg-background">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
                 Mi Deuda
               </p>
               {data.resumen_deuda.tiene_deuda ? (
@@ -273,10 +253,10 @@ export default function PortalPage() {
 
                   return (
                     <>
-                      <p className="text-3xl font-extrabold text-red-600">
+                      <p className="text-3xl font-extrabold text-error">
                         {formatPrecio(data.resumen_deuda.saldo_total)}
                       </p>
-                      <p className="mt-1 text-sm text-[var(--color-muted)]">
+                      <p className="mt-1 text-sm text-muted">
                         {data.resumen_deuda.facturas_pendientes.length} factura
                         {data.resumen_deuda.facturas_pendientes.length !== 1
                           ? "s"
@@ -287,7 +267,7 @@ export default function PortalPage() {
                           : ""}
                       </p>
                       {masProxima && (
-                        <p className="mt-1 text-xs text-[var(--color-muted)]">
+                        <p className="mt-1 text-xs text-muted">
                           {masProxima.estado === "vencida"
                             ? `Vencida: ${formatFechaCorta(masProxima.fecha_limite_pago)}`
                             : `Vence: ${formatFechaCorta(masProxima.fecha_limite_pago)}`}
@@ -298,25 +278,25 @@ export default function PortalPage() {
                 })()
               ) : (
                 <>
-                  <p className="text-lg font-semibold text-green-600">
+                  <p className="text-lg font-semibold text-success">
                     Estás al día
                   </p>
-                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  <p className="mt-1 text-sm text-muted">
                     Sin facturas pendientes
                   </p>
                 </>
               )}
             </div>
-            <div className="border border-[var(--color-border)] rounded-xl p-6 bg-[var(--color-background)]">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-3">
+            <div className="border border-border rounded-xl p-6 bg-background">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
                 Tickets Recientes
               </p>
               {data.tickets_recientes.length === 0 ? (
                 <>
-                  <p className="text-lg font-semibold text-[var(--color-foreground)]">
+                  <p className="text-lg font-semibold text-foreground">
                     Sin tickets
                   </p>
-                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  <p className="mt-1 text-sm text-muted">
                     No tienes solicitudes de soporte
                   </p>
                 </>
@@ -324,14 +304,14 @@ export default function PortalPage() {
                 <ul className="space-y-2">
                   {data.tickets_recientes.map((t) => (
                     <li key={t.id_ticket} className="text-sm">
-                      <span className="font-medium text-[var(--color-foreground)]">
+                      <span className="font-medium text-foreground">
                         {t.codigo_seguimiento}
                       </span>
-                      <span className="text-[var(--color-muted)]">
+                      <span className="text-muted">
                         {" "}
                         — {t.estado}
                       </span>
-                      <p className="text-xs text-[var(--color-muted)] truncate">
+                      <p className="text-xs text-muted truncate">
                         {t.descripcion}
                       </p>
                     </li>

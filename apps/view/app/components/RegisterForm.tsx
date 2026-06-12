@@ -114,11 +114,11 @@ export default function RegisterForm() {
     "w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors duration-200";
 
   return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-8 shadow-sm sm:p-10">
+    <div className="rounded-2xl border border-border bg-background p-8 shadow-sm sm:p-10">
       <LoginBranding subtitle="Crea tu cuenta" />
 
       {serverError && (
-        <div className="mb-5 rounded-lg border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="mb-5 rounded-lg border border-error/20 bg-error-container px-4 py-3 text-sm text-error">
           {serverError}
         </div>
       )}
@@ -127,7 +127,7 @@ export default function RegisterForm() {
         <div>
           <label
             htmlFor="nombreCompleto"
-            className="mb-1.5 block text-sm font-medium text-[var(--color-foreground)]"
+            className="mb-1.5 block text-sm font-medium text-foreground"
           >
             Nombre completo
           </label>
@@ -143,18 +143,18 @@ export default function RegisterForm() {
             onBlur={() => validateField("nombreCompleto", nombreCompleto)}
             data-error={!!errors.nombreCompleto}
             className={`${inputClass}
-              data-[error=false]:border-[var(--color-border)] data-[error=false]:bg-[var(--color-background)] data-[error=false]:text-[var(--color-foreground)] data-[error=false]:placeholder:text-[var(--color-muted)] data-[error=false]:focus-visible:outline data-[error=false]:focus-visible:outline-2 data-[error=false]:focus-visible:outline-offset-0 data-[error=false]:focus-visible:outline-[var(--color-primary)]
-              border-red-500 bg-red-50 text-[var(--color-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-red-500`}
+              data-[error=false]:border-border data-[error=false]:bg-background data-[error=false]:text-foreground data-[error=false]:placeholder:text-muted data-[error=false]:focus-visible:outline data-[error=false]:focus-visible:outline-2 data-[error=false]:focus-visible:outline-offset-0 data-[error=false]:focus-visible:outline-primary
+              border-error bg-error-container text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-error`}
           />
           {errors.nombreCompleto && (
-            <p className="mt-1 text-xs text-red-600">{errors.nombreCompleto}</p>
+            <p className="mt-1 text-xs text-error">{errors.nombreCompleto}</p>
           )}
         </div>
 
         <div>
           <label
             htmlFor="email"
-            className="mb-1.5 block text-sm font-medium text-[var(--color-foreground)]"
+            className="mb-1.5 block text-sm font-medium text-foreground"
           >
             Email
           </label>
@@ -170,11 +170,11 @@ export default function RegisterForm() {
             onBlur={() => validateField("email", email)}
             data-error={!!errors.email}
             className={`${inputClass}
-              data-[error=false]:border-[var(--color-border)] data-[error=false]:bg-[var(--color-background)] data-[error=false]:text-[var(--color-foreground)] data-[error=false]:placeholder:text-[var(--color-muted)] data-[error=false]:focus-visible:outline data-[error=false]:focus-visible:outline-2 data-[error=false]:focus-visible:outline-offset-0 data-[error=false]:focus-visible:outline-[var(--color-primary)]
-              border-red-500 bg-red-50 text-[var(--color-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-red-500`}
+              data-[error=false]:border-border data-[error=false]:bg-background data-[error=false]:text-foreground data-[error=false]:placeholder:text-muted data-[error=false]:focus-visible:outline data-[error=false]:focus-visible:outline-2 data-[error=false]:focus-visible:outline-offset-0 data-[error=false]:focus-visible:outline-primary
+              border-error bg-error-container text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-error`}
           />
           {errors.email && (
-            <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+            <p className="mt-1 text-xs text-error">{errors.email}</p>
           )}
         </div>
 
@@ -211,7 +211,7 @@ export default function RegisterForm() {
         <div>
           <label
             htmlFor="confirmPassword"
-            className="mb-1.5 block text-sm font-medium text-[var(--color-foreground)]"
+            className="mb-1.5 block text-sm font-medium text-foreground"
           >
             Confirmar Contraseña
           </label>
@@ -230,17 +230,17 @@ export default function RegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--color-background)] shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-background shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Registrando..." : "Registrarse"}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-xs text-[var(--color-muted)]">
+      <p className="mt-6 text-center text-xs text-muted">
         Al registrarte aceptas nuestros{" "}
         <a
           href="#"
-          className="text-[var(--color-primary)] underline hover:opacity-80"
+          className="text-primary underline hover:opacity-80"
         >
           Términos y Condiciones
         </a>

@@ -15,10 +15,10 @@ export default function LoginBranding({
         priority
         className="mx-auto h-10 w-auto"
       />
-      <h1 className="mt-4 text-2xl font-bold tracking-tight text-[var(--color-foreground)]">
+      <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground">
         Portal de Clientes
       </h1>
-      <p className="mt-1.5 text-sm text-[var(--color-muted)]">
+      <p className="mt-1.5 text-sm text-muted">
         {subtitle ?? "Ingresa con tu RUT y contraseña"}
       </p>
     </div>

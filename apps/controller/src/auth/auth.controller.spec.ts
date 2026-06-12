@@ -173,9 +173,7 @@ describe('AuthController', () => {
     });
 
     it('lanza 503 y limpia cookie si falla la conexion a BD (CU-02 Excepción 1)', async () => {
-      mockAuthService.logout.mockRejectedValue(
-        new Error('connection refused'),
-      );
+      mockAuthService.logout.mockRejectedValue(new Error('connection refused'));
 
       const clearCookie = jest.fn();
       const req = {

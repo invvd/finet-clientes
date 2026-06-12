@@ -22,7 +22,7 @@ export default function UpdateTelefonoForm({
   function validateTelefono(value: string) {
     const cleaned = cleanTelefono(value);
     if (cleaned.length < 8) return "El teléfono debe tener al menos 8 caracteres";
-    if (cleaned.length > 20) return "El teléfono es demasiado largo";
+    if (cleaned.length > 12) return "El teléfono es demasiado largo";
     if (!/^\+?[\d\s\-()]+$/.test(value)) return "Formato de teléfono inválido";
     return "";
   }
@@ -74,23 +74,23 @@ export default function UpdateTelefonoForm({
   }
 
   return (
-    <div className="border border-[var(--color-border)] rounded-xl bg-[var(--color-background)] p-6">
-      <h2 className="text-lg font-semibold text-[var(--color-foreground)] mb-1">
+    <div className="border border-border rounded-xl bg-background p-6">
+      <h2 className="text-lg font-semibold text-foreground mb-1">
         Actualizar Teléfono
       </h2>
-      <p className="text-sm text-[var(--color-muted)] mb-6">
+      <p className="text-sm text-muted mb-6">
         Ingresa tu contraseña actual y el nuevo número de teléfono
       </p>
 
       {done && (
-        <div className="mb-6 rounded-lg border border-green-500/20 bg-green-50 px-4 py-3 text-sm text-green-700 flex items-start gap-2">
+        <div className="mb-6 rounded-lg border border-success/20 bg-success-container px-4 py-3 text-sm text-on-success-container flex items-start gap-2">
           <CheckCircle2 size={16} className="mt-0.5 shrink-0" aria-hidden />
           Teléfono actualizado correctamente.
         </div>
       )}
 
       {serverError && (
-        <div className="mb-6 rounded-lg border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="mb-6 rounded-lg border border-error/20 bg-error-container px-4 py-3 text-sm text-error">
           {serverError}
         </div>
       )}
@@ -111,33 +111,35 @@ export default function UpdateTelefonoForm({
         <div>
           <label
             htmlFor="telefono"
-            className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Nuevo teléfono
           </label>
           <input
             id="telefono"
             type="tel"
+            maxLength={12}
             value={telefono}
             onChange={(e) => {
-              setTelefono(e.target.value);
+              const cleaned = e.target.value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+              setTelefono(!cleaned || cleaned.startsWith("+") ? cleaned : "+" + cleaned);
               setErrors((prev) => ({ ...prev, telefono: "" }));
               setDone(false);
             }}
             placeholder="+56912345678"
-            className={`w-full rounded-lg border px-3 py-2 text-sm bg-[var(--color-background)] text-[var(--color-foreground)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 ${
-              errors.telefono ? "border-red-500" : "border-[var(--color-border)]"
+            className={`w-full rounded-lg border px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+              errors.telefono ? "border-error" : "border-border"
             }`}
           />
           {errors.telefono && (
-            <p className="mt-1 text-xs text-red-600">{errors.telefono}</p>
+            <p className="mt-1 text-xs text-error">{errors.telefono}</p>
           )}
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-[var(--color-primary)] px-6 py-2.5 text-sm font-semibold text-[var(--color-background)] shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-background shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Actualizando..." : "Actualizar teléfono"}
         </button>

@@ -31,7 +31,7 @@ export default function PlanesClient({ planes }: PlanesClientProps) {
 
   if (planes.length === 0) {
     return (
-      <p className="text-[var(--color-muted)] text-center">
+      <p className="text-muted text-center">
         No hay planes disponibles temporalmente.
       </p>
     );
@@ -53,13 +53,13 @@ export default function PlanesClient({ planes }: PlanesClientProps) {
         </div>
       ) : (
         <div className="text-center">
-          <p className="text-[var(--color-muted)]">
+          <p className="text-muted">
             No hay planes disponibles para este segmento.
           </p>
           <button
             type="button"
             onClick={() => setSegmento("todos")}
-            className="mt-3 text-sm text-[var(--color-primary)] hover:underline"
+            className="mt-3 text-sm text-primary hover:underline"
           >
             Ver todos los planes
           </button>

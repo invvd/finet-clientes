@@ -12,6 +12,7 @@ import { PortalModule } from './portal/portal.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { PerfilModule } from './perfil/perfil.module.js';
 import { LandingModule } from './landing/landing.module.js';
+import { ContratacionesModule } from './contrataciones/contrataciones.module.js';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LandingModule } from './landing/landing.module.js';
     AdminModule,
     PerfilModule,
     LandingModule,
+    ContratacionesModule,
   ],
   controllers: [AppController],
   providers: [

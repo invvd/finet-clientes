@@ -3,57 +3,160 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --color-primary: #0e7c86;
-  --color-primary-bright: #1098a3;
-  --color-accent: #d9e021;
+  --color-primary: #2FAEC9;
+  --color-primary-bright: #00687a;
+  --color-accent: #E3E446;
+  --color-on-accent: #0F172A;
 
-  --color-hero-slide-1: #0e7c86;
-  --color-hero-slide-2: #1e3a5f;
-  --color-hero-slide-3: #0e7c86;
+  --color-hero-slide-1: #2FAEC9;
+  --color-hero-slide-2: #00687a;
+  --color-hero-slide-3: #565E74;
 
-  --color-background: #ffffff;
-  --color-surface: #f7f9fb;
-  --color-surface-deep: #e5e7eb;
-  --color-foreground: #0a1929;
-  --color-muted: #6b7280;
-  --color-border: #e5e7eb;
+  --color-background: #F8F9FF;
+  --color-surface: #EFF4FF;
+  --color-surface-deep: #DCE9FF;
+  --color-foreground: #0B1C30;
+  --color-muted: #6D797D;
+  --color-border: #E2E8F0;
+
+  --color-error: #BA1A1A;
+  --color-on-error: #FFFFFF;
+  --color-error-container: #FFDAD6;
+  --color-on-error-container: #93000A;
+
+  --color-success: #1B7D2F;
+  --color-on-success: #FFFFFF;
+  --color-success-container: #B6F2C2;
+  --color-on-success-container: #00210A;
+
+  --color-warning: #8A5300;
+  --color-on-warning: #FFFFFF;
+  --color-warning-container: #FFDCBC;
+  --color-on-warning-container: #2C1700;
+
+  --color-info: #00687A;
+  --color-on-info: #FFFFFF;
+  --color-info-container: #ACEDFF;
+  --color-on-info-container: #001F26;
+
+  --shadow-sm: 0px 1px 3px rgba(11, 28, 48, 0.04), 0px 1px 2px rgba(11, 28, 48, 0.03);
+  --shadow-md: 0px 4px 8px rgba(47, 174, 201, 0.06), 0px 2px 4px rgba(47, 174, 201, 0.04);
+  --shadow-lg: 0px 12px 24px rgba(47, 174, 201, 0.08);
+  --shadow-xl: 0px 24px 48px rgba(11, 28, 48, 0.10);
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
 }
 
 [data-theme="dark"] {
-  --color-primary: #2dd4bf;
-  --color-primary-bright: #5eead4;
-  --color-background: #0a1929;
-  --color-surface: #102a43;
-  --color-surface-deep: #061224;
-  --color-foreground: #f7f9fb;
-  --color-muted: #94a3b8;
-  --color-border: #1f3a5c;
+  --color-primary: #62D5F1;
+  --color-primary-bright: #ACEDFF;
+  --color-accent: #E6E748;
+  --color-on-accent: #1D1D00;
+
+  --color-hero-slide-1: #00687a;
+  --color-hero-slide-2: #213145;
+  --color-hero-slide-3: #2FAEC9;
+
+  --color-background: #0B1C30;
+  --color-surface: #213145;
+  --color-surface-deep: #192A40;
+  --color-foreground: #EAF1FF;
+  --color-muted: #9AA8B8;
+  --color-border: #2E4056;
+
+  --color-error: #FFB4AB;
+  --color-on-error: #690005;
+  --color-error-container: #93000A;
+  --color-on-error-container: #FFDAD6;
+
+  --color-success: #8BD89B;
+  --color-on-success: #00210A;
+  --color-success-container: #005319;
+  --color-on-success-container: #B6F2C2;
+
+  --color-warning: #FFB868;
+  --color-on-warning: #4A2800;
+  --color-warning-container: #693C00;
+  --color-on-warning-container: #FFDCBC;
+
+  --color-info: #62D5F1;
+  --color-on-info: #003640;
+  --color-info-container: #004E5C;
+  --color-on-info-container: #ACEDFF;
+
+  --shadow-sm: 0px 1px 3px rgba(0, 0, 0, 0.20);
+  --shadow-md: 0px 4px 8px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0px 12px 24px rgba(0, 0, 0, 0.30);
+  --shadow-xl: 0px 24px 48px rgba(0, 0, 0, 0.40);
 }
 
 @theme inline {
   --color-primary: var(--color-primary);
+  --color-primary-bright: var(--color-primary-bright);
   --color-accent: var(--color-accent);
+  --color-on-accent: var(--color-on-accent);
   --color-background: var(--color-background);
   --color-surface: var(--color-surface);
+  --color-surface-deep: var(--color-surface-deep);
   --color-foreground: var(--color-foreground);
   --color-muted: var(--color-muted);
   --color-border: var(--color-border);
-  --font-sans: var(--font-inter);
-  --color-fin: #0ea5e9;
-  --color-fin-50: #ecfeff;
-  --color-fin-100: #cffafe;
-  --color-fin-200: #a5f3fc;
-  --color-fin-300: #67e8f9;
-  --color-fin-400: #22d3ee;
-  --color-fin-500: #06b6d4;
-  --color-fin-600: #0891b2;
-  --color-fin-700: #0e7490;
-  --color-fin-800: #155e75;
-  --color-fin-900: #164e63;
-  --color-fin-950: #083344;
-  --color-surface: #0f172a;
-  --color-surface-50: #1e293b;
-  --color-surface-100: #334155;
+
+  --color-error: var(--color-error);
+  --color-on-error: var(--color-on-error);
+  --color-error-container: var(--color-error-container);
+  --color-on-error-container: var(--color-on-error-container);
+
+  --color-success: var(--color-success);
+  --color-on-success: var(--color-on-success);
+  --color-success-container: var(--color-success-container);
+  --color-on-success-container: var(--color-on-success-container);
+
+  --color-warning: var(--color-warning);
+  --color-on-warning: var(--color-on-warning);
+  --color-warning-container: var(--color-warning-container);
+  --color-on-warning-container: var(--color-on-warning-container);
+
+  --color-info: var(--color-info);
+  --color-on-info: var(--color-on-info);
+  --color-info-container: var(--color-info-container);
+  --color-on-info-container: var(--color-on-info-container);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  --font-sans: var(--font-hanken);
+}
+
+/* Glassmorphic surface for overlays, modals and elevated nav — DESIGN.md "Elevation & Depth" */
+@utility glass {
+  background-color: color-mix(in srgb, var(--color-background) 72%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+/* Soft ambient lift on interactive cards — DESIGN.md Level 2 */
+@utility card-lift {
+  transition:
+    box-shadow 200ms ease,
+    transform 200ms ease,
+    border-color 200ms ease;
+  &:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
 }
 
 html {
@@ -72,5 +175,9 @@ body {
 @layer base {
   button {
     cursor: pointer;
+  }
+
+  input, select, textarea {
+    font-family: inherit;
   }
 }

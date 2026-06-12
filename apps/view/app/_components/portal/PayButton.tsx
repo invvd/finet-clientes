@@ -25,12 +25,12 @@ export default function PayButton() {
       <button
         onClick={handlePay}
         disabled={isPending}
-        className="inline-flex items-center gap-2 self-start rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-2 self-start rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-on-accent shadow-sm hover:shadow-md hover:brightness-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <CreditCard size={16} aria-hidden />
         {isPending ? 'Redirigiendo...' : 'Pagar en línea'}
       </button>
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-error">{error}</p>}
     </div>
   );
 }

@@ -27,8 +27,8 @@ export default function AudienceSwitch({ items }: AudienceSwitchProps) {
                 aria-current={isActive ? "page" : undefined}
                 className={
                   isActive
-                    ? "font-medium text-[var(--color-foreground)]"
-                    : "text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors"
+                    ? "font-medium text-foreground"
+                    : "text-muted hover:text-foreground transition-colors"
                 }
               >
                 {item.label}

@@ -26,33 +26,33 @@ export default function PlanCard({ plan, featured }: PlanCardProps) {
 
   return (
     <article
-      className={`relative border border-[var(--color-border)] p-6 rounded-xl transition-all hover:shadow-md hover:border-[var(--color-primary)] ${
-        featured ? "ring-2 ring-[var(--color-primary)]" : ""
+      className={`card-lift relative border border-border p-6 rounded-xl transition-all hover:border-primary ${
+        featured ? "ring-2 ring-primary" : ""
       }`}
     >
       {featured && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--color-accent)] px-4 py-0.5 text-xs font-bold text-[var(--color-foreground)]">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-4 py-0.5 text-xs font-bold text-on-accent">
           Mas popular
         </span>
       )}
       <h2 className="text-lg font-medium">{plan.nombre_comercial}</h2>
-      <p className="text-4xl font-extrabold text-[var(--color-foreground)] mt-2">
+      <p className="text-4xl font-extrabold text-foreground mt-2">
         {formatPrecioMensual(plan.precio_mensual)}
-        <span className="text-sm font-normal text-[var(--color-muted)]">/mes</span>
+        <span className="text-sm font-normal text-muted">/mes</span>
       </p>
       {plan.descripcion && (
-        <p className="text-sm text-[var(--color-muted)] mt-1">
+        <p className="text-sm text-muted mt-1">
           {plan.descripcion}
         </p>
       )}
-      <ul className="mt-4 grid gap-2 border-t border-[var(--color-border)] pt-4">
+      <ul className="mt-4 grid gap-2 border-t border-border pt-4">
         {features.map((feature) => (
           <li
             key={feature}
-            className="flex items-start gap-2 text-sm text-[var(--color-foreground)]"
+            className="flex items-start gap-2 text-sm text-foreground"
           >
             <svg
-              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary)]"
+              className="mt-0.5 h-4 w-4 shrink-0 text-primary"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -72,7 +72,7 @@ export default function PlanCard({ plan, featured }: PlanCardProps) {
       <div className="mt-6">
         <PrimaryButton
           href={`/contratar/${plan.id_plan}`}
-          variant="solid"
+          variant="conversion"
           className="w-full"
         >
           Contratar {plan.nombre_comercial}

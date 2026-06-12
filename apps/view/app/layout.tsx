@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import Navbar from "./_components/layout/navbar/Navbar";
 import Footer from "./_components/layout/footer/Footer";
@@ -7,8 +7,8 @@ import { themeScript } from "./_components/layout/theme/theme-script";
 import { BASE_URL } from "./_lib/consts";
 import { AuthProvider } from "./_lib/auth";
 
-const inter = Inter({
-  variable: "--font-inter",
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
 });
 
@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
     template: "%s | Finet — Fibra Optica en La Pintana",
-    default: "Finet — Internet Fibra Optica y TV Digital | La Pintana, Puente Alto",
+    default:
+      "Finet — Internet Fibra Optica y TV Digital | La Pintana, Puente Alto",
   },
   description:
     "Internet de fibra optica de alta velocidad desde 200 Mbps simetricos. Planes hogar y empresa en La Pintana, Puente Alto, La Florida y La Granja. Contrata en linea.",
@@ -95,10 +96,11 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} h-full antialiased`}
+      className={`${hanken.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
+        <meta name="apple-mobile-web-app-title" content="Finet" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script
           type="application/ld+json"
@@ -109,13 +111,15 @@ export default function RootLayout({
         {/* Skip-to-content link for keyboard users */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-[var(--color-primary)] focus:px-4 focus:py-2 focus:text-[var(--color-background)] focus:text-sm focus:outline-none"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-background focus:text-sm focus:outline-none"
         >
           Saltar al contenido principal
         </a>
         <AuthProvider>
           <Navbar />
-          <main id="main-content" className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
           <Footer />
         </AuthProvider>
       </body>

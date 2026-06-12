@@ -22,7 +22,7 @@ export default async function EmpresasPage() {
       <div className="mx-auto grid max-w-7xl gap-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold">Ofertas y servicios corporativos</h1>
-          <p className="text-[var(--color-muted)] mt-2 max-w-2xl mx-auto">
+          <p className="text-muted mt-2 max-w-2xl mx-auto">
             Internet fibra optica de alta disponibilidad para empresas, pymes e
             instituciones. Facturacion empresa, soporte comercial dedicado y
             SLA garantizado.
@@ -35,19 +35,19 @@ export default async function EmpresasPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center border border-[var(--color-border)] rounded-xl p-10 max-w-lg mx-auto">
-            <p className="text-[var(--color-muted)]">
+          <div className="text-center border border-border rounded-xl p-10 max-w-lg mx-auto">
+            <p className="text-muted">
               El contenido corporativo no esta disponible temporalmente.
             </p>
-            <p className="text-sm text-[var(--color-muted)] mt-3">
+            <p className="text-sm text-muted mt-3">
               Contactanos directamente para recibir una cotizacion personalizada
               para tu empresa.
             </p>
-            <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
+            <p className="mt-4 text-sm font-medium text-foreground">
               WhatsApp:{" "}
               <a
                 href="https://wa.me/569XXXXXXXX"
-                className="text-[var(--color-primary)] hover:underline"
+                className="text-primary hover:underline"
               >
                 +56 9 XXXX XXXX
               </a>

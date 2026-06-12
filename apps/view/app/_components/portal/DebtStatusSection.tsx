@@ -28,8 +28,8 @@ export default function DebtStatusSection({ balance }: { balance: Balance }) {
       <div className="rounded-2xl bg-surface p-5 shadow-sm flex flex-col gap-3">
         <p className="text-sm font-medium text-muted">Estado de Cuenta</p>
         <div className="flex items-center gap-3">
-          <AlertCircle className="text-amber-500 shrink-0" size={28} />
-          <p className="text-base font-semibold text-amber-700 dark:text-amber-400">
+          <AlertCircle className="text-warning shrink-0" size={28} />
+          <p className="text-base font-semibold text-warning">
             No se pudo determinar tu estado de cuenta en este momento.
           </p>
         </div>
@@ -43,15 +43,15 @@ export default function DebtStatusSection({ balance }: { balance: Balance }) {
   return (
     <div
       className={`rounded-2xl p-5 shadow-sm flex flex-col gap-3 ${
-        isUpToDate ? 'bg-green-50 dark:bg-green-900/20' : 'bg-surface'
+        isUpToDate ? 'bg-success-container' : 'bg-surface'
       }`}
     >
       <p className="text-sm font-medium text-muted">Estado de Cuenta</p>
 
       {isUpToDate ? (
         <div className="flex items-center gap-3">
-          <CheckCircle className="text-green-600 dark:text-green-400 shrink-0" size={28} />
-          <p className="text-base font-semibold text-green-800 dark:text-green-300">
+          <CheckCircle className="text-on-success-container shrink-0" size={28} />
+          <p className="text-base font-semibold text-on-success-container">
             ¡Todo al día! No tienes pagos pendientes.
           </p>
         </div>
@@ -59,7 +59,7 @@ export default function DebtStatusSection({ balance }: { balance: Balance }) {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-3">
-              <AlertCircle className="text-red-500 shrink-0" size={28} />
+              <AlertCircle className="text-error shrink-0" size={28} />
               <p className="text-2xl font-bold text-foreground">{formatCLP(balance.saldo_total)}</p>
             </div>
             {balance.facturas_pendientes.length > 0 && (

@@ -45,8 +45,8 @@ export default function WifiPasswordSection() {
       <div className="rounded-2xl bg-surface p-5 shadow-sm flex flex-col gap-3">
         <p className="text-sm font-medium text-muted">Cambiar Contraseña WiFi</p>
         <div className="flex items-center gap-3">
-          <CheckCircle2 className="text-green-600 dark:text-green-400 shrink-0" size={24} />
-          <p className="text-sm font-semibold text-green-800 dark:text-green-300">
+          <CheckCircle2 className="text-success shrink-0" size={24} />
+          <p className="text-sm font-semibold text-success">
             Solicitud enviada correctamente. El cambio puede tardar unos minutos.
           </p>
         </div>
@@ -94,9 +94,11 @@ export default function WifiPasswordSection() {
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          {fieldError && <p className="text-xs text-red-500">{fieldError}</p>}
+          {fieldError && (
+            <p className="text-xs text-error">{fieldError}</p>
+          )}
           {result?.error && !fieldError && (
-            <p className="text-xs text-red-500">{result.error}</p>
+            <p className="text-xs text-error">{result.error}</p>
           )}
         </div>
 

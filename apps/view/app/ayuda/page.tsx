@@ -51,10 +51,10 @@ export default function AyudaPage() {
       />
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-[var(--color-foreground)]">
+          <h1 className="text-3xl font-bold text-foreground">
             Preguntas frecuentes
           </h1>
-          <p className="text-[var(--color-muted)] mt-3">
+          <p className="text-muted mt-3">
             Encuentra respuestas rapidas sobre nuestros servicios de Internet
             fibra optica.
           </p>
@@ -63,12 +63,12 @@ export default function AyudaPage() {
           {faqs.map((faq) => (
             <details
               key={faq.question}
-              className="group border border-[var(--color-border)] rounded-xl"
+              className="group border border-border rounded-xl"
             >
-              <summary className="flex cursor-pointer items-center justify-between gap-4 p-5 font-medium text-[var(--color-foreground)] marker:content-none group-open:border-b group-open:border-[var(--color-border)]">
+              <summary className="flex cursor-pointer items-center justify-between gap-4 p-5 font-medium text-foreground marker:content-none group-open:border-b group-open:border-border">
                 {faq.question}
                 <svg
-                  className="h-5 w-5 shrink-0 text-[var(--color-muted)] transition-transform group-open:rotate-180"
+                  className="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-180"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -82,18 +82,18 @@ export default function AyudaPage() {
                   />
                 </svg>
               </summary>
-              <div className="px-5 pb-5 pt-4 text-sm text-[var(--color-muted)] leading-relaxed">
+              <div className="px-5 pb-5 pt-4 text-sm text-muted leading-relaxed">
                 {faq.answer}
               </div>
             </details>
           ))}
         </div>
         <div className="text-center mt-12">
-          <p className="text-sm text-[var(--color-muted)]">
+          <p className="text-sm text-muted">
             ¿No encuentras lo que buscas?{" "}
             <a
               href="/soporte"
-              className="text-[var(--color-primary)] hover:underline"
+              className="text-primary hover:underline"
             >
               Contacta a soporte
             </a>

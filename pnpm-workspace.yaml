@@ -2,14 +2,15 @@ packages:
   - "apps/*"
 
 allowBuilds:
-  "@nestjs/core": true
-  "@prisma/engines": true
+  '@nestjs/core': true
+  '@prisma/engines': true
   bcrypt: true
   prisma: true
   prisma-zod-generator: true
   sharp: true
   unrs-resolver: true
 
+<<<<<<< HEAD
 onlyBuiltDependencies:
   - "@nestjs/core"
   - "@prisma/engines"
@@ -18,3 +19,7 @@ onlyBuiltDependencies:
   - prisma-zod-generator
   - sharp
   - unrs-resolver
+=======
+
+
+>>>>>>> dev
