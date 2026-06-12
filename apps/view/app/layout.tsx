@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
     template: "%s | Finet — Fibra Optica en La Pintana",
-    default: "Finet — Internet Fibra Optica y TV Digital | La Pintana, Puente Alto",
+    default:
+      "Finet — Internet Fibra Optica y TV Digital | La Pintana, Puente Alto",
   },
   description:
     "Internet de fibra optica de alta velocidad desde 200 Mbps simetricos. Planes hogar y empresa en La Pintana, Puente Alto, La Florida y La Granja. Contrata en linea.",
@@ -99,6 +100,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <meta name="apple-mobile-web-app-title" content="Finet" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script
           type="application/ld+json"
@@ -115,7 +117,9 @@ export default function RootLayout({
         </a>
         <AuthProvider>
           <Navbar />
-          <main id="main-content" className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
           <Footer />
         </AuthProvider>
       </body>
