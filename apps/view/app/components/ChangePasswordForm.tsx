@@ -78,7 +78,7 @@ export default function ChangePasswordForm() {
         Cambiar Contraseña
       </h2>
       <p className="text-sm text-muted mb-6">
-        Mínimo 8 caracteres, al menos 1 mayúscula, 1 número y 1 carácter especial
+        Mínimo 8 caracteres, al menos 1 mayúscula y 1 número
       </p>
 
       {done && (
