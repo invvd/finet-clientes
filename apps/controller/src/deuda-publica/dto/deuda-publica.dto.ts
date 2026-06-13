@@ -36,6 +36,20 @@ export interface DeudaPublicaResponseDto {
   tiene_deuda: boolean;
   saldo_total: number;
   facturas: DetalleFacturaPublicaDto[];
+  // Detalle del/los plan(es) contratado(s) por el cliente
+  planes: PlanResumenPublicoDto[];
+  // CU-41 Excepción 1: false si no fue posible obtener el detalle de facturación
+  detalle_disponible: boolean;
+  // CU-41 Excepción 2: false si hay montos o fechas inconsistentes en las facturas
+  informacion_completa: boolean;
+}
+
+// Resumen del plan contratado para mostrar en la consulta pública de deuda
+export interface PlanResumenPublicoDto {
+  nombre_comercial: string;
+  tipo_plan: string;
+  velocidad_mbps: number | null;
+  precio_mensual: number;
 }
 
 // CU-41: Detalle de deuda y fecha de vencimiento
