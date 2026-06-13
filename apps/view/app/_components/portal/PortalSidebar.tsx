@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, FileText, CreditCard, MessageSquare, User, X, LogOut, AlertCircle } from "lucide-react";
+import { LayoutDashboard, MessageSquare, User, X, LogOut, AlertCircle } from "lucide-react";
 import { useAuth } from "../../_lib/auth";
 
+// El Panel (/portal) ya integra contratos vigentes y estado de deuda (CU-24/25/26/27/28),
+// por lo que no se enlazan páginas dedicadas /portal/contratos ni /portal/deuda.
 const navItems = [
   { href: "/portal", label: "Panel", icon: LayoutDashboard },
-  { href: "/portal/contratos", label: "Mis Contratos", icon: FileText },
-  { href: "/portal/deuda", label: "Mi Deuda", icon: CreditCard },
   { href: "/portal/tickets", label: "Tickets", icon: MessageSquare },
   { href: "/perfil", label: "Mi Perfil", icon: User },
 ];
