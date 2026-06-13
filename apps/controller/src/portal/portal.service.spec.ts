@@ -105,9 +105,21 @@ describe('PortalService', () => {
     });
 
     it('lanza BadRequestException con IDs de contratos afectados cuando hay estados mixtos (CU-23 Excepción 3)', async () => {
-      const contratoValido1 = { ...CONTRATO_MOCK, id_contrato: 1, estado: 'activo' };
-      const contratoInvalido = { ...CONTRATO_MOCK, id_contrato: 5, estado: 'cortado' };
-      const contratoValido2 = { ...CONTRATO_MOCK, id_contrato: 9, estado: 'suspendido' };
+      const contratoValido1 = {
+        ...CONTRATO_MOCK,
+        id_contrato: 1,
+        estado: 'activo',
+      };
+      const contratoInvalido = {
+        ...CONTRATO_MOCK,
+        id_contrato: 5,
+        estado: 'cortado',
+      };
+      const contratoValido2 = {
+        ...CONTRATO_MOCK,
+        id_contrato: 9,
+        estado: 'suspendido',
+      };
       (prisma.contrato.findMany as jest.Mock).mockResolvedValue([
         contratoValido1,
         contratoInvalido,

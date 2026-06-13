@@ -24,8 +24,8 @@ export class ContratacionesService {
     const hoy = new Date();
 
     try {
-      const { id_cliente, id_contrato, id_ot } =
-        await this.prisma.$transaction(async (tx) => {
+      const { id_cliente, id_contrato, id_ot } = await this.prisma.$transaction(
+        async (tx) => {
           const existe = await tx.cliente.findUnique({
             where: { rut: dto.rut },
             select: { id_cliente: true },
@@ -111,7 +111,8 @@ export class ContratacionesService {
             id_contrato: contrato.id_contrato,
             id_ot: ot.id_ot,
           };
-        });
+        },
+      );
 
       this.logger.log(
         `Contratación creada — cliente=${id_cliente} contrato=${id_contrato} ot=${id_ot}`,
