@@ -1,3 +1,5 @@
+import { WHATSAPP_URL } from '../../../_lib/company';
+
 export type FooterLink = { label: string; href: string; icon?: string };
 export type FooterColumn = { title: string; links: FooterLink[] };
 
@@ -14,7 +16,7 @@ export const footerColumns: FooterColumn[] = [
   {
     title: 'Te ayudamos',
     links: [
-      { label: 'WhatsApp', href: 'https://wa.me/56945002319', icon: 'whatsapp' },
+      { label: 'WhatsApp', href: WHATSAPP_URL, icon: 'whatsapp' },
       { label: 'Soporte técnico', href: '/soporte' },
       { label: 'Reportar falla', href: '/reportar' },
       { label: 'FAQs', href: '/faqs' },

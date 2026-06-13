@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PlanCard from "../_components/catalog/PlanCard";
 import { getLandingPlanes } from "../_lib/api";
+import { COMPANY_PHONE_DISPLAY, WHATSAPP_URL } from "../_lib/company";
 
 export const metadata: Metadata = {
   title: "Planes Empresa",
@@ -46,10 +47,10 @@ export default async function EmpresasPage() {
             <p className="mt-4 text-sm font-medium text-foreground">
               WhatsApp:{" "}
               <a
-                href="https://wa.me/569XXXXXXXX"
+                href={WHATSAPP_URL}
                 className="text-primary hover:underline"
               >
-                +56 9 XXXX XXXX
+                {COMPANY_PHONE_DISPLAY}
               </a>
             </p>
           </div>
