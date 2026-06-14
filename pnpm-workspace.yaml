@@ -10,7 +10,6 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 
-<<<<<<< HEAD
 onlyBuiltDependencies:
   - "@nestjs/core"
   - "@prisma/engines"
@@ -19,7 +18,3 @@ onlyBuiltDependencies:
   - prisma-zod-generator
   - sharp
   - unrs-resolver
-=======
-
-
->>>>>>> dev
