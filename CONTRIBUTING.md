@@ -7,6 +7,7 @@ Este documento describe cómo se trabaja con git en este repo — es una convenc
 - **`main`** — rama de producción/release.
 - **`dev`** — rama de integración. El trabajo terminado se acumula acá antes de pasar a `main`.
 - **`review/<tema>`** o rama de feature — trabajo en curso. Se cierra mergeándola a `dev` (o abriendo PR hacia `dev`) cuando el trabajo está listo, y luego se borra (local + remota).
+- **`incremento-N/<bloque>`** — trabajo de un incremento completo (ver [`docs/CASOS-DE-USO.md`](docs/CASOS-DE-USO.md)), una rama por "Bloque" funcional del incremento (ej. `incremento-2/deuda`, `incremento-2/smartolt`). Mismo ciclo de vida que una rama de feature: se cierra hacia `dev` cuando el bloque está listo. No hay que esperar a que todos los bloques de un incremento terminen para ir integrando los que sí están listos.
 
 `main` y `dev` pueden divergir (cada una con commits propios que la otra no tiene) — **no asumas que una es ancestro de la otra sin comprobarlo**:
 
