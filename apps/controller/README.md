@@ -133,6 +133,7 @@ Documentación de endpoints organizada por feature (bodies, respuestas, errores,
 | **Landing** | [`docs/landing.md`](./docs/landing.md) | Catálogo de planes |
 | **Deuda Pública** | [`docs/deuda-publica.md`](./docs/deuda-publica.md) | Consulta de deuda por RUT o código de abonado |
 | **Admin** | (ver abajo) | Intentos fallidos, desbloquear IP |
+| **Pagos** | [`docs/pagos.md`](./docs/pagos.md) | Registrar pago confirmado (interno/admin, Incremento 2) |
 
 ### Documentación técnica
 
