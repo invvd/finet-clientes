@@ -15,12 +15,13 @@ import { ZodValidationPipe } from '../auth/pipes/zod-validation.pipe.js';
 import { RegistrarPagoDto } from './dto/pagos.dto.js';
 import { pagosRechazadosQuerySchema } from './dto/pagos-rechazados.dto.js';
 import type { PagosRechazadosQueryDto } from './dto/pagos-rechazados.dto.js';
+import { IncorporarAbonoExternoDto } from './dto/abonos-externos.dto.js';
 
 /**
  * Núcleo de pago (Incremento 2). Protegido con API Key porque, en este
- * incremento, el único emisor de confirmaciones es la recaudación externa
- * (CU-46), operada por un administrador — no hay pasarela conectada todavía
- * (esa llega en CU-42/43, Incremento 3, y reusará este mismo servicio).
+ * incremento, quienes reportan pagos son sistemas de recaudación externa
+ * (CU-46) operados por un administrador — no hay pasarela conectada todavía
+ * (esa llega en CU-42/43, Incremento 3, y reusará el mismo `PagosService`).
  *
  * Base path: /api/admin/pagos
  */
@@ -30,11 +31,13 @@ export class PagosController {
   constructor(private readonly pagosService: PagosService) {}
 
   /**
-   * CU-44 / CU-45 / CU-46: registrar un pago confirmado
+   * CU-44 / CU-45: registrar un pago confirmado
    *
-   * Registra de forma permanente un pago ya confirmado por la entidad
-   * recaudadora (fecha, monto, código de autorización) y lo asocia a la
-   * factura/contrato correspondiente.
+   * Registra de forma permanente un pago ya confirmado (fecha, monto, código
+   * de autorización) y lo asocia a la factura indicada — marcándola como
+   * pagada. Pensado para cuando ya se conoce la factura exacta a la que
+   * aplica el pago (a diferencia de CU-46, que la resuelve a partir del
+   * contrato).
    *
    * POST /admin/pagos/confirmar
    * Auth: X-API-Key
@@ -62,6 +65,44 @@ export class PagosController {
   ) {
     return this.pagosService.registrarPagoConfirmado(
       body as RegistrarPagoDto,
+      req.ip ?? '0.0.0.0',
+    );
+  }
+
+  /**
+   * CU-46: incorporar un abono de recaudación externa
+   *
+   * Incorpora al saldo del cliente un abono reportado por una entidad de
+   * recaudación externa (pago hecho fuera de nuestro sistema). Identifica el
+   * contrato por `codigo_abonado` (= id_contrato) y lo aplica a la factura
+   * pendiente/vencida más antigua de ese contrato — no hay pagos parciales,
+   * así que el monto debe calzar exacto con esa factura.
+   *
+   * POST /admin/pagos/abonos-externos
+   * Auth: X-API-Key
+   *
+   * @body {
+   *   codigo_abonado: number,      // = id_contrato
+   *   monto: number,
+   *   fecha_pago: string,          // ISO 8601
+   *   codigo_transaccion: string,  // único — CU-45
+   *   pasarela: string             // nombre del recaudador externo
+   * }
+   *
+   * Errores:
+   *   400 - Validación Zod, o monto inválido/inconsistente con la deuda del contrato (CU-46 Excepción 2)
+   *   409 - codigo_transaccion ya registrado (CU-45)
+   *   422 - No fue posible identificar al cliente/contrato (CU-46 Excepción 1)
+   *   500 - Falla al actualizar el saldo (CU-46 Excepción 3)
+   */
+  @Post('abonos-externos')
+  @HttpCode(201)
+  async incorporarAbono(
+    @Body(new ZodValidationPipe(IncorporarAbonoExternoDto)) body: unknown,
+    @Req() req: Request,
+  ) {
+    return this.pagosService.incorporarAbonoExterno(
+      body as IncorporarAbonoExternoDto,
       req.ip ?? '0.0.0.0',
     );
   }

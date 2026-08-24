@@ -4,18 +4,21 @@ import { PagosController } from './pagos.controller.js';
 import { PagosService } from './pagos.service.js';
 import { ApiKeyGuard } from '../admin/guards/api-key.guard.js';
 import type { RegistrarPagoDto } from './dto/pagos.dto.js';
+import type { IncorporarAbonoExternoDto } from './dto/abonos-externos.dto.js';
 
 describe('PagosController', () => {
   let pagosController: PagosController;
   let mockPagosService: {
     registrarPagoConfirmado: jest.Mock;
     getPagosRechazados: jest.Mock;
+    incorporarAbonoExterno: jest.Mock;
   };
 
   beforeEach(async () => {
     mockPagosService = {
       registrarPagoConfirmado: jest.fn(),
       getPagosRechazados: jest.fn(),
+      incorporarAbonoExterno: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -59,6 +62,42 @@ describe('PagosController', () => {
       await pagosController.confirmar(dto, {} as never);
 
       expect(mockPagosService.registrarPagoConfirmado).toHaveBeenCalledWith(
+        dto,
+        '0.0.0.0',
+      );
+    });
+  });
+
+  describe('POST /admin/pagos/abonos-externos', () => {
+    const dto: IncorporarAbonoExternoDto = {
+      codigo_abonado: 100,
+      monto: 19990,
+      fecha_pago: '2026-06-10T12:00:00.000Z',
+      codigo_transaccion: 'EXT-0001',
+      pasarela: 'servipag',
+    };
+
+    it('CU-46: delega en el service con el body y la IP de la request', async () => {
+      const mockResult = { id_pago: 2, ...dto };
+      mockPagosService.incorporarAbonoExterno.mockResolvedValue(mockResult);
+
+      const response = await pagosController.incorporarAbono(dto, {
+        ip: '10.0.0.5',
+      } as never);
+
+      expect(response).toEqual(mockResult);
+      expect(mockPagosService.incorporarAbonoExterno).toHaveBeenCalledWith(
+        dto,
+        '10.0.0.5',
+      );
+    });
+
+    it('usa 0.0.0.0 si la request no trae IP', async () => {
+      mockPagosService.incorporarAbonoExterno.mockResolvedValue({});
+
+      await pagosController.incorporarAbono(dto, {} as never);
+
+      expect(mockPagosService.incorporarAbonoExterno).toHaveBeenCalledWith(
         dto,
         '0.0.0.0',
       );
