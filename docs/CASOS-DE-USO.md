@@ -81,7 +81,7 @@ Fuente de verdad: documento de requisitos `CU_por_Incremento` (aportado por el e
 | 4 | CU-55 | Consultando lista de contratos con saldos vencidos | Deuda | ⏳ Pendiente |
 | 5 | CU-56 | Gestionando seguimiento de contrato vencido seleccionado | Deuda | ⏳ Pendiente |
 | 6 | CU-44 | Registrando pago confirmado con trazabilidad financiera | Núcleo de pago | ✅ Implementado — `POST /admin/pagos/confirmar`, ver [`apps/controller/docs/pagos.md`](../apps/controller/docs/pagos.md). Excepciones 2/3 trazables en `log_auditoria` (decisión: reusar la tabla existente en vez de crear `incidencia_pago`) |
-| 7 | CU-45 | Validando unicidad de código de transacción para evitar duplicados | Núcleo de pago | ✅ Implementado — mismo endpoint, valida `codigo_transaccion` antes del insert (además de la constraint `@unique` en DB) |
+| 7 | CU-45 | Validando unicidad de código de transacción para evitar duplicados | Núcleo de pago | ✅ Implementado — valida antes del insert y ante condición de carrera (constraint `@unique`); rechazos y fallas de consulta quedan en `log_auditoria` para que el administrador los revise. Falta el endpoint de consulta dedicado (hoy es query directa a `log_auditoria`) |
 | 8 | CU-46 | Incorporando abonos de recaudación externa al saldo del cliente | Núcleo de pago | 🚧 Parcial — el endpoint de CU-44 es el mecanismo de ingesta, pero registra un pago a la vez; falta un flujo de carga masiva/batch |
 | 9 | CU-52 | Generando comprobante de pago en formato PDF | Núcleo de pago | ⏳ Pendiente — schema listo: `pago.comprobante_pdf_url` ya existe |
 | 10 | CU-53 | Enviando comprobante de pago al correo del cliente | Núcleo de pago | ⏳ Pendiente — reutilizable: `MailService`/Nodemailer ya existe (`apps/controller/src/mail/`) |

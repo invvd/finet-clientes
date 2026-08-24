@@ -119,6 +119,54 @@ describe('PagosService', () => {
       expect(prisma.pago.create).not.toHaveBeenCalled();
     });
 
+    it('CU-45: registra incidencia DUPLICADO_RECHAZADO para que el administrador pueda consultarla', async () => {
+      (prisma.pago.findUnique as jest.Mock).mockResolvedValue(PAGO_DB_MOCK);
+
+      await expect(
+        service.registrarPagoConfirmado(DTO_MOCK, '127.0.0.1'),
+      ).rejects.toThrow();
+
+      expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: {
+          accion: 'PAGO_INCIDENCIA_DUPLICADO_RECHAZADO',
+          entidad_afectada: 'pago',
+          valor_nuevo: { payload: DTO_MOCK, error: undefined },
+          ip_origen: '127.0.0.1',
+        },
+      });
+    });
+
+    it('CU-45 Excepción 2: lanza ServiceUnavailableException si no se puede consultar el historial', async () => {
+      (prisma.pago.findUnique as jest.Mock).mockRejectedValue(
+        new Error('connection lost'),
+      );
+
+      await expect(
+        service.registrarPagoConfirmado(DTO_MOCK, '127.0.0.1'),
+      ).rejects.toThrow('No fue posible verificar duplicados');
+      expect(prisma.factura.findUnique).not.toHaveBeenCalled();
+      expect(prisma.pago.create).not.toHaveBeenCalled();
+    });
+
+    it('CU-45 Excepción 2: registra incidencia HISTORIAL_NO_CONSULTABLE', async () => {
+      (prisma.pago.findUnique as jest.Mock).mockRejectedValue(
+        new Error('connection lost'),
+      );
+
+      await expect(
+        service.registrarPagoConfirmado(DTO_MOCK, '127.0.0.1'),
+      ).rejects.toThrow();
+
+      expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: {
+          accion: 'PAGO_INCIDENCIA_HISTORIAL_NO_CONSULTABLE',
+          entidad_afectada: 'pago',
+          valor_nuevo: { payload: DTO_MOCK, error: 'connection lost' },
+          ip_origen: '127.0.0.1',
+        },
+      });
+    });
+
     it('CU-44 Excepción 2: lanza UnprocessableEntityException si la factura no existe', async () => {
       (prisma.factura.findUnique as jest.Mock).mockResolvedValue(null);
 
@@ -172,8 +220,15 @@ describe('PagosService', () => {
         service.registrarPagoConfirmado(DTO_MOCK, '127.0.0.1'),
       ).rejects.toThrow('El código de transacción ya fue registrado');
 
-      // No debe registrarse como incidencia de persistencia — es un duplicado, no una falla
-      expect(prisma.log_auditoria.create).not.toHaveBeenCalled();
+      // Se registra como duplicado rechazado (CU-45), no como falla de persistencia (CU-44 Excepción 3)
+      expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: {
+          accion: 'PAGO_INCIDENCIA_DUPLICADO_RECHAZADO',
+          entidad_afectada: 'pago',
+          valor_nuevo: { payload: DTO_MOCK, error: undefined },
+          ip_origen: '127.0.0.1',
+        },
+      });
     });
 
     it('CU-44 Excepción 3: lanza InternalServerErrorException y registra incidencia si falla la persistencia', async () => {

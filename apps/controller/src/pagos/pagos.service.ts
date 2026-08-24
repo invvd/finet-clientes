@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  ServiceUnavailableException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -24,7 +25,8 @@ export class PagosService {
    * se valida antes del insert para devolver un 409 de negocio en vez de un
    * error crudo de constraint.
    *
-   * Nota de alcance: la Excepción 1 (datos incompletos) ya la resuelve
+   * Nota de alcance: la Excepción 1 de CU-44/CU-45 (datos incompletos o
+   * código de transacción ausente/corrupto) ya la resuelve
    * `ZodValidationPipe` en el controller — un 400 antes de llegar aquí. No se
    * registra incidencia para ese caso porque el payload nunca llega a
    * asociarse a nada (no hay `entidad_afectada` real que loguear).
@@ -33,11 +35,27 @@ export class PagosService {
     dto: RegistrarPagoDto,
     ip: string,
   ): Promise<PagoResponseDto> {
-    const duplicado = await this.prisma.pago.findUnique({
-      where: { codigo_transaccion: dto.codigo_transaccion },
-    });
+    // CU-45 Excepción 2: el historial de pagos no puede consultarse
+    let duplicado;
+    try {
+      duplicado = await this.prisma.pago.findUnique({
+        where: { codigo_transaccion: dto.codigo_transaccion },
+      });
+    } catch (err) {
+      this.logger.error(
+        `No se pudo consultar el historial de pagos para verificar duplicados: ${this.describirError(err)}`,
+      );
+      await this.registrarIncidencia('HISTORIAL_NO_CONSULTABLE', dto, ip, err);
+      throw new ServiceUnavailableException(
+        'No fue posible verificar duplicados en el historial de pagos — intente más tarde',
+      );
+    }
 
     if (duplicado) {
+      // CU-45: "el administrador puede consultar el historial y verificar los
+      // intentos de registro rechazados por código duplicado" — sin este log
+      // el rechazo no queda trazado en ningún lado.
+      await this.registrarIncidencia('DUPLICADO_RECHAZADO', dto, ip);
       throw new ConflictException(
         'El código de transacción ya fue registrado — pago duplicado',
       );
@@ -103,6 +121,7 @@ export class PagosService {
         err instanceof Prisma.PrismaClientKnownRequestError &&
         err.code === 'P2002'
       ) {
+        await this.registrarIncidencia('DUPLICADO_RECHAZADO', dto, ip);
         throw new ConflictException(
           'El código de transacción ya fue registrado — pago duplicado',
         );
@@ -121,7 +140,11 @@ export class PagosService {
   }
 
   private async registrarIncidencia(
-    tipo: 'CUENTA_NO_DETERMINADA' | 'ERROR_PERSISTENCIA',
+    tipo:
+      | 'CUENTA_NO_DETERMINADA'
+      | 'ERROR_PERSISTENCIA'
+      | 'HISTORIAL_NO_CONSULTABLE'
+      | 'DUPLICADO_RECHAZADO',
     dto: RegistrarPagoDto,
     ip: string,
     err?: unknown,

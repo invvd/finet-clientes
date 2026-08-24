@@ -60,27 +60,30 @@ Content-Type: application/json
 
 **Errores:**
 
-| HTTP | Causa | Excepción CU-44 |
+| HTTP | Causa | Excepción |
 |---|---|---|
-| 400 | Validation failed — payload incompleto o mal formado | Excepción 1 |
+| 400 | Validation failed — payload incompleto o mal formado, incluye `codigo_transaccion` ausente/corrupto | CU-44 Excepción 1 / CU-45 Excepción 1 |
 | 401 | Falta `X-API-Key`, key inválida, o `ADMIN_API_KEY` no configurado | — |
-| 409 | `codigo_transaccion` ya registrado (pago duplicado) | CU-45 |
-| 422 | La factura no existe o no tiene contrato/cliente asociado — no se pudo determinar a quién aplicar el pago | Excepción 2 |
-| 500 | Falla al persistir el pago | Excepción 3 |
+| 409 | `codigo_transaccion` ya registrado (pago duplicado) — detectado antes del insert o por condición de carrera vía la constraint `@unique` de la DB | CU-45 |
+| 422 | La factura no existe o no tiene contrato/cliente asociado — no se pudo determinar a quién aplicar el pago | CU-44 Excepción 2 |
+| 500 | Falla al persistir el pago | CU-44 Excepción 3 |
+| 503 | No se pudo consultar el historial de pagos para verificar duplicados | CU-45 Excepción 2 |
 
 ## Trazabilidad de incidencias
 
-Las Excepciones 2 y 3 de CU-44 quedan registradas en `log_auditoria` (no en una tabla dedicada — decisión explícita para no agregar schema nuevo en este incremento, ver [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) para el criterio):
+Todas las excepciones de negocio (menos la Excepción 1, ver abajo) quedan registradas en `log_auditoria` (no en una tabla dedicada — decisión explícita para no agregar schema nuevo en este incremento, ver [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) para el criterio). Esto es lo que permite que, como pide CU-45, **el administrador pueda consultar el historial y verificar los intentos de registro rechazados por código duplicado** — hoy vía consulta directa a `log_auditoria` filtrando por `accion`; no hay un endpoint dedicado todavía (ver "Pendiente" abajo):
 
 | `accion` | Cuándo |
 |---|---|
 | `PAGO_REGISTRADO` | Pago persistido correctamente |
-| `PAGO_INCIDENCIA_CUENTA_NO_DETERMINADA` | Excepción 2 — la factura no resolvió a un contrato/cliente válido |
-| `PAGO_INCIDENCIA_ERROR_PERSISTENCIA` | Excepción 3 — falló el insert en `pago` |
+| `PAGO_INCIDENCIA_CUENTA_NO_DETERMINADA` | CU-44 Excepción 2 — la factura no resolvió a un contrato/cliente válido |
+| `PAGO_INCIDENCIA_ERROR_PERSISTENCIA` | CU-44 Excepción 3 — falló el insert en `pago` |
+| `PAGO_INCIDENCIA_DUPLICADO_RECHAZADO` | CU-45 — código de transacción duplicado, detectado antes del insert o por condición de carrera |
+| `PAGO_INCIDENCIA_HISTORIAL_NO_CONSULTABLE` | CU-45 Excepción 2 — falló la consulta de unicidad antes de siquiera intentar el registro |
 
-La Excepción 1 (datos incompletos) no genera un registro en `log_auditoria` — `ZodValidationPipe` la rechaza con un 400 antes de que el payload llegue al service, y en ese punto no hay `entidad_afectada` real que loguear.
+La Excepción 1 de CU-44/CU-45 (datos incompletos o código de transacción ausente/corrupto) no genera un registro en `log_auditoria` — `ZodValidationPipe` la rechaza con un 400 antes de que el payload llegue al service, y en ese punto no hay `entidad_afectada` real que loguear.
 
-No hay reintento automático implementado para la Excepción 3 — el registro en `log_auditoria` es la trazabilidad para revisión manual; una cola de reintento queda pendiente si se necesita más adelante.
+No hay reintento automático implementado para las Excepciones de infraestructura (CU-44 Excepción 3, CU-45 Excepción 2) — el registro en `log_auditoria` es la trazabilidad para revisión manual; una cola de reintento queda pendiente si se necesita más adelante.
 
 ## Archivos clave
 
@@ -94,3 +97,5 @@ No hay reintento automático implementado para la Excepción 3 — el registro e
 
 - **CU-46** (abonos de recaudación externa): este endpoint es el mecanismo de ingesta, pero no hay todavía un flujo de carga masiva/batch — cada llamada registra un pago a la vez.
 - **CU-52** (comprobante PDF) y **CU-53** (envío por correo, reusando `MailModule`): no implementados.
+- **Endpoint de consulta para CU-45** ("el administrador puede consultar el historial... de intentos rechazados"): los rechazos ya quedan en `log_auditoria`, pero no hay un `GET` dedicado para listarlos — sería el mismo patrón que `GET /admin/intentos-fallidos`.
+- **RF-33** (dependencia declarada de CU-45): no encontrado en ningún doc del repo — no se documentó su contenido para no inventarlo.
