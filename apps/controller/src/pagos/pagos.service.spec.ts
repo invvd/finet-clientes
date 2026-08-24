@@ -1,6 +1,7 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Prisma } from '../../generated/prisma/client.js';
 import type { RegistrarPagoDto } from './dto/pagos.dto.js';
 
 const { PagosService } = await import('./pagos.service.js');
@@ -157,6 +158,22 @@ describe('PagosService', () => {
           ip_origen: '127.0.0.1',
         },
       });
+    });
+
+    it('CU-45: lanza ConflictException (no Excepción 3) si create() falla por unique constraint P2002', async () => {
+      (prisma.pago.create as jest.Mock).mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: 'test',
+        }),
+      );
+
+      await expect(
+        service.registrarPagoConfirmado(DTO_MOCK, '127.0.0.1'),
+      ).rejects.toThrow('El código de transacción ya fue registrado');
+
+      // No debe registrarse como incidencia de persistencia — es un duplicado, no una falla
+      expect(prisma.log_auditoria.create).not.toHaveBeenCalled();
     });
 
     it('CU-44 Excepción 3: lanza InternalServerErrorException y registra incidencia si falla la persistencia', async () => {

@@ -6,6 +6,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Prisma } from '../../generated/prisma/client.js';
 import type { PagoResponseDto, RegistrarPagoDto } from './dto/pagos.dto.js';
 
 @Injectable()
@@ -94,6 +95,19 @@ export class PagosService {
         pasarela: pago.pasarela,
       };
     } catch (err) {
+      // CU-45: dos confirmaciones casi simultáneas con el mismo codigo_transaccion
+      // pueden pasar ambas el findUnique de arriba antes de que cualquiera inserte.
+      // La constraint @unique de la DB es la que realmente decide — si es ese el
+      // motivo del fallo, es un duplicado (409), no una falla de persistencia.
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'El código de transacción ya fue registrado — pago duplicado',
+        );
+      }
+
       this.logger.error(
         `Fallo al persistir pago codigo_transaccion=${dto.codigo_transaccion}: ${String(err)}`,
       );
