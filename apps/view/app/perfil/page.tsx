@@ -5,6 +5,7 @@ import { User, AlertCircle, RefreshCw } from "lucide-react";
 import ChangePasswordForm from "../components/ChangePasswordForm";
 import UpdateTelefonoForm from "../components/UpdateTelefonoForm";
 import UpdateEmailForm from "../components/UpdateEmailForm";
+import WifiPasswordSection from "../_components/portal/WifiPasswordSection";
 import { api } from "../utils/api";
 
 type ClientePerfil = {
@@ -173,6 +174,9 @@ export default function PerfilPage() {
           <div className="mt-8">
             <ChangePasswordForm />
           </div>
+          <div className="mt-8">
+  <WifiPasswordSection />
+</div>
         </>
       )}
     </div>
