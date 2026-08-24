@@ -66,6 +66,12 @@ Regenerar Prisma Client (si se modifica el schema):
 $ pnpm prisma generate
 ```
 
+Cargar datos de prueba del visor cartográfico (CU-59 a CU-62):
+
+```bash
+$ pnpm db:seed:cobertura
+```
+
 ## Scripts
 
 ```bash
@@ -115,6 +121,7 @@ src/
 ├── portal/                    # Portal autenticado (panel, contratos, deuda, tickets)
 ├── landing/                   # Landing page pública (catálogo de planes)
 ├── deuda-publica/             # Consulta pública de deuda (por RUT o código de abonado)
+├── cobertura/                 # Visor cartográfico público + editor de cobertura
 ├── admin/                     # Panel admin (intentos fallidos, desbloqueo de IP)
 └── generated/zod/             # Schemas Zod auto-generados desde Prisma
 ```
@@ -132,6 +139,7 @@ Documentación de endpoints organizada por feature (bodies, respuestas, errores,
 | **Portal** | [`docs/portal.md`](./docs/portal.md) | Panel, contratos (estado/vigentes), deuda, tickets |
 | **Landing** | [`docs/landing.md`](./docs/landing.md) | Catálogo de planes |
 | **Deuda Pública** | [`docs/deuda-publica.md`](./docs/deuda-publica.md) | Consulta de deuda por RUT o código de abonado |
+| **Cobertura** | [`docs/cobertura.md`](./docs/cobertura.md) | Visor cartográfico público + editor (pincel y polígonos) |
 | **Admin** | (ver abajo) | Intentos fallidos, desbloquear IP |
 
 ### Documentación técnica
