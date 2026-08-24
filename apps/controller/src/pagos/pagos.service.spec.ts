@@ -45,6 +45,8 @@ describe('PagosService', () => {
             },
             log_auditoria: {
               create: jest.fn(),
+              findMany: jest.fn(),
+              count: jest.fn(),
             },
           },
         },
@@ -251,6 +253,102 @@ describe('PagosService', () => {
           ip_origen: '127.0.0.1',
         },
       });
+    });
+  });
+
+  describe('getPagosRechazados', () => {
+    const LOG_MOCK = {
+      id_log: 10n,
+      valor_nuevo: { payload: DTO_MOCK, error: undefined },
+      ip_origen: '127.0.0.1',
+      fecha_hora: new Date('2026-06-10T12:05:00.000Z'),
+    };
+
+    beforeEach(() => {
+      (prisma.log_auditoria.findMany as jest.Mock).mockResolvedValue([
+        LOG_MOCK,
+      ]);
+      (prisma.log_auditoria.count as jest.Mock).mockResolvedValue(1);
+    });
+
+    it('CU-45: filtra por accion PAGO_INCIDENCIA_DUPLICADO_RECHAZADO', async () => {
+      await service.getPagosRechazados({ page: 1, limit: 20 });
+
+      expect(prisma.log_auditoria.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { accion: 'PAGO_INCIDENCIA_DUPLICADO_RECHAZADO' },
+          orderBy: { fecha_hora: 'desc' },
+          skip: 0,
+          take: 20,
+        }),
+      );
+    });
+
+    it('CU-45: mapea el payload guardado en valor_nuevo a la respuesta', async () => {
+      const result = await service.getPagosRechazados({ page: 1, limit: 20 });
+
+      expect(result).toEqual({
+        data: [
+          {
+            id_log: '10',
+            codigo_transaccion: 'TX-0001',
+            id_factura: 201,
+            monto: 19990,
+            pasarela: 'recaudacion-externa',
+            ip_origen: '127.0.0.1',
+            fecha: '2026-06-10T12:05:00.000Z',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+      });
+    });
+
+    it('CU-45: filtra por codigo_transaccion vía JSON path', async () => {
+      await service.getPagosRechazados({
+        codigo_transaccion: 'TX-0001',
+        page: 1,
+        limit: 20,
+      });
+
+      const where = (prisma.log_auditoria.findMany as jest.Mock).mock
+        .calls[0][0].where;
+      expect(where.valor_nuevo).toEqual({
+        path: ['payload', 'codigo_transaccion'],
+        equals: 'TX-0001',
+      });
+    });
+
+    it('CU-45: filtra por rango de fechas', async () => {
+      await service.getPagosRechazados({
+        desde: '2026-06-01',
+        hasta: '2026-06-30',
+        page: 1,
+        limit: 20,
+      });
+
+      const where = (prisma.log_auditoria.findMany as jest.Mock).mock
+        .calls[0][0].where;
+      expect(where.fecha_hora.gte).toBeInstanceOf(Date);
+      expect(where.fecha_hora.lte).toBeInstanceOf(Date);
+    });
+
+    it('CU-45: aplica paginación', async () => {
+      await service.getPagosRechazados({ page: 3, limit: 10 });
+
+      expect(prisma.log_auditoria.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 20, take: 10 }),
+      );
+    });
+
+    it('CU-45: retorna data vacía cuando no hay registros', async () => {
+      (prisma.log_auditoria.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.log_auditoria.count as jest.Mock).mockResolvedValue(0);
+
+      const result = await service.getPagosRechazados({ page: 1, limit: 20 });
+
+      expect(result).toEqual({ data: [], total: 0, page: 1, limit: 20 });
     });
   });
 });

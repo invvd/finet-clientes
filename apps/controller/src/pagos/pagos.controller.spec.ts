@@ -7,11 +7,15 @@ import type { RegistrarPagoDto } from './dto/pagos.dto.js';
 
 describe('PagosController', () => {
   let pagosController: PagosController;
-  let mockPagosService: { registrarPagoConfirmado: jest.Mock };
+  let mockPagosService: {
+    registrarPagoConfirmado: jest.Mock;
+    getPagosRechazados: jest.Mock;
+  };
 
   beforeEach(async () => {
     mockPagosService = {
       registrarPagoConfirmado: jest.fn(),
+      getPagosRechazados: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -58,6 +62,45 @@ describe('PagosController', () => {
         dto,
         '0.0.0.0',
       );
+    });
+  });
+
+  describe('GET /admin/pagos/rechazados', () => {
+    it('CU-45: delega en el service con la query recibida', async () => {
+      const mockResult = { data: [], total: 0, page: 1, limit: 20 };
+      mockPagosService.getPagosRechazados.mockResolvedValue(mockResult);
+
+      const response = await pagosController.getRechazados({
+        page: 1,
+        limit: 20,
+      });
+
+      expect(response).toEqual(mockResult);
+      expect(mockPagosService.getPagosRechazados).toHaveBeenCalledWith({
+        page: 1,
+        limit: 20,
+      });
+    });
+
+    it('CU-45: pasa el filtro de codigo_transaccion al service', async () => {
+      mockPagosService.getPagosRechazados.mockResolvedValue({
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+      });
+
+      await pagosController.getRechazados({
+        codigo_transaccion: 'TX-0001',
+        page: 1,
+        limit: 20,
+      });
+
+      expect(mockPagosService.getPagosRechazados).toHaveBeenCalledWith({
+        codigo_transaccion: 'TX-0001',
+        page: 1,
+        limit: 20,
+      });
     });
   });
 });

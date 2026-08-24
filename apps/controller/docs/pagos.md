@@ -69,9 +69,49 @@ Content-Type: application/json
 | 500 | Falla al persistir el pago | CU-44 Excepción 3 |
 | 503 | No se pudo consultar el historial de pagos para verificar duplicados | CU-45 Excepción 2 |
 
+## 2. Consultar intentos rechazados por código duplicado (CU-45)
+
+```
+GET /api/admin/pagos/rechazados
+X-API-Key: <ADMIN_API_KEY>
+```
+
+**Query params (todos opcionales):**
+
+| Param | Tipo | Default | Descripción |
+|---|---|---|---|
+| `codigo_transaccion` | string | — | Filtra por el código de transacción exacto del intento rechazado |
+| `desde` | string (fecha) | — | Intentos desde esta fecha (`YYYY-MM-DD`) |
+| `hasta` | string (fecha) | — | Intentos hasta esta fecha (`YYYY-MM-DD`) |
+| `page` | number | 1 | Número de página |
+| `limit` | number | 20 | Resultados por página (máx 100) |
+
+**Respuesta 200:**
+
+```json
+{
+  "data": [
+    {
+      "id_log": "10",
+      "codigo_transaccion": "TX-0001",
+      "id_factura": 201,
+      "monto": 19990,
+      "pasarela": "recaudacion-externa",
+      "ip_origen": "127.0.0.1",
+      "fecha": "2026-06-10T12:05:00.000Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20
+}
+```
+
+Lee `log_auditoria` filtrando por `accion = 'PAGO_INCIDENCIA_DUPLICADO_RECHAZADO'` — no hay una tabla propia. El filtro por `codigo_transaccion` usa un filtro JSON de Postgres sobre `valor_nuevo.payload.codigo_transaccion` (Prisma `path`/`equals`); no está ejercitado contra una base real todavía, solo con Prisma mockeado en los tests unitarios.
+
 ## Trazabilidad de incidencias
 
-Todas las excepciones de negocio (menos la Excepción 1, ver abajo) quedan registradas en `log_auditoria` (no en una tabla dedicada — decisión explícita para no agregar schema nuevo en este incremento, ver [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) para el criterio). Esto es lo que permite que, como pide CU-45, **el administrador pueda consultar el historial y verificar los intentos de registro rechazados por código duplicado** — hoy vía consulta directa a `log_auditoria` filtrando por `accion`; no hay un endpoint dedicado todavía (ver "Pendiente" abajo):
+Todas las excepciones de negocio (menos la Excepción 1, ver abajo) quedan registradas en `log_auditoria` (no en una tabla dedicada — decisión explícita para no agregar schema nuevo en este incremento, ver [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) para el criterio). Esto es lo que permite que, como pide CU-45, **el administrador pueda consultar el historial y verificar los intentos de registro rechazados por código duplicado** (endpoint arriba):
 
 | `accion` | Cuándo |
 |---|---|
@@ -89,13 +129,13 @@ No hay reintento automático implementado para las Excepciones de infraestructur
 
 | Archivo | Propósito |
 |---|---|
-| `src/pagos/pagos.controller.ts` | Endpoint `POST /admin/pagos/confirmar` |
-| `src/pagos/pagos.service.ts` | `registrarPagoConfirmado()` — CU-44/45, incidencias vía `log_auditoria` |
+| `src/pagos/pagos.controller.ts` | `POST /admin/pagos/confirmar`, `GET /admin/pagos/rechazados` |
+| `src/pagos/pagos.service.ts` | `registrarPagoConfirmado()` y `getPagosRechazados()` — CU-44/45, incidencias vía `log_auditoria` |
 | `src/pagos/dto/pagos.dto.ts` | Validación Zod (`RegistrarPagoDto`) |
+| `src/pagos/dto/pagos-rechazados.dto.ts` | Validación Zod de la query de `GET /rechazados` |
 
 ## Pendiente en este bloque
 
-- **CU-46** (abonos de recaudación externa): este endpoint es el mecanismo de ingesta, pero no hay todavía un flujo de carga masiva/batch — cada llamada registra un pago a la vez.
+- **CU-46** (abonos de recaudación externa): el endpoint de confirmar es el mecanismo de ingesta, pero no hay todavía un flujo de carga masiva/batch — cada llamada registra un pago a la vez.
 - **CU-52** (comprobante PDF) y **CU-53** (envío por correo, reusando `MailModule`): no implementados.
-- **Endpoint de consulta para CU-45** ("el administrador puede consultar el historial... de intentos rechazados"): los rechazos ya quedan en `log_auditoria`, pero no hay un `GET` dedicado para listarlos — sería el mismo patrón que `GET /admin/intentos-fallidos`.
 - **RF-33** (dependencia declarada de CU-45): no encontrado en ningún doc del repo — no se documentó su contenido para no inventarlo.

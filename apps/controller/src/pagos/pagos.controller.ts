@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -11,6 +13,8 @@ import { PagosService } from './pagos.service.js';
 import { ApiKeyGuard } from '../admin/guards/api-key.guard.js';
 import { ZodValidationPipe } from '../auth/pipes/zod-validation.pipe.js';
 import { RegistrarPagoDto } from './dto/pagos.dto.js';
+import { pagosRechazadosQuerySchema } from './dto/pagos-rechazados.dto.js';
+import type { PagosRechazadosQueryDto } from './dto/pagos-rechazados.dto.js';
 
 /**
  * Núcleo de pago (Incremento 2). Protegido con API Key porque, en este
@@ -60,5 +64,29 @@ export class PagosController {
       body as RegistrarPagoDto,
       req.ip ?? '0.0.0.0',
     );
+  }
+
+  /**
+   * CU-45: consultar el historial de intentos de registro rechazados por
+   * código duplicado
+   *
+   * GET /admin/pagos/rechazados
+   * Auth: X-API-Key
+   *
+   * @query {
+   *   codigo_transaccion?: string,
+   *   desde?: string,   // YYYY-MM-DD
+   *   hasta?: string,   // YYYY-MM-DD
+   *   page?: number,    // default 1
+   *   limit?: number    // default 20, máx 100
+   * }
+   */
+  @Get('rechazados')
+  @HttpCode(200)
+  async getRechazados(
+    @Query(new ZodValidationPipe(pagosRechazadosQuerySchema))
+    query: PagosRechazadosQueryDto,
+  ) {
+    return this.pagosService.getPagosRechazados(query);
   }
 }

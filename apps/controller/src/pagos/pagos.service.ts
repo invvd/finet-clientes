@@ -9,6 +9,12 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import type { PagoResponseDto, RegistrarPagoDto } from './dto/pagos.dto.js';
+import type {
+  PagoRechazadoDto,
+  PagosRechazadosQueryDto,
+} from './dto/pagos-rechazados.dto.js';
+
+const ACCION_DUPLICADO_RECHAZADO = 'PAGO_INCIDENCIA_DUPLICADO_RECHAZADO';
 
 @Injectable()
 export class PagosService {
@@ -137,6 +143,88 @@ export class PagosService {
         'No fue posible registrar el pago — reintente más tarde',
       );
     }
+  }
+
+  /**
+   * CU-45: "el administrador puede consultar el historial y verificar los
+   * intentos de registro rechazados por código duplicado" — lee los
+   * incidentes ya registrados en `log_auditoria` por `registrarIncidencia`.
+   */
+  async getPagosRechazados(query: PagosRechazadosQueryDto) {
+    const { codigo_transaccion, desde, hasta, page, limit } = query;
+
+    const where: Prisma.log_auditoriaWhereInput = {
+      accion: ACCION_DUPLICADO_RECHAZADO,
+    };
+
+    if (codigo_transaccion) {
+      where.valor_nuevo = {
+        path: ['payload', 'codigo_transaccion'],
+        equals: codigo_transaccion,
+      };
+    }
+
+    if (desde || hasta) {
+      const fechaHora: Prisma.DateTimeFilter = {};
+      if (desde) {
+        const desdeDate = new Date(desde);
+        desdeDate.setHours(0, 0, 0, 0);
+        fechaHora.gte = desdeDate;
+      }
+      if (hasta) {
+        const hastaDate = new Date(hasta);
+        hastaDate.setHours(23, 59, 59, 999);
+        fechaHora.lte = hastaDate;
+      }
+      where.fecha_hora = fechaHora;
+    }
+
+    const [registros, total] = await Promise.all([
+      this.prisma.log_auditoria.findMany({
+        where,
+        orderBy: { fecha_hora: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id_log: true,
+          valor_nuevo: true,
+          ip_origen: true,
+          fecha_hora: true,
+        },
+      }),
+      this.prisma.log_auditoria.count({ where }),
+    ]);
+
+    return {
+      data: registros.map((r) => this.mapearPagoRechazado(r)),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  private mapearPagoRechazado(registro: {
+    id_log: bigint;
+    valor_nuevo: Prisma.JsonValue;
+    ip_origen: string | null;
+    fecha_hora: Date | null;
+  }): PagoRechazadoDto {
+    const payload =
+      registro.valor_nuevo &&
+      typeof registro.valor_nuevo === 'object' &&
+      'payload' in registro.valor_nuevo
+        ? (registro.valor_nuevo.payload as Partial<RegistrarPagoDto>)
+        : undefined;
+
+    return {
+      id_log: registro.id_log.toString(),
+      codigo_transaccion: payload?.codigo_transaccion ?? null,
+      id_factura: payload?.id_factura ?? null,
+      monto: payload?.monto ?? null,
+      pasarela: payload?.pasarela ?? null,
+      ip_origen: registro.ip_origen,
+      fecha: registro.fecha_hora ? registro.fecha_hora.toISOString() : null,
+    };
   }
 
   private async registrarIncidencia(
