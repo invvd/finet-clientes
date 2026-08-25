@@ -105,6 +105,21 @@ model cliente {
   unidad_equipo          unidad_equipo[]
 }
 
+/// CU-80 / RF-35: parámetros que usa la revisión diaria de morosidad (CU-47).
+/// Una fila por empresa. Hoy existe una sola porque el sistema opera para una ISP.
+model configuracion_morosidad {
+  id_configuracion    Int       @id @default(autoincrement())
+  id_empresa          Int
+  /// Días posteriores a factura.fecha_limite_pago antes de marcar el contrato como moroso.
+  dias_gracia         Int       @db.SmallInt
+  /// Monto de deuda que habilita la suspensión del servicio (CU-48).
+  umbral_suspension   Decimal   @db.Decimal(10, 2)
+  fecha_actualizacion DateTime? @default(now()) @db.Timestamp(6)
+  empresa             empresa   @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_configuracion_morosidad_id_empresa")
+
+  @@unique([id_empresa])
+}
+
 model configuracion_seo {
   id_seo              Int       @id @default(autoincrement())
   id_empresa          Int
@@ -137,6 +152,11 @@ model contrato {
   dia_vencimiento   Int                @db.SmallInt
   estado            String             @db.VarChar(20)
   fecha_suspension  DateTime?          @db.Date
+  /// CU-47: fecha desde la que el contrato está moroso; null = al día.
+  /// Campo aparte y no un valor de `estado` porque el enum "Estado servicio" del
+  /// Documento 0 (§11.15) no contempla MOROSO, y morosidad es ortogonal al estado de
+  /// servicio: un contrato SUSPENDIDO sigue siendo moroso.
+  fecha_morosidad   DateTime?          @db.Date
   cliente           cliente?           @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_contrato_id_cliente")
   empresa           empresa?           @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_contrato_id_empresa")
   plan              plan?              @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "fk_contrato_id_plan")
@@ -208,6 +228,7 @@ model empresa {
   caja_nap                                                                caja_nap[]
   canal_whatsapp                                                          canal_whatsapp[]
   cliente                                                                 cliente[]
+  configuracion_morosidad                                                 configuracion_morosidad?
   configuracion_seo                                                       configuracion_seo[]
   contrato                                                                contrato[]
   intento_fallido                                                         intento_fallido[]

@@ -75,11 +75,11 @@ Fuente de verdad: documento de requisitos `CU_por_Incremento` (aportado por el e
 
 | Prioridad | CU | Caso de uso | Bloque | Estado |
 |---|---|---|---|---|
-| 1 | CU-54 | Asignando fecha de vencimiento fija a un contrato | Deuda | ⏳ Pendiente — `contrato` no tiene campo de fecha de vencimiento fija en el schema (solo `dia_vencimiento`, un día del mes) |
-| 2 | CU-47 | Identificando contratos morosos en revisión diaria automática | Deuda | ⏳ Pendiente |
-| 3 | CU-80 | Configurando parámetros de detección de morosidad | Deuda | ⏳ Pendiente — no hay modelo de configuración para esto todavía |
-| 4 | CU-55 | Consultando lista de contratos con saldos vencidos | Deuda | ⏳ Pendiente |
-| 5 | CU-56 | Gestionando seguimiento de contrato vencido seleccionado | Deuda | ⏳ Pendiente |
+| 1 | CU-54 | Asignando fecha de vencimiento fija a un contrato | Deuda | 🚧 Backend listo — `ContratoModule` (`apps/controller/src/contrato/`) con `PATCH /api/admin/contratos/:id/dia-vencimiento`, validación 1–28 y bitácora. **Sin migración**: `contrato.dia_vencimiento` ya existía. Falta el frontend |
+| 2 | CU-47 | Identificando contratos morosos en revisión diaria automática | Deuda | 🚧 Backend listo — cron `@Cron` diario a las 00:00 (`America/Santiago`) en `MorosidadService.revisarMorosidad`, más `POST /api/admin/morosidad/revision` para dispararlo a mano. Las 3 excepciones dejan registro en `log_auditoria`. **Sin frontend por diseño** (actor = Sistema). Falta aplicar la migración |
+| 3 | CU-80 | Configurando parámetros de detección de morosidad | Deuda | 🚧 Backend listo — `MorosidadModule` (`apps/controller/src/morosidad/`) con `GET`/`PUT /api/admin/morosidad/configuracion`, validación de rangos y bitácora. **Falta aplicar la migración** (tabla `configuracion_morosidad`, pendiente de acuerdo con el equipo) y el frontend |
+| 4 | CU-55 | Consultando lista de contratos con saldos vencidos | Deuda | 🚧 Backend listo — `GET /api/admin/morosidad/contratos-vencidos` paginado. El saldo lo agrega la base con `groupBy`. Excepción 3 devuelve lista vacía, no error. Falta el frontend |
+| 5 | CU-56 | Gestionando seguimiento de contrato vencido seleccionado | Deuda | 🚧 Backend listo — `GET /api/admin/morosidad/contratos-vencidos/:id` con deuda, historial de pagos y datos del cliente. Falta el frontend |
 | 6 | CU-44 | Registrando pago confirmado con trazabilidad financiera | Núcleo de pago | ⏳ Pendiente — schema listo: `model pago` ya existe (`prisma/schema.prisma`) |
 | 7 | CU-45 | Validando unicidad de código de transacción para evitar duplicados | Núcleo de pago | ⏳ Pendiente — schema listo: `pago.codigo_transaccion` ya es `@unique` |
 | 8 | CU-46 | Incorporando abonos de recaudación externa al saldo del cliente | Núcleo de pago | ⏳ Pendiente |

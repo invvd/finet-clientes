@@ -2,7 +2,7 @@ import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { AdminController } from './admin.controller.js';
 import { AdminService } from './admin.service.js';
-import { ApiKeyGuard } from './guards/api-key.guard.js';
+import { AdminGuard } from './guards/admin.guard.js';
 
 describe('AdminController', () => {
   let adminController: AdminController;
@@ -21,7 +21,7 @@ describe('AdminController', () => {
       controllers: [AdminController],
       providers: [{ provide: AdminService, useValue: mockAdminService }],
     })
-      .overrideGuard(ApiKeyGuard)
+      .overrideGuard(AdminGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

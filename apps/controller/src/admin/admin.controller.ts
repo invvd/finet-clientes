@@ -8,14 +8,14 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { AdminService } from './admin.service.js';
-import { ApiKeyGuard } from './guards/api-key.guard.js';
+import { AdminGuard } from './guards/admin.guard.js';
 import { ZodValidationPipe } from '../auth/pipes/zod-validation.pipe.js';
 import { intentosFallidosQuerySchema } from './dto/intentos-fallidos.dto.js';
 import type { IntentosFallidosQueryDto } from './dto/intentos-fallidos.dto.js';
 import { desbloquearIpSchema } from './dto/desbloquear-ip.dto.js';
 
 @Controller('admin')
-@UseGuards(ApiKeyGuard)
+@UseGuards(AdminGuard)
 export class AdminController {
   constructor(private adminService: AdminService) {}
 
