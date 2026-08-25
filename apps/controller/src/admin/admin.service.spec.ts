@@ -15,6 +15,12 @@ describe('AdminService', () => {
     log_auditoria: {
       create: jest.Mock;
     };
+    pago: {
+      findMany: jest.Mock;
+    };
+    factura: {
+      findMany: jest.Mock;
+    };
   };
 
   beforeEach(async () => {
@@ -26,6 +32,12 @@ describe('AdminService', () => {
       },
       log_auditoria: {
         create: jest.fn().mockResolvedValue({}),
+      },
+      pago: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      factura: {
+        findMany: jest.fn().mockResolvedValue([]),
       },
     };
 
@@ -315,6 +327,93 @@ describe('AdminService', () => {
         page: 1,
         limit: 20,
       });
+    });
+  });
+
+  describe('reportes financieros (CU-57/CU-58)', () => {
+    const query = { desde: '2026-08-01', hasta: '2026-08-31' };
+
+    beforeEach(() => {
+      mockPrisma.pago.findMany.mockResolvedValue([
+        {
+          id_pago: 1,
+          fecha_pago: new Date('2026-08-10T12:00:00.000Z'),
+          monto: 25000,
+          pasarela: 'webpay',
+          cliente: { nombre_completo: 'Juan Perez' },
+        },
+      ]);
+      mockPrisma.factura.findMany.mockResolvedValue([
+        {
+          id_factura: 9,
+          periodo_mes: 8,
+          periodo_anio: 2026,
+          monto: 12000,
+          fecha_emision: new Date('2026-08-01T00:00:00.000Z'),
+          fecha_limite_pago: new Date('2026-08-15T00:00:00.000Z'),
+          estado: 'pendiente',
+          contrato: { cliente: { nombre_completo: 'Ana Perez' } },
+        },
+      ]);
+    });
+
+    it('consolida ingresos y deudas del periodo', async () => {
+      const result = await adminService.getReporteFinanciero(query);
+
+      expect(result.resumen).toEqual({
+        total_ingresos: 25000,
+        total_deudas: 12000,
+        cantidad_pagos: 1,
+        cantidad_facturas_pendientes: 1,
+      });
+      expect(result.ingresos[0].cliente).toBe('Juan Perez');
+      expect(result.deudas[0].cliente).toBe('Ana Perez');
+      expect(mockPrisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          accion: 'GENERAR_REPORTE_FINANCIERO',
+        }),
+      });
+    });
+
+    it('informa cuando el periodo no contiene datos', async () => {
+      mockPrisma.pago.findMany.mockResolvedValue([]);
+      mockPrisma.factura.findMany.mockResolvedValue([]);
+
+      await expect(adminService.getReporteFinanciero(query)).rejects.toThrow(
+        'No existen datos financieros',
+      );
+    });
+
+    it('genera CSV y registra su descarga', async () => {
+      const archivo = await adminService.descargarReporteFinanciero(query);
+
+      expect(archivo.nombre).toBe(
+        'reporte-financiero-2026-08-01-2026-08-31.csv',
+      );
+      expect(archivo.contenido).toContain('"Ingreso"');
+      expect(archivo.contenido).toContain('"Deuda"');
+      expect(mockPrisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          accion: 'DESCARGAR_REPORTE_FINANCIERO',
+        }),
+      });
+    });
+
+    it('neutraliza formulas al construir el CSV', async () => {
+      mockPrisma.pago.findMany.mockResolvedValue([
+        {
+          id_pago: 1,
+          fecha_pago: new Date('2026-08-10T12:00:00.000Z'),
+          monto: 25000,
+          pasarela: '=CMD()',
+          cliente: { nombre_completo: 'Juan Perez' },
+        },
+      ]);
+      mockPrisma.factura.findMany.mockResolvedValue([]);
+
+      const archivo = await adminService.descargarReporteFinanciero(query);
+
+      expect(archivo.contenido).toContain("'=CMD()");
     });
   });
 });

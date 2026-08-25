@@ -1,7 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { cleanRut } from '../common/utils/rut.js';
 import type { IntentosFallidosQueryDto } from './dto/intentos-fallidos.dto.js';
+import type {
+  ReporteFinancieroDto,
+  ReporteFinancieroQueryDto,
+} from './dto/reporte-financiero.dto.js';
 
 @Injectable()
 export class AdminService {
@@ -107,6 +111,45 @@ export class AdminService {
       desbloqueado: result.count > 0,
       registros_afectados: result.count,
     };
+  }
+
+  async getReporteFinanciero(
+    query: ReporteFinancieroQueryDto,
+  ): Promise<ReporteFinancieroDto> {
+    const reporte = await this.consolidarReporteFinanciero(query);
+
+    await this.prisma.log_auditoria.create({
+      data: {
+        accion: 'GENERAR_REPORTE_FINANCIERO',
+        entidad_afectada: 'reporte_financiero',
+        valor_nuevo: {
+          periodo: reporte.periodo,
+          resumen: reporte.resumen,
+        },
+      },
+    });
+
+    return reporte;
+  }
+
+  async descargarReporteFinanciero(query: ReporteFinancieroQueryDto) {
+    const reporte = await this.consolidarReporteFinanciero(query);
+    const nombre = `reporte-financiero-${query.desde}-${query.hasta}.csv`;
+    const contenido = this.crearCsvReporte(reporte);
+
+    await this.prisma.log_auditoria.create({
+      data: {
+        accion: 'DESCARGAR_REPORTE_FINANCIERO',
+        entidad_afectada: 'reporte_financiero',
+        valor_nuevo: {
+          periodo: reporte.periodo,
+          nombre_archivo: nombre,
+          formato: 'csv',
+        },
+      },
+    });
+
+    return { nombre, contenido };
   }
 
   /**
@@ -226,5 +269,120 @@ export class AdminService {
       page: query.page,
       limit: query.limit,
     };
+  }
+
+  private async consolidarReporteFinanciero(
+    query: ReporteFinancieroQueryDto,
+  ): Promise<ReporteFinancieroDto> {
+    const desde = new Date(`${query.desde}T00:00:00.000Z`);
+    const hasta = new Date(`${query.hasta}T23:59:59.999Z`);
+
+    const [pagos, facturas] = await Promise.all([
+      this.prisma.pago.findMany({
+        where: { fecha_pago: { gte: desde, lte: hasta } },
+        select: {
+          id_pago: true,
+          fecha_pago: true,
+          monto: true,
+          pasarela: true,
+          cliente: { select: { nombre_completo: true } },
+        },
+        orderBy: { fecha_pago: 'asc' },
+      }),
+      this.prisma.factura.findMany({
+        where: {
+          fecha_emision: { gte: desde, lte: hasta },
+          estado: { in: ['pendiente', 'vencida'] },
+        },
+        select: {
+          id_factura: true,
+          periodo_mes: true,
+          periodo_anio: true,
+          monto: true,
+          fecha_emision: true,
+          fecha_limite_pago: true,
+          estado: true,
+          contrato: {
+            select: {
+              cliente: { select: { nombre_completo: true } },
+            },
+          },
+        },
+        orderBy: { fecha_emision: 'asc' },
+      }),
+    ]);
+
+    if (pagos.length === 0 && facturas.length === 0) {
+      throw new NotFoundException(
+        'No existen datos financieros para el periodo seleccionado',
+      );
+    }
+
+    const ingresos = pagos.map((pago) => ({
+      id_pago: pago.id_pago,
+      fecha_pago: pago.fecha_pago.toISOString(),
+      monto: Number(pago.monto),
+      pasarela: pago.pasarela,
+      cliente: pago.cliente?.nombre_completo ?? null,
+    }));
+    const deudas = facturas.map((factura) => ({
+      id_factura: factura.id_factura,
+      periodo: `${String(factura.periodo_mes).padStart(2, '0')}-${factura.periodo_anio}`,
+      fecha_emision: factura.fecha_emision?.toISOString() ?? null,
+      fecha_limite_pago: factura.fecha_limite_pago.toISOString(),
+      monto: Number(factura.monto ?? 0),
+      estado: factura.estado,
+      cliente: factura.contrato?.cliente?.nombre_completo ?? null,
+    }));
+
+    return {
+      periodo: { desde: query.desde, hasta: query.hasta },
+      generado_en: new Date().toISOString(),
+      resumen: {
+        total_ingresos: ingresos.reduce((total, pago) => total + pago.monto, 0),
+        total_deudas: deudas.reduce(
+          (total, factura) => total + factura.monto,
+          0,
+        ),
+        cantidad_pagos: ingresos.length,
+        cantidad_facturas_pendientes: deudas.length,
+      },
+      ingresos,
+      deudas,
+    };
+  }
+
+  private crearCsvReporte(reporte: ReporteFinancieroDto): string {
+    const filas: Array<Array<string | number>> = [
+      ['Tipo', 'Fecha', 'Documento', 'Cliente', 'Concepto', 'Estado', 'Monto'],
+      ...reporte.ingresos.map((pago) => [
+        'Ingreso',
+        pago.fecha_pago,
+        `Pago ${pago.id_pago}`,
+        pago.cliente ?? '',
+        pago.pasarela,
+        'pagado',
+        pago.monto,
+      ]),
+      ...reporte.deudas.map((factura) => [
+        'Deuda',
+        factura.fecha_emision ?? '',
+        `Factura ${factura.id_factura}`,
+        factura.cliente ?? '',
+        factura.periodo,
+        factura.estado,
+        factura.monto,
+      ]),
+    ];
+
+    return `\uFEFF${filas
+      .map((fila) => fila.map((valor) => this.escaparCsv(valor)).join(','))
+      .join('\r\n')}`;
+  }
+
+  private escaparCsv(valor: string | number): string {
+    let texto = String(valor);
+    if (/^[=+\-@]/.test(texto)) texto = `'${texto}`;
+    return `"${texto.replaceAll('"', '""')}"`;
   }
 }

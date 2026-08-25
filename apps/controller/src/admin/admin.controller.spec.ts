@@ -9,12 +9,16 @@ describe('AdminController', () => {
   let mockAdminService: {
     getIntentosFallidos: jest.Mock;
     desbloquearIp: jest.Mock;
+    getReporteFinanciero: jest.Mock;
+    descargarReporteFinanciero: jest.Mock;
   };
 
   beforeEach(async () => {
     mockAdminService = {
       getIntentosFallidos: jest.fn(),
       desbloquearIp: jest.fn(),
+      getReporteFinanciero: jest.fn(),
+      descargarReporteFinanciero: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -144,6 +148,46 @@ describe('AdminController', () => {
       });
 
       expect(response).toEqual(mockResult);
+    });
+  });
+
+  describe('reportes financieros', () => {
+    const query = { desde: '2026-08-01', hasta: '2026-08-31' };
+
+    it('genera el reporte para el periodo validado', async () => {
+      const reporte = {
+        periodo: query,
+        resumen: { total_ingresos: 1000, total_deudas: 500 },
+      };
+      mockAdminService.getReporteFinanciero.mockResolvedValue(reporte);
+
+      await expect(adminController.getReporteFinanciero(query)).resolves.toBe(
+        reporte,
+      );
+      expect(mockAdminService.getReporteFinanciero).toHaveBeenCalledWith(query);
+    });
+
+    it('prepara la descarga CSV para el navegador', async () => {
+      mockAdminService.descargarReporteFinanciero.mockResolvedValue({
+        nombre: 'reporte-financiero.csv',
+        contenido: 'csv',
+      });
+      const response = { setHeader: jest.fn() };
+
+      const result = await adminController.descargarReporteFinanciero(
+        query,
+        response as any,
+      );
+
+      expect(result).toBe('csv');
+      expect(response.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'text/csv; charset=utf-8',
+      );
+      expect(response.setHeader).toHaveBeenCalledWith(
+        'Content-Disposition',
+        'attachment; filename="reporte-financiero.csv"',
+      );
     });
   });
 });
