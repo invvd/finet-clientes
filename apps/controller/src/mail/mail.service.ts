@@ -62,6 +62,47 @@ export class MailService {
     this.logger.log('Password changed email sent');
   }
 
+  async sendTicketCreated(
+    email: string,
+    nombre: string,
+    codigoSeguimiento: string,
+    categoria: string,
+  ) {
+    const from =
+      this.configService.get<string>('MAIL_FROM') ||
+      '"Portal Clientes" <no-reply@finet.cl>';
+
+    await this.transporter.sendMail({
+      from,
+      to: email,
+      subject: `Solicitud de soporte ${codigoSeguimiento}`,
+      text: `Hola ${nombre}, registramos tu solicitud en la categoria ${categoria}. Tu codigo de seguimiento es ${codigoSeguimiento}.`,
+    });
+
+    this.logger.log('Ticket created email sent');
+  }
+
+  async sendTicketStatusChanged(
+    email: string,
+    nombre: string,
+    codigoSeguimiento: string,
+    estado: string,
+    accion: string,
+  ) {
+    const from =
+      this.configService.get<string>('MAIL_FROM') ||
+      '"Portal Clientes" <no-reply@finet.cl>';
+
+    await this.transporter.sendMail({
+      from,
+      to: email,
+      subject: `Actualizacion de soporte ${codigoSeguimiento}`,
+      text: `Hola ${nombre}, tu solicitud ${codigoSeguimiento} ahora esta en estado ${estado.replaceAll('_', ' ')}. Accion registrada: ${accion}`,
+    });
+
+    this.logger.log('Ticket status email sent');
+  }
+
   private resetTemplate(nombre: string, link: string): string {
     return `
 <!DOCTYPE html>
