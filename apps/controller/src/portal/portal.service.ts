@@ -1,3 +1,5 @@
+import { CambiarWifiPasswordDto } from './dto/portal-request.dto.js';
+import * as bcrypt from 'bcrypt';
 import {
   BadRequestException,
   HttpException,
@@ -304,7 +306,42 @@ export class PortalService {
       tickets: ticketsMapeados,
     };
   }
+  // ─── CU-31 + CU-32: Cambiar contraseña de red WiFi ───────────────────────
+  // Formato ya validado por Zod en el controller (RF-24). Guarda el hash
+  // y registra la solicitud en el log de auditoría.
+  async cambiarWifiPassword(idCliente: number, nuevaPassword: string) {
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id_cliente: idCliente },
+    });
 
+    if (!cliente) {
+      throw new NotFoundException('Cliente no encontrado');
+    }
+
+    const hash = await bcrypt.hash(nuevaPassword, 10);
+
+    await this.prisma.cliente.update({
+      where: { id_cliente: idCliente },
+      data: { wifi_password_hash: hash },
+    });
+
+    try {
+      await this.prisma.log_auditoria.create({
+        data: {
+          accion: 'CAMBIO_PASSWORD_WIFI_SOLICITADO',
+          entidad_afectada: 'cliente',
+          id_entidad_afectada: idCliente,
+        },
+      });
+    } catch (auditError) {
+      this.logger.error(
+        `No se pudo registrar auditoría de cambio de clave WiFi para cliente ${idCliente}`,
+        auditError,
+      );
+    }
+
+    return { success: true };
+  }
   // variables meses xD
   private formatPeriodo(mes: number, anio: number): string {
     const meses = [

@@ -82,6 +82,7 @@ model cliente {
   email                  String?                  @db.VarChar(120)
   telefono               String?                  @db.VarChar(21)
   password_portal_hash   String?                  @db.VarChar(72)
+  wifi_password_hash     String?                  @db.VarChar(72)
   estado                 String                   @db.VarChar(20)
   es_conflictivo         Boolean?                 @default(false)
   importado_masivo       Boolean?                 @default(false)
