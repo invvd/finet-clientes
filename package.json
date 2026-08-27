@@ -14,5 +14,9 @@
     "test:cov": "pnpm -r test:cov",
     "format": "pnpm -r format",
     "clean": "pnpm -r exec rm -rf dist .next coverage"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3"
   }
 }
