@@ -9,6 +9,10 @@ Cubre CU-59 a CU-62 (bloque **Mapa** del Incremento 2).
 | `/cobertura/*` | Público | `/cobertura` del sitio |
 | `/admin/cobertura/*` | Header `X-API-Key` | `/admin/cobertura` (editor provisional) |
 
+Este documento cubre el **contrato de la API**. La diferencia entre los dos
+frontends que la consumen (componentes, caché, grilla, autenticación) está en
+[`apps/view/docs/cobertura.md`](../../view/docs/cobertura.md).
+
 ---
 
 ## Modelo de datos: dos capas

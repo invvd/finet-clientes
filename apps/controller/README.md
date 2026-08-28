@@ -22,11 +22,10 @@ Backend para el portal de clientes basado en NestJS, Prisma y PostgreSQL.
 
 ## Configuración
 
-Copia el archivo de entorno de ejemplo y ajusta los valores:
-
-```bash
-$ cp .env.example .env
-```
+Crear `apps/controller/.env` a mano — no hay `.env.example` en el repo. La
+plantilla completa y lista para copiar está en el
+[README raíz](../../README.md#backend--appscontrollerenv); el archivo está en
+`.gitignore` y no se commitea.
 
 Variables principales:
 

@@ -56,6 +56,9 @@ escribir nada. Lleva `robots: noindex`.
 Es una ruta **provisional**: cuando exista el panel de administración real, la
 página se mueve dentro de él sin tocar el backend.
 
+La comparación completa entre esta ruta y el mapa público del sitio (componentes,
+caché, grilla, auth) está en [`cobertura.md`](./cobertura.md).
+
 ## Route handlers
 
 | Ruta | Qué hace |
