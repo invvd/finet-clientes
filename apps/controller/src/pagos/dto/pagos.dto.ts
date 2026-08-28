@@ -35,4 +35,7 @@ export interface PagoResponseDto {
   fecha_pago: string;
   codigo_transaccion: string | null;
   pasarela: string;
+  // CU-52: null si el comprobante todavía no se generó (ver Excepción 1/2) —
+  // la generación nunca falla la respuesta del pago en sí.
+  comprobante_pdf_url: string | null;
 }

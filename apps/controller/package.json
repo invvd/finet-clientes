@@ -39,6 +39,7 @@
     "nodemailer": "^8.0.10",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "pdfkit": "^0.20.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^4.4.3"
@@ -56,6 +57,7 @@
     "@types/node": "^24.0.0",
     "@types/nodemailer": "^8.0.0",
     "@types/passport-jwt": "^4.0.1",
+    "@types/pdfkit": "^0.17.6",
     "@types/supertest": "^7.0.0",
     "dotenv": "^17.4.2",
     "eslint": "^9.18.0",

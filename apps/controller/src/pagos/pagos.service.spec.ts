@@ -5,7 +5,15 @@ import { Prisma } from '../../generated/prisma/client.js';
 import type { RegistrarPagoDto } from './dto/pagos.dto.js';
 import type { IncorporarAbonoExternoDto } from './dto/abonos-externos.dto.js';
 
+jest.unstable_mockModule('node:fs/promises', () => ({
+  mkdir: jest.fn().mockResolvedValue(undefined),
+  writeFile: jest.fn().mockResolvedValue(undefined),
+}));
+
 const { PagosService } = await import('./pagos.service.js');
+const fsPromises = await import('node:fs/promises');
+
+const EMPRESA_MOCK = { nombre: 'Fibernet Limitada', rut_empresa: '76123456-7' };
 
 const DTO_MOCK: RegistrarPagoDto = {
   id_factura: 201,
@@ -43,6 +51,8 @@ describe('PagosService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     txMock = {
       pago: { create: jest.fn() },
       factura: { update: jest.fn() },
@@ -56,6 +66,9 @@ describe('PagosService', () => {
           useValue: {
             pago: {
               findUnique: jest.fn(),
+              findMany: jest.fn(),
+              count: jest.fn(),
+              update: jest.fn().mockResolvedValue({}),
             },
             factura: {
               findUnique: jest.fn(),
@@ -63,6 +76,11 @@ describe('PagosService', () => {
             },
             contrato: {
               findUnique: jest.fn(),
+            },
+            cliente: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValue({ empresa: EMPRESA_MOCK }),
             },
             log_auditoria: {
               create: jest.fn(),
@@ -118,6 +136,20 @@ describe('PagosService', () => {
         id_cliente: 5,
         monto: 19990,
         codigo_transaccion: 'TX-0001',
+      });
+    });
+
+    it('CU-52: genera el comprobante y lo refleja en comprobante_pdf_url', async () => {
+      const result = await service.registrarPagoConfirmado(
+        DTO_MOCK,
+        '127.0.0.1',
+      );
+
+      expect(result.comprobante_pdf_url).toBe('/admin/pagos/1/comprobante');
+      expect(fsPromises.writeFile).toHaveBeenCalledTimes(1);
+      expect(prisma.pago.update).toHaveBeenCalledWith({
+        where: { id_pago: 1 },
+        data: { comprobante_pdf_url: '/admin/pagos/1/comprobante' },
       });
     });
 
@@ -278,6 +310,104 @@ describe('PagosService', () => {
           },
           ip_origen: '127.0.0.1',
         },
+      });
+    });
+
+    describe('CU-52: generación de comprobante (nunca falla el pago)', () => {
+      it('Excepción 1: si no hay id_cliente, no genera comprobante ni escribe archivo', async () => {
+        (prisma.factura.findUnique as jest.Mock).mockResolvedValue({
+          id_factura: 201,
+          contrato: { id_cliente: 5 },
+        });
+        txMock.pago.create.mockResolvedValue({
+          ...PAGO_DB_MOCK,
+          id_cliente: null,
+        });
+
+        const result = await service.registrarPagoConfirmado(
+          DTO_MOCK,
+          '127.0.0.1',
+        );
+
+        expect(result.comprobante_pdf_url).toBeNull();
+        expect(fsPromises.writeFile).not.toHaveBeenCalled();
+        expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+          data: {
+            accion: 'PAGO_INCIDENCIA_COMPROBANTE_DATOS_FALTANTES',
+            entidad_afectada: 'pago',
+            valor_nuevo: { payload: DTO_MOCK, error: undefined },
+            ip_origen: '127.0.0.1',
+          },
+        });
+      });
+
+      it('Excepción 1: si a la empresa le falta nombre o rut_empresa, no genera comprobante', async () => {
+        (prisma.cliente.findUnique as jest.Mock).mockResolvedValue({
+          empresa: { nombre: 'Fibernet Limitada', rut_empresa: null },
+        });
+
+        const result = await service.registrarPagoConfirmado(
+          DTO_MOCK,
+          '127.0.0.1',
+        );
+
+        expect(result.comprobante_pdf_url).toBeNull();
+        expect(fsPromises.writeFile).not.toHaveBeenCalled();
+        expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+          data: {
+            accion: 'PAGO_INCIDENCIA_COMPROBANTE_DATOS_FALTANTES',
+            entidad_afectada: 'pago',
+            valor_nuevo: { payload: DTO_MOCK, error: undefined },
+            ip_origen: '127.0.0.1',
+          },
+        });
+      });
+
+      it('Excepción 2: si falla la consulta de datos de la empresa, el pago igual responde sin comprobante', async () => {
+        (prisma.cliente.findUnique as jest.Mock).mockRejectedValue(
+          new Error('connection lost'),
+        );
+
+        const result = await service.registrarPagoConfirmado(
+          DTO_MOCK,
+          '127.0.0.1',
+        );
+
+        expect(result).toMatchObject({ id_pago: 1, comprobante_pdf_url: null });
+        expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+          data: {
+            accion: 'PAGO_INCIDENCIA_COMPROBANTE_ERROR_GENERACION',
+            entidad_afectada: 'pago',
+            valor_nuevo: { payload: DTO_MOCK, error: 'connection lost' },
+            ip_origen: '127.0.0.1',
+          },
+        });
+      });
+
+      it('Excepción 2: si el PDF generado excede 500 KB, no lo guarda y registra incidencia', async () => {
+        // Simula un documento sobredimensionado sin depender del tamaño real de pdfkit
+        const servicePrivado = service as unknown as {
+          construirComprobantePdf: (...args: unknown[]) => Promise<Buffer>;
+        };
+        jest
+          .spyOn(servicePrivado, 'construirComprobantePdf')
+          .mockResolvedValue(Buffer.alloc(600 * 1024));
+
+        const result = await service.registrarPagoConfirmado(
+          DTO_MOCK,
+          '127.0.0.1',
+        );
+
+        expect(result.comprobante_pdf_url).toBeNull();
+        expect(fsPromises.writeFile).not.toHaveBeenCalled();
+        expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+          data: {
+            accion: 'PAGO_INCIDENCIA_COMPROBANTE_ERROR_GENERACION',
+            entidad_afectada: 'pago',
+            valor_nuevo: expect.objectContaining({ payload: DTO_MOCK }),
+            ip_origen: '127.0.0.1',
+          },
+        });
       });
     });
   });
@@ -511,6 +641,88 @@ describe('PagosService', () => {
       const result = await service.getPagosRechazados({ page: 1, limit: 20 });
 
       expect(result).toEqual({ data: [], total: 0, page: 1, limit: 20 });
+    });
+  });
+
+  describe('listarPagos (CU-52)', () => {
+    beforeEach(() => {
+      (prisma.pago.findMany as jest.Mock).mockResolvedValue([
+        { ...PAGO_DB_MOCK, comprobante_pdf_url: '/admin/pagos/1/comprobante' },
+      ]);
+      (prisma.pago.count as jest.Mock).mockResolvedValue(1);
+    });
+
+    it('lista el historial de pagos exitosos con su comprobante', async () => {
+      const result = await service.listarPagos({ page: 1, limit: 20 });
+
+      expect(result).toEqual({
+        data: [
+          {
+            id_pago: 1,
+            id_factura: 201,
+            id_cliente: 5,
+            monto: 19990,
+            fecha_pago: '2026-06-10T12:00:00.000Z',
+            codigo_transaccion: 'TX-0001',
+            pasarela: 'recaudacion-externa',
+            comprobante_pdf_url: '/admin/pagos/1/comprobante',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+      });
+    });
+
+    it('filtra por rango de fechas', async () => {
+      await service.listarPagos({
+        desde: '2026-06-01',
+        hasta: '2026-06-30',
+        page: 1,
+        limit: 20,
+      });
+
+      const where = (prisma.pago.findMany as jest.Mock).mock.calls[0][0].where;
+      expect(where.fecha_pago.gte).toBeInstanceOf(Date);
+      expect(where.fecha_pago.lte).toBeInstanceOf(Date);
+    });
+
+    it('aplica paginación', async () => {
+      await service.listarPagos({ page: 3, limit: 10 });
+
+      expect(prisma.pago.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 20, take: 10 }),
+      );
+    });
+  });
+
+  describe('obtenerRutaComprobante (CU-52)', () => {
+    it('retorna la ruta en disco cuando el comprobante ya se generó', async () => {
+      (prisma.pago.findUnique as jest.Mock).mockResolvedValue({
+        comprobante_pdf_url: '/admin/pagos/1/comprobante',
+      });
+
+      const ruta = await service.obtenerRutaComprobante(1);
+
+      expect(ruta).toMatch(/comprobantes[/\\]1\.pdf$/);
+    });
+
+    it('lanza NotFoundException si el pago no existe', async () => {
+      (prisma.pago.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.obtenerRutaComprobante(999)).rejects.toThrow(
+        'Comprobante no encontrado o todavía no generado',
+      );
+    });
+
+    it('lanza NotFoundException si el comprobante todavía no se generó', async () => {
+      (prisma.pago.findUnique as jest.Mock).mockResolvedValue({
+        comprobante_pdf_url: null,
+      });
+
+      await expect(service.obtenerRutaComprobante(1)).rejects.toThrow(
+        'Comprobante no encontrado o todavía no generado',
+      );
     });
   });
 });

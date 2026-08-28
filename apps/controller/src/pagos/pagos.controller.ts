@@ -1,11 +1,16 @@
+import { createReadStream } from 'node:fs';
 import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
+  Param,
+  ParseIntPipe,
   Post,
   Query,
   Req,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
@@ -16,6 +21,8 @@ import { RegistrarPagoDto } from './dto/pagos.dto.js';
 import { pagosRechazadosQuerySchema } from './dto/pagos-rechazados.dto.js';
 import type { PagosRechazadosQueryDto } from './dto/pagos-rechazados.dto.js';
 import { IncorporarAbonoExternoDto } from './dto/abonos-externos.dto.js';
+import { listadoPagosQuerySchema } from './dto/listado-pagos.dto.js';
+import type { ListadoPagosQueryDto } from './dto/listado-pagos.dto.js';
 
 /**
  * Núcleo de pago (Incremento 2). Protegido con API Key porque, en este
@@ -105,6 +112,48 @@ export class PagosController {
       body as IncorporarAbonoExternoDto,
       req.ip ?? '0.0.0.0',
     );
+  }
+
+  /**
+   * CU-52: "el administrador puede acceder al comprobante generado desde el
+   * historial de transacciones del sistema" — historial de pagos exitosos.
+   *
+   * GET /admin/pagos
+   * Auth: X-API-Key
+   *
+   * @query {
+   *   desde?: string,   // YYYY-MM-DD
+   *   hasta?: string,   // YYYY-MM-DD
+   *   page?: number,    // default 1
+   *   limit?: number    // default 20, máx 100
+   * }
+   */
+  @Get()
+  @HttpCode(200)
+  async listar(
+    @Query(new ZodValidationPipe(listadoPagosQuerySchema))
+    query: ListadoPagosQueryDto,
+  ) {
+    return this.pagosService.listarPagos(query);
+  }
+
+  /**
+   * CU-52: descargar el comprobante PDF de un pago
+   *
+   * GET /admin/pagos/:id_pago/comprobante
+   * Auth: X-API-Key
+   *
+   * Errores:
+   *   404 - El pago no existe, o el comprobante todavía no se generó
+   *         (CU-52 Excepción 1/2 — queda pendiente de generación)
+   */
+  @Get(':id_pago/comprobante')
+  @Header('Content-Type', 'application/pdf')
+  async descargarComprobante(
+    @Param('id_pago', ParseIntPipe) idPago: number,
+  ): Promise<StreamableFile> {
+    const ruta = await this.pagosService.obtenerRutaComprobante(idPago);
+    return new StreamableFile(createReadStream(ruta));
   }
 
   /**

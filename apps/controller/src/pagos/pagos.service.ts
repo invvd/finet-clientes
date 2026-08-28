@@ -1,22 +1,35 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import PDFDocument from 'pdfkit';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
+import { EMPRESA_DIRECCION } from '../common/constants/empresa.js';
 import type { PagoResponseDto, RegistrarPagoDto } from './dto/pagos.dto.js';
 import type {
   PagoRechazadoDto,
   PagosRechazadosQueryDto,
 } from './dto/pagos-rechazados.dto.js';
 import type { IncorporarAbonoExternoDto } from './dto/abonos-externos.dto.js';
+import type {
+  ListadoPagosQueryDto,
+  PagoListadoDto,
+} from './dto/listado-pagos.dto.js';
 
 const ACCION_DUPLICADO_RECHAZADO = 'PAGO_INCIDENCIA_DUPLICADO_RECHAZADO';
+
+// CU-52: peso máximo del comprobante generado
+const COMPROBANTE_MAX_BYTES = 500 * 1024;
+const COMPROBANTES_DIR = path.join(process.cwd(), 'storage', 'comprobantes');
 
 type IncidenciaTipo =
   | 'CUENTA_NO_DETERMINADA'
@@ -24,7 +37,9 @@ type IncidenciaTipo =
   | 'HISTORIAL_NO_CONSULTABLE'
   | 'DUPLICADO_RECHAZADO'
   | 'ABONO_CLIENTE_NO_IDENTIFICADO'
-  | 'ABONO_ERROR_ACTUALIZAR_SALDO';
+  | 'ABONO_ERROR_ACTUALIZAR_SALDO'
+  | 'COMPROBANTE_DATOS_FALTANTES'
+  | 'COMPROBANTE_ERROR_GENERACION';
 
 type DatosPago = {
   monto: number;
@@ -232,6 +247,20 @@ export class PagosService {
         },
       });
 
+      // CU-52: el comprobante se genera después de que el pago ya se confirmó
+      // — un fallo acá nunca debe revertir ni fallar la respuesta del pago.
+      const comprobantePdfUrl = await this.generarComprobante(
+        {
+          id_pago: pago.id_pago,
+          id_cliente: pago.id_cliente,
+          monto: Number(pago.monto),
+          fecha_pago: pago.fecha_pago,
+          codigo_transaccion: pago.codigo_transaccion,
+        },
+        datos,
+        ip,
+      );
+
       return {
         id_pago: pago.id_pago,
         id_factura: pago.id_factura,
@@ -240,6 +269,7 @@ export class PagosService {
         fecha_pago: pago.fecha_pago.toISOString(),
         codigo_transaccion: pago.codigo_transaccion,
         pasarela: pago.pasarela,
+        comprobante_pdf_url: comprobantePdfUrl,
       };
     } catch (err) {
       // CU-45: dos confirmaciones casi simultáneas con el mismo codigo_transaccion
@@ -267,6 +297,227 @@ export class PagosService {
         'No fue posible registrar el pago — reintente más tarde',
       );
     }
+  }
+
+  /**
+   * CU-52: genera el comprobante PDF de un pago ya confirmado y lo deja
+   * disponible para descarga. Nunca lanza — un fallo acá (Excepción 1: faltan
+   * datos; Excepción 2: falla el generador o el PDF excede el peso máximo)
+   * queda registrado como incidencia y el pago responde igual con
+   * `comprobante_pdf_url: null` ("pendiente de generación").
+   */
+  private async generarComprobante(
+    pago: {
+      id_pago: number;
+      id_cliente: number | null;
+      monto: number;
+      fecha_pago: Date;
+      codigo_transaccion: string | null;
+    },
+    payloadIncidencia: unknown,
+    ip: string,
+  ): Promise<string | null> {
+    try {
+      if (!pago.id_cliente) {
+        await this.registrarIncidencia(
+          'COMPROBANTE_DATOS_FALTANTES',
+          payloadIncidencia,
+          ip,
+        );
+        return null;
+      }
+
+      // CU-52 Excepción 1: faltan datos esenciales del pago o de la empresa
+      const cliente = await this.prisma.cliente.findUnique({
+        where: { id_cliente: pago.id_cliente },
+        select: { empresa: { select: { nombre: true, rut_empresa: true } } },
+      });
+
+      const empresa = cliente?.empresa;
+      if (!empresa?.nombre || !empresa.rut_empresa) {
+        await this.registrarIncidencia(
+          'COMPROBANTE_DATOS_FALTANTES',
+          payloadIncidencia,
+          ip,
+        );
+        return null;
+      }
+
+      const buffer = await this.construirComprobantePdf({
+        monto: pago.monto,
+        fechaPago: pago.fecha_pago,
+        codigoTransaccion: pago.codigo_transaccion ?? '—',
+        empresaNombre: empresa.nombre,
+        empresaRut: empresa.rut_empresa,
+      });
+
+      // CU-52 Excepción 2: el documento debe pesar menos de 500 KB
+      if (buffer.length > COMPROBANTE_MAX_BYTES) {
+        await this.registrarIncidencia(
+          'COMPROBANTE_ERROR_GENERACION',
+          payloadIncidencia,
+          ip,
+          new Error(
+            `El PDF generado pesa ${buffer.length} bytes, excede el máximo de ${COMPROBANTE_MAX_BYTES}`,
+          ),
+        );
+        return null;
+      }
+
+      await this.guardarComprobante(pago.id_pago, buffer);
+
+      const comprobantePdfUrl = `/admin/pagos/${pago.id_pago}/comprobante`;
+      await this.prisma.pago.update({
+        where: { id_pago: pago.id_pago },
+        data: { comprobante_pdf_url: comprobantePdfUrl },
+      });
+
+      return comprobantePdfUrl;
+    } catch (err) {
+      // CU-52 Excepción 2: error en el servicio generador de PDF
+      this.logger.error(
+        `Fallo al generar comprobante para id_pago=${pago.id_pago}: ${this.describirError(err)}`,
+      );
+      await this.registrarIncidencia(
+        'COMPROBANTE_ERROR_GENERACION',
+        payloadIncidencia,
+        ip,
+        err,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Arma el PDF en memoria con pdfkit — documento de texto simple, muy por
+   * debajo del límite de 500 KB de CU-52.
+   */
+  private construirComprobantePdf(datos: {
+    monto: number;
+    fechaPago: Date;
+    codigoTransaccion: string;
+    empresaNombre: string;
+    empresaRut: string;
+  }): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      doc.fontSize(16).text(datos.empresaNombre, { align: 'center' });
+      doc.fontSize(10).text(`RUT: ${datos.empresaRut}`, { align: 'center' });
+      doc.text(EMPRESA_DIRECCION, { align: 'center' });
+      doc.moveDown(2);
+      doc.fontSize(14).text('Comprobante de Pago', { align: 'center' });
+      doc.moveDown();
+      doc.fontSize(11);
+      doc.text(`Código de transacción: ${datos.codigoTransaccion}`);
+      doc.text(`Fecha de pago: ${datos.fechaPago.toLocaleDateString('es-CL')}`);
+      doc.text(`Monto pagado: $${datos.monto.toLocaleString('es-CL')}`);
+
+      doc.end();
+    });
+  }
+
+  /**
+   * Almacenamiento local en disco — interino hasta contar con credenciales de
+   * un proveedor cloud real. Aislado en su propio método para que, cuando
+   * llegue ese momento, el reemplazo sea solo esta función.
+   */
+  private async guardarComprobante(
+    idPago: number,
+    buffer: Buffer,
+  ): Promise<void> {
+    await mkdir(COMPROBANTES_DIR, { recursive: true });
+    await writeFile(path.join(COMPROBANTES_DIR, `${idPago}.pdf`), buffer);
+  }
+
+  /**
+   * Resuelve la ruta en disco del comprobante de un pago, para que el
+   * controller lo sirva. 404 si el pago no existe o el comprobante todavía
+   * no se generó (Excepción 1/2 de CU-52).
+   */
+  async obtenerRutaComprobante(idPago: number): Promise<string> {
+    const pago = await this.prisma.pago.findUnique({
+      where: { id_pago: idPago },
+      select: { comprobante_pdf_url: true },
+    });
+
+    if (!pago || !pago.comprobante_pdf_url) {
+      throw new NotFoundException(
+        'Comprobante no encontrado o todavía no generado',
+      );
+    }
+
+    return path.join(COMPROBANTES_DIR, `${idPago}.pdf`);
+  }
+
+  /**
+   * CU-52: "el administrador puede acceder al comprobante generado desde el
+   * historial de transacciones del sistema" — historial de pagos exitosos
+   * (a diferencia de `getPagosRechazados`, que lista incidencias de
+   * duplicados).
+   */
+  async listarPagos(query: ListadoPagosQueryDto) {
+    const { desde, hasta, page, limit } = query;
+
+    const where: Prisma.pagoWhereInput = {};
+
+    if (desde || hasta) {
+      const fechaPago: Prisma.DateTimeFilter = {};
+      if (desde) {
+        const desdeDate = new Date(desde);
+        desdeDate.setHours(0, 0, 0, 0);
+        fechaPago.gte = desdeDate;
+      }
+      if (hasta) {
+        const hastaDate = new Date(hasta);
+        hastaDate.setHours(23, 59, 59, 999);
+        fechaPago.lte = hastaDate;
+      }
+      where.fecha_pago = fechaPago;
+    }
+
+    const [pagos, total] = await Promise.all([
+      this.prisma.pago.findMany({
+        where,
+        orderBy: { fecha_pago: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id_pago: true,
+          id_factura: true,
+          id_cliente: true,
+          monto: true,
+          fecha_pago: true,
+          codigo_transaccion: true,
+          pasarela: true,
+          comprobante_pdf_url: true,
+        },
+      }),
+      this.prisma.pago.count({ where }),
+    ]);
+
+    return {
+      data: pagos.map(
+        (p): PagoListadoDto => ({
+          id_pago: p.id_pago,
+          id_factura: p.id_factura,
+          id_cliente: p.id_cliente,
+          monto: Number(p.monto),
+          fecha_pago: p.fecha_pago.toISOString(),
+          codigo_transaccion: p.codigo_transaccion,
+          pasarela: p.pasarela,
+          comprobante_pdf_url: p.comprobante_pdf_url,
+        }),
+      ),
+      total,
+      page,
+      limit,
+    };
   }
 
   /**

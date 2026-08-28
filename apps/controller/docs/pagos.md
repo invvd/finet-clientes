@@ -4,7 +4,7 @@ Base URL: `http://localhost:4000/api`
 
 **Interno/Administración** — requiere `X-API-Key` (`ADMIN_API_KEY`), igual que los endpoints de `/admin`. No es consumido por el frontend de clientes.
 
-Implementa CU-44, CU-45 y CU-46 — ver [`docs/CASOS-DE-USO.md`](../../../docs/CASOS-DE-USO.md) para el detalle de la spec y las excepciones. CU-52 (comprobante PDF) y CU-53 (envío por correo) todavía no están implementados.
+Implementa CU-44, CU-45, CU-46 y CU-52 — ver [`docs/CASOS-DE-USO.md`](../../../docs/CASOS-DE-USO.md) para el detalle de la spec y las excepciones. CU-53 (envío por correo) todavía no está implementado.
 
 ---
 
@@ -56,9 +56,12 @@ Content-Type: application/json
   "monto": 19990,
   "fecha_pago": "2026-06-10T12:00:00.000Z",
   "codigo_transaccion": "TX-0001",
-  "pasarela": "recaudacion-externa"
+  "pasarela": "recaudacion-externa",
+  "comprobante_pdf_url": "/admin/pagos/1/comprobante"
 }
 ```
+
+> `comprobante_pdf_url` puede venir `null` si CU-52 no logró generar el comprobante (Excepción 1/2) — eso **nunca** hace fallar esta respuesta, ver sección de CU-52 más abajo.
 
 **Errores:**
 
@@ -154,6 +157,56 @@ X-API-Key: <ADMIN_API_KEY>
 
 Lee `log_auditoria` filtrando por `accion = 'PAGO_INCIDENCIA_DUPLICADO_RECHAZADO'` — no hay una tabla propia. El filtro por `codigo_transaccion` usa un filtro JSON de Postgres sobre `valor_nuevo.payload.codigo_transaccion` (Prisma `path`/`equals`); no está ejercitado contra una base real todavía, solo con Prisma mockeado en los tests unitarios.
 
+## 4. Comprobante de pago en PDF (CU-52)
+
+Se genera automáticamente dentro de `aplicarPago()` — ni CU-44 ni CU-46 lo piden explícitamente en el body, simplemente sucede después de que el pago se confirma. **Nunca falla la respuesta del pago**: si algo sale mal (Excepción 1: faltan datos de la empresa; Excepción 2: falla el generador o el PDF pesa más de 500 KB), queda como incidencia y `comprobante_pdf_url` vuelve `null`.
+
+Datos usados: `monto`, `fecha_pago`, `codigo_transaccion` del pago recién creado, y `empresa.nombre`/`empresa.rut_empresa` resueltos vía `pago.id_cliente → cliente.id_empresa → empresa`. El resto de los datos corporativos (dirección) son estáticos, ver `src/common/constants/empresa.ts` — el modelo `empresa` de Prisma no tiene más campos que esos dos.
+
+**Almacenamiento — interino, no es "servicio cloud":** no hay ninguna integración cloud (S3/GCS/Cloudinary) configurada en el proyecto. Por decisión explícita, el PDF se guarda en disco local (`storage/comprobantes/{id_pago}.pdf`, gitignored) a través de una única función `guardarComprobante()` — cuando haya credenciales de un proveedor real, se reemplaza esa función sin tocar el resto del flujo. **Limitación real de esta decisión:** no sobrevive a redeploys ni funciona con múltiples instancias del backend corriendo a la vez.
+
+### Descargar el comprobante
+
+```
+GET /api/admin/pagos/:id_pago/comprobante
+X-API-Key: <ADMIN_API_KEY>
+```
+
+Responde el archivo con `Content-Type: application/pdf`. `404` si el pago no existe o el comprobante todavía no se generó.
+
+### Historial de transacciones exitosas
+
+CU-52 exige que "el administrador pueda acceder al comprobante generado desde el historial de transacciones" — no existía ningún listado de pagos exitosos (solo el de rechazados por duplicado), así que se agregó:
+
+```
+GET /api/admin/pagos
+X-API-Key: <ADMIN_API_KEY>
+```
+
+**Query params (todos opcionales):** `desde`, `hasta` (`YYYY-MM-DD`), `page` (default 1), `limit` (default 20, máx 100) — mismo patrón que `GET /rechazados`.
+
+**Respuesta 200:**
+
+```json
+{
+  "data": [
+    {
+      "id_pago": 1,
+      "id_factura": 201,
+      "id_cliente": 5,
+      "monto": 19990,
+      "fecha_pago": "2026-06-10T12:00:00.000Z",
+      "codigo_transaccion": "TX-0001",
+      "pasarela": "recaudacion-externa",
+      "comprobante_pdf_url": "/admin/pagos/1/comprobante"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20
+}
+```
+
 ## Trazabilidad de incidencias
 
 Todas las excepciones de negocio (menos la Excepción 1, ver abajo) quedan registradas en `log_auditoria` (no en una tabla dedicada — decisión explícita para no agregar schema nuevo en este incremento, ver [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) para el criterio). Esto es lo que permite que, como pide CU-45, **el administrador pueda consultar el historial y verificar los intentos de registro rechazados por código duplicado** (endpoint arriba):
@@ -167,6 +220,8 @@ Todas las excepciones de negocio (menos la Excepción 1, ver abajo) quedan regis
 | `PAGO_INCIDENCIA_HISTORIAL_NO_CONSULTABLE` | CU-45 Excepción 2 — falló la consulta de unicidad antes de siquiera intentar el registro |
 | `PAGO_INCIDENCIA_ABONO_CLIENTE_NO_IDENTIFICADO` | CU-46 Excepción 1 — `codigo_abonado` no resolvió a un contrato/cliente válido |
 | `PAGO_INCIDENCIA_ABONO_ERROR_ACTUALIZAR_SALDO` | CU-46 Excepción 3 — falló la transacción de aplicar el abono |
+| `PAGO_INCIDENCIA_COMPROBANTE_DATOS_FALTANTES` | CU-52 Excepción 1 — no se resolvió `empresa` o le faltan `nombre`/`rut_empresa` |
+| `PAGO_INCIDENCIA_COMPROBANTE_ERROR_GENERACION` | CU-52 Excepción 2 — falló pdfkit, o el PDF resultante excede 500 KB |
 
 La Excepción 1 de CU-44/CU-45 (datos incompletos o código de transacción ausente/corrupto) no genera un registro en `log_auditoria` — `ZodValidationPipe` la rechaza con un 400 antes de que el payload llegue al service, y en ese punto no hay `entidad_afectada` real que loguear.
 
@@ -176,15 +231,18 @@ No hay reintento automático implementado para las Excepciones de infraestructur
 
 | Archivo | Propósito |
 |---|---|
-| `src/pagos/pagos.controller.ts` | `POST /admin/pagos/confirmar`, `POST /admin/pagos/abonos-externos`, `GET /admin/pagos/rechazados` |
-| `src/pagos/pagos.service.ts` | `registrarPagoConfirmado()` (CU-44), `incorporarAbonoExterno()` (CU-46), `aplicarPago()` (núcleo compartido), `getPagosRechazados()` (CU-45) |
+| `src/pagos/pagos.controller.ts` | `POST /admin/pagos/confirmar`, `POST /admin/pagos/abonos-externos`, `GET /admin/pagos`, `GET /admin/pagos/:id_pago/comprobante`, `GET /admin/pagos/rechazados` |
+| `src/pagos/pagos.service.ts` | `registrarPagoConfirmado()` (CU-44), `incorporarAbonoExterno()` (CU-46), `aplicarPago()` (núcleo compartido), `generarComprobante()`/`guardarComprobante()` (CU-52), `listarPagos()` (CU-52), `getPagosRechazados()` (CU-45) |
 | `src/pagos/dto/pagos.dto.ts` | Validación Zod (`RegistrarPagoDto`) |
 | `src/pagos/dto/abonos-externos.dto.ts` | Validación Zod (`IncorporarAbonoExternoDto`) |
 | `src/pagos/dto/pagos-rechazados.dto.ts` | Validación Zod de la query de `GET /rechazados` |
+| `src/pagos/dto/listado-pagos.dto.ts` | Validación Zod de la query de `GET /admin/pagos` |
+| `src/common/constants/empresa.ts` | Datos corporativos estáticos para el comprobante |
 
 ## Pendiente en este bloque
 
 - **CU-46**: cada llamada incorpora un abono a la vez — no hay todavía un flujo de carga masiva/batch (un reporte con múltiples abonos en una sola request).
-- **CU-52** (comprobante PDF) y **CU-53** (envío por correo, reusando `MailModule`): no implementados.
-- **RF-33/RF-34** (dependencias declaradas de CU-45/CU-46): no encontradas en ningún doc del repo — no se documentó su contenido para no inventarlo.
+- **CU-52**: almacenamiento en disco local, no en un servicio cloud real (ver sección de CU-52 arriba) — falta reemplazar `guardarComprobante()` cuando haya credenciales.
+- **CU-53** (envío del comprobante por correo, reusando `MailModule`): no implementado — `mail.service.ts` tampoco soporta adjuntos todavía.
+- **RF-32/RF-33/RF-34/RF-38** (dependencias declaradas de CU-45/46/52): no encontradas en ningún doc del repo — no se documentó su contenido para no inventarlo.
 - **Pantalla de "elegir contrato a pagar"**: mencionada al planificar CU-46, pero es una feature de frontend distinta — no cubierta por ningún CU del documento de requisitos.

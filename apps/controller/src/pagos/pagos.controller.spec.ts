@@ -1,10 +1,16 @@
+import { fileURLToPath } from 'node:url';
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
+import { StreamableFile } from '@nestjs/common';
 import { PagosController } from './pagos.controller.js';
 import { PagosService } from './pagos.service.js';
 import { ApiKeyGuard } from '../admin/guards/api-key.guard.js';
 import type { RegistrarPagoDto } from './dto/pagos.dto.js';
 import type { IncorporarAbonoExternoDto } from './dto/abonos-externos.dto.js';
+
+// Ruta a un archivo real (este mismo spec) para que createReadStream no falle
+// al abrirlo — evita tener que mockear node:fs solo para este test.
+const ARCHIVO_REAL_DE_PRUEBA = fileURLToPath(import.meta.url);
 
 describe('PagosController', () => {
   let pagosController: PagosController;
@@ -12,6 +18,8 @@ describe('PagosController', () => {
     registrarPagoConfirmado: jest.Mock;
     getPagosRechazados: jest.Mock;
     incorporarAbonoExterno: jest.Mock;
+    listarPagos: jest.Mock;
+    obtenerRutaComprobante: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -19,6 +27,8 @@ describe('PagosController', () => {
       registrarPagoConfirmado: jest.fn(),
       getPagosRechazados: jest.fn(),
       incorporarAbonoExterno: jest.fn(),
+      listarPagos: jest.fn(),
+      obtenerRutaComprobante: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -140,6 +150,34 @@ describe('PagosController', () => {
         page: 1,
         limit: 20,
       });
+    });
+  });
+
+  describe('GET /admin/pagos (listado, CU-52)', () => {
+    it('delega en el service con la query recibida', async () => {
+      const mockResult = { data: [], total: 0, page: 1, limit: 20 };
+      mockPagosService.listarPagos.mockResolvedValue(mockResult);
+
+      const response = await pagosController.listar({ page: 1, limit: 20 });
+
+      expect(response).toEqual(mockResult);
+      expect(mockPagosService.listarPagos).toHaveBeenCalledWith({
+        page: 1,
+        limit: 20,
+      });
+    });
+  });
+
+  describe('GET /admin/pagos/:id_pago/comprobante (CU-52)', () => {
+    it('resuelve la ruta vía el service y retorna un StreamableFile', async () => {
+      mockPagosService.obtenerRutaComprobante.mockResolvedValue(
+        ARCHIVO_REAL_DE_PRUEBA,
+      );
+
+      const result = await pagosController.descargarComprobante(1);
+
+      expect(mockPagosService.obtenerRutaComprobante).toHaveBeenCalledWith(1);
+      expect(result).toBeInstanceOf(StreamableFile);
     });
   });
 });
