@@ -4,7 +4,7 @@ Base URL: `http://localhost:4000/api`
 
 **Interno/Administración** — requiere `X-API-Key` (`ADMIN_API_KEY`), igual que los endpoints de `/admin`. No es consumido por el frontend de clientes.
 
-Implementa CU-44, CU-45, CU-46 y CU-52 — ver [`docs/CASOS-DE-USO.md`](../../../docs/CASOS-DE-USO.md) para el detalle de la spec y las excepciones. CU-53 (envío por correo) todavía no está implementado.
+Implementa CU-44, CU-45, CU-46, CU-52 y CU-53 — ver [`docs/CASOS-DE-USO.md`](../../../docs/CASOS-DE-USO.md) para el detalle de la spec y las excepciones. Con esto el bloque "Núcleo de pago" del Incremento 2 queda completo.
 
 ---
 
@@ -207,6 +207,20 @@ X-API-Key: <ADMIN_API_KEY>
 }
 ```
 
+## 5. Envío del comprobante por correo (CU-53)
+
+Se dispara automáticamente dentro de `aplicarPago()`, justo después de CU-52 — no es un endpoint propio, no hay body ni query que lo activen. **Mismo principio que CU-52: nunca falla la respuesta del pago.**
+
+Flujo (`enviarComprobantePorCorreo()`):
+
+1. Si CU-52 no generó comprobante (`comprobante_pdf_url` es `null`) → **Excepción 3**: se cancela el despacho de inmediato, incidencia `COMPROBANTE_ARCHIVO_NO_DISPONIBLE`.
+2. Si `cliente.email` no está registrado → **Excepción 1**: incidencia `COMPROBANTE_EMAIL_NO_REGISTRADO`, no se envía.
+3. Se relee el PDF desde disco (`storage/comprobantes/{id_pago}.pdf`) — si ya no está disponible en ese momento (la otra cara de la **Excepción 3**), misma incidencia `COMPROBANTE_ARCHIVO_NO_DISPONIBLE`.
+4. Envío vía `MailService.sendComprobantePago()` (nuevo método, con `attachments`) — hasta 3 intentos con backoff exponencial (`1000ms * 2^(intento-1)`, mismo patrón que `fetchWithRetry` en `apps/view/app/_lib/auth.tsx`). Si los 3 fallan → **Excepción 2**: incidencia `COMPROBANTE_ENVIO_FALLIDO` con el error del último intento.
+5. Envío exitoso: no genera un registro adicional en `log_auditoria` — la poscondición de CU-53 solo exige trazar el intento **fallido**, no el exitoso.
+
+No hay una cola de reintento persistente (no está instalado Bull/BullMQ) — el reintento es síncrono, dentro del mismo request que registró el pago.
+
 ## Trazabilidad de incidencias
 
 Todas las excepciones de negocio (menos la Excepción 1, ver abajo) quedan registradas en `log_auditoria` (no en una tabla dedicada — decisión explícita para no agregar schema nuevo en este incremento, ver [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) para el criterio). Esto es lo que permite que, como pide CU-45, **el administrador pueda consultar el historial y verificar los intentos de registro rechazados por código duplicado** (endpoint arriba):
@@ -222,6 +236,9 @@ Todas las excepciones de negocio (menos la Excepción 1, ver abajo) quedan regis
 | `PAGO_INCIDENCIA_ABONO_ERROR_ACTUALIZAR_SALDO` | CU-46 Excepción 3 — falló la transacción de aplicar el abono |
 | `PAGO_INCIDENCIA_COMPROBANTE_DATOS_FALTANTES` | CU-52 Excepción 1 — no se resolvió `empresa` o le faltan `nombre`/`rut_empresa` |
 | `PAGO_INCIDENCIA_COMPROBANTE_ERROR_GENERACION` | CU-52 Excepción 2 — falló pdfkit, o el PDF resultante excede 500 KB |
+| `PAGO_INCIDENCIA_COMPROBANTE_EMAIL_NO_REGISTRADO` | CU-53 Excepción 1 — el cliente no tiene correo registrado |
+| `PAGO_INCIDENCIA_COMPROBANTE_ENVIO_FALLIDO` | CU-53 Excepción 2 — fallaron los 3 intentos de envío |
+| `PAGO_INCIDENCIA_COMPROBANTE_ARCHIVO_NO_DISPONIBLE` | CU-53 Excepción 3 — no había comprobante generado, o ya no está en disco al momento de enviar |
 
 La Excepción 1 de CU-44/CU-45 (datos incompletos o código de transacción ausente/corrupto) no genera un registro en `log_auditoria` — `ZodValidationPipe` la rechaza con un 400 antes de que el payload llegue al service, y en ese punto no hay `entidad_afectada` real que loguear.
 
@@ -238,11 +255,12 @@ No hay reintento automático implementado para las Excepciones de infraestructur
 | `src/pagos/dto/pagos-rechazados.dto.ts` | Validación Zod de la query de `GET /rechazados` |
 | `src/pagos/dto/listado-pagos.dto.ts` | Validación Zod de la query de `GET /admin/pagos` |
 | `src/common/constants/empresa.ts` | Datos corporativos estáticos para el comprobante |
+| `src/mail/mail.service.ts` | `sendComprobantePago()` (CU-53) — único método de `MailService` con adjuntos |
 
 ## Pendiente en este bloque
 
 - **CU-46**: cada llamada incorpora un abono a la vez — no hay todavía un flujo de carga masiva/batch (un reporte con múltiples abonos en una sola request).
 - **CU-52**: almacenamiento en disco local, no en un servicio cloud real (ver sección de CU-52 arriba) — falta reemplazar `guardarComprobante()` cuando haya credenciales.
-- **CU-53** (envío del comprobante por correo, reusando `MailModule`): no implementado — `mail.service.ts` tampoco soporta adjuntos todavía.
-- **RF-32/RF-33/RF-34/RF-38** (dependencias declaradas de CU-45/46/52): no encontradas en ningún doc del repo — no se documentó su contenido para no inventarlo.
+- **CU-53**: el reintento es síncrono dentro del mismo request (sin cola persistente) — si el proceso se cae a mitad de los 3 intentos, no queda un job para reprocesar después, solo la incidencia si llegó a agotar los 3 intentos.
+- **RF-32/RF-33/RF-34/RF-38** (dependencias declaradas de CU-45/46/52/53): no encontradas en ningún doc del repo — no se documentó su contenido para no inventarlo.
 - **Pantalla de "elegir contrato a pagar"**: mencionada al planificar CU-46, pero es una feature de frontend distinta — no cubierta por ningún CU del documento de requisitos.

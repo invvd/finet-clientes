@@ -1,6 +1,7 @@
 import { jest, beforeEach, describe, it, expect } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { MailService } from '../mail/mail.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import type { RegistrarPagoDto } from './dto/pagos.dto.js';
 import type { IncorporarAbonoExternoDto } from './dto/abonos-externos.dto.js';
@@ -8,6 +9,7 @@ import type { IncorporarAbonoExternoDto } from './dto/abonos-externos.dto.js';
 jest.unstable_mockModule('node:fs/promises', () => ({
   mkdir: jest.fn().mockResolvedValue(undefined),
   writeFile: jest.fn().mockResolvedValue(undefined),
+  readFile: jest.fn().mockResolvedValue(Buffer.from('%PDF-fake')),
 }));
 
 const { PagosService } = await import('./pagos.service.js');
@@ -45,6 +47,7 @@ const PAGO_DB_MOCK = {
 describe('PagosService', () => {
   let service: InstanceType<typeof PagosService>;
   let prisma: PrismaService;
+  let mailService: { sendComprobantePago: jest.Mock };
   let txMock: {
     pago: { create: jest.Mock };
     factura: { update: jest.Mock };
@@ -56,6 +59,10 @@ describe('PagosService', () => {
     txMock = {
       pago: { create: jest.fn() },
       factura: { update: jest.fn() },
+    };
+
+    mailService = {
+      sendComprobantePago: jest.fn().mockResolvedValue(undefined),
     };
 
     const module = await Test.createTestingModule({
@@ -78,9 +85,11 @@ describe('PagosService', () => {
               findUnique: jest.fn(),
             },
             cliente: {
-              findUnique: jest
-                .fn()
-                .mockResolvedValue({ empresa: EMPRESA_MOCK }),
+              findUnique: jest.fn().mockResolvedValue({
+                empresa: EMPRESA_MOCK,
+                email: 'juan@test.cl',
+                nombre_completo: 'Juan Perez',
+              }),
             },
             log_auditoria: {
               create: jest.fn(),
@@ -92,6 +101,7 @@ describe('PagosService', () => {
             ),
           },
         },
+        { provide: MailService, useValue: mailService },
       ],
     }).compile();
 
@@ -408,6 +418,131 @@ describe('PagosService', () => {
             ip_origen: '127.0.0.1',
           },
         });
+      });
+    });
+
+    describe('CU-53: envío del comprobante por correo (nunca falla el pago)', () => {
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+
+      it('envía el comprobante por correo tras generarlo exitosamente', async () => {
+        const result = await service.registrarPagoConfirmado(
+          DTO_MOCK,
+          '127.0.0.1',
+        );
+
+        expect(mailService.sendComprobantePago).toHaveBeenCalledWith(
+          'juan@test.cl',
+          'Juan Perez',
+          expect.any(Buffer),
+          'comprobante-pago-1.pdf',
+        );
+        expect(result.comprobante_pdf_url).toBe('/admin/pagos/1/comprobante');
+      });
+
+      it('Excepción 1: si el cliente no tiene correo registrado, no envía y registra incidencia', async () => {
+        (prisma.cliente.findUnique as jest.Mock).mockResolvedValue({
+          empresa: EMPRESA_MOCK,
+          email: null,
+          nombre_completo: 'Juan Perez',
+        });
+
+        await service.registrarPagoConfirmado(DTO_MOCK, '127.0.0.1');
+
+        expect(mailService.sendComprobantePago).not.toHaveBeenCalled();
+        expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+          data: {
+            accion: 'PAGO_INCIDENCIA_COMPROBANTE_EMAIL_NO_REGISTRADO',
+            entidad_afectada: 'pago',
+            valor_nuevo: { payload: DTO_MOCK, error: undefined },
+            ip_origen: '127.0.0.1',
+          },
+        });
+      });
+
+      it('Excepción 3: si CU-52 no generó comprobante, cancela el despacho sin intentar enviar', async () => {
+        const servicePrivado = service as unknown as {
+          construirComprobantePdf: (...args: unknown[]) => Promise<Buffer>;
+        };
+        jest
+          .spyOn(servicePrivado, 'construirComprobantePdf')
+          .mockResolvedValue(Buffer.alloc(600 * 1024));
+
+        const result = await service.registrarPagoConfirmado(
+          DTO_MOCK,
+          '127.0.0.1',
+        );
+
+        expect(result.comprobante_pdf_url).toBeNull();
+        expect(mailService.sendComprobantePago).not.toHaveBeenCalled();
+        expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+          data: {
+            accion: 'PAGO_INCIDENCIA_COMPROBANTE_ARCHIVO_NO_DISPONIBLE',
+            entidad_afectada: 'pago',
+            valor_nuevo: { payload: DTO_MOCK, error: undefined },
+            ip_origen: '127.0.0.1',
+          },
+        });
+      });
+
+      it('Excepción 3 (otra cara): si el archivo ya no está en disco al enviar, cancela y registra incidencia', async () => {
+        (fsPromises.readFile as jest.Mock).mockRejectedValueOnce(
+          new Error('ENOENT'),
+        );
+
+        await service.registrarPagoConfirmado(DTO_MOCK, '127.0.0.1');
+
+        expect(mailService.sendComprobantePago).not.toHaveBeenCalled();
+        expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+          data: {
+            accion: 'PAGO_INCIDENCIA_COMPROBANTE_ARCHIVO_NO_DISPONIBLE',
+            entidad_afectada: 'pago',
+            valor_nuevo: { payload: DTO_MOCK, error: 'ENOENT' },
+            ip_origen: '127.0.0.1',
+          },
+        });
+      });
+
+      it('Excepción 2: reintenta con backoff exponencial y registra incidencia si las 3 fallan', async () => {
+        jest.useFakeTimers();
+        mailService.sendComprobantePago.mockRejectedValue(
+          new Error('smtp down'),
+        );
+
+        const promise = service.registrarPagoConfirmado(DTO_MOCK, '127.0.0.1');
+
+        await jest.advanceTimersByTimeAsync(1000);
+        await jest.advanceTimersByTimeAsync(2000);
+
+        const result = await promise;
+
+        expect(mailService.sendComprobantePago).toHaveBeenCalledTimes(3);
+        // El fallo de envio no afecta la respuesta del pago
+        expect(result.comprobante_pdf_url).toBe('/admin/pagos/1/comprobante');
+        expect(prisma.log_auditoria.create).toHaveBeenCalledWith({
+          data: {
+            accion: 'PAGO_INCIDENCIA_COMPROBANTE_ENVIO_FALLIDO',
+            entidad_afectada: 'pago',
+            valor_nuevo: { payload: DTO_MOCK, error: 'smtp down' },
+            ip_origen: '127.0.0.1',
+          },
+        });
+      });
+
+      it('el envío exitoso no genera una incidencia adicional', async () => {
+        await service.registrarPagoConfirmado(DTO_MOCK, '127.0.0.1');
+
+        const acciones = (
+          prisma.log_auditoria.create as jest.Mock
+        ).mock.calls.map(
+          (call) => (call[0] as { data: { accion: string } }).data.accion,
+        );
+
+        expect(acciones).not.toContain(
+          'PAGO_INCIDENCIA_COMPROBANTE_ENVIO_FALLIDO',
+        );
+        expect(acciones).toContain('PAGO_REGISTRADO');
       });
     });
   });

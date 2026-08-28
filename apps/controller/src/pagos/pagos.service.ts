@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   BadRequestException,
@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { MailService } from '../mail/mail.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import { EMPRESA_DIRECCION } from '../common/constants/empresa.js';
 import type { PagoResponseDto, RegistrarPagoDto } from './dto/pagos.dto.js';
@@ -39,7 +40,14 @@ type IncidenciaTipo =
   | 'ABONO_CLIENTE_NO_IDENTIFICADO'
   | 'ABONO_ERROR_ACTUALIZAR_SALDO'
   | 'COMPROBANTE_DATOS_FALTANTES'
-  | 'COMPROBANTE_ERROR_GENERACION';
+  | 'COMPROBANTE_ERROR_GENERACION'
+  | 'COMPROBANTE_EMAIL_NO_REGISTRADO'
+  | 'COMPROBANTE_ENVIO_FALLIDO'
+  | 'COMPROBANTE_ARCHIVO_NO_DISPONIBLE';
+
+// CU-53: mismo patrón de reintento que fetchWithRetry en apps/view/app/_lib/auth.tsx
+const EMAIL_MAX_INTENTOS = 3;
+const EMAIL_BASE_DELAY_MS = 1000;
 
 type DatosPago = {
   monto: number;
@@ -53,7 +61,10 @@ type DatosPago = {
 export class PagosService {
   private readonly logger = new Logger(PagosService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   /**
    * CU-44: registra un pago confirmado por la entidad recaudadora
@@ -261,6 +272,14 @@ export class PagosService {
         ip,
       );
 
+      // CU-53: mismo principio — el envío por correo nunca falla el pago.
+      await this.enviarComprobantePorCorreo(
+        { id_pago: pago.id_pago, id_cliente: pago.id_cliente },
+        comprobantePdfUrl,
+        datos,
+        ip,
+      );
+
       return {
         id_pago: pago.id_pago,
         id_factura: pago.id_factura,
@@ -385,6 +404,102 @@ export class PagosService {
         err,
       );
       return null;
+    }
+  }
+
+  /**
+   * CU-53: envía el comprobante ya generado al correo del cliente. Nunca
+   * lanza — mismo principio que `generarComprobante`, un fallo acá no debe
+   * afectar la respuesta del pago.
+   */
+  private async enviarComprobantePorCorreo(
+    pago: { id_pago: number; id_cliente: number | null },
+    comprobantePdfUrl: string | null,
+    payloadIncidencia: unknown,
+    ip: string,
+  ): Promise<void> {
+    // CU-53 Excepción 3: el comprobante no está disponible — CU-52 ya falló,
+    // no hay nada que adjuntar. Se cancela el despacho.
+    if (!comprobantePdfUrl) {
+      await this.registrarIncidencia(
+        'COMPROBANTE_ARCHIVO_NO_DISPONIBLE',
+        payloadIncidencia,
+        ip,
+      );
+      return;
+    }
+
+    if (!pago.id_cliente) {
+      await this.registrarIncidencia(
+        'COMPROBANTE_EMAIL_NO_REGISTRADO',
+        payloadIncidencia,
+        ip,
+      );
+      return;
+    }
+
+    // CU-53 Excepción 1: el cliente no tiene correo registrado
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id_cliente: pago.id_cliente },
+      select: { email: true, nombre_completo: true },
+    });
+
+    if (!cliente?.email) {
+      await this.registrarIncidencia(
+        'COMPROBANTE_EMAIL_NO_REGISTRADO',
+        payloadIncidencia,
+        ip,
+      );
+      return;
+    }
+
+    // CU-53 Excepción 3 (otra cara): el archivo se generó pero ya no está
+    // disponible en disco al momento de despachar el correo.
+    let buffer: Buffer;
+    try {
+      buffer = await readFile(
+        path.join(COMPROBANTES_DIR, `${pago.id_pago}.pdf`),
+      );
+    } catch (err) {
+      this.logger.error(
+        `Comprobante no disponible para envío, id_pago=${pago.id_pago}: ${this.describirError(err)}`,
+      );
+      await this.registrarIncidencia(
+        'COMPROBANTE_ARCHIVO_NO_DISPONIBLE',
+        payloadIncidencia,
+        ip,
+        err,
+      );
+      return;
+    }
+
+    // CU-53 Excepción 2: el servicio de correo falla — reintenta con backoff
+    // exponencial, mismo patrón que fetchWithRetry en apps/view/app/_lib/auth.tsx
+    for (let intento = 1; intento <= EMAIL_MAX_INTENTOS; intento++) {
+      try {
+        await this.mailService.sendComprobantePago(
+          cliente.email,
+          cliente.nombre_completo,
+          buffer,
+          `comprobante-pago-${pago.id_pago}.pdf`,
+        );
+        return;
+      } catch (err) {
+        if (intento === EMAIL_MAX_INTENTOS) {
+          this.logger.error(
+            `Fallo definitivo al enviar comprobante por correo id_pago=${pago.id_pago}: ${this.describirError(err)}`,
+          );
+          await this.registrarIncidencia(
+            'COMPROBANTE_ENVIO_FALLIDO',
+            payloadIncidencia,
+            ip,
+            err,
+          );
+          return;
+        }
+        const delay = EMAIL_BASE_DELAY_MS * Math.pow(2, intento - 1);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
     }
   }
 

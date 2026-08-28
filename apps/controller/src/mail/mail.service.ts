@@ -62,6 +62,34 @@ export class MailService {
     this.logger.log('Password changed email sent');
   }
 
+  /**
+   * CU-53: envía el comprobante de pago adjunto en PDF. El llamador
+   * (`PagosService`) es responsable del reintento — este método solo hace
+   * un intento de envío y deja que el error se propague.
+   */
+  async sendComprobantePago(
+    email: string,
+    nombre: string,
+    pdfBuffer: Buffer,
+    nombreArchivo: string,
+  ) {
+    const from =
+      this.configService.get<string>('MAIL_FROM') ||
+      '"Portal Clientes" <no-reply@finet.cl>';
+
+    const html = this.comprobanteTemplate(nombre);
+
+    await this.transporter.sendMail({
+      from,
+      to: email,
+      subject: 'Comprobante de pago - Portal Clientes',
+      html,
+      attachments: [{ filename: nombreArchivo, content: pdfBuffer }],
+    });
+
+    this.logger.log('Comprobante de pago email sent');
+  }
+
   private resetTemplate(nombre: string, link: string): string {
     return `
 <!DOCTYPE html>
@@ -92,6 +120,22 @@ export class MailService {
     <p>Hola ${nombre},</p>
     <p>Tu contraseña ha sido actualizada exitosamente.</p>
     <p style="font-size: 12px; color: #666;">Si no realizaste este cambio, contacta a soporte de inmediato.</p>
+  </div>
+</body>
+</html>`;
+  }
+
+  private comprobanteTemplate(nombre: string): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: Arial, sans-serif; color: #333;">
+  <div style="max-width: 480px; margin: 0 auto; padding: 24px;">
+    <h2 style="color: #1a56db;">Portal Clientes</h2>
+    <p>Hola ${nombre},</p>
+    <p>Adjuntamos el comprobante de tu pago.</p>
+    <p style="font-size: 12px; color: #666;">Este es un mensaje automático, no responder.</p>
   </div>
 </body>
 </html>`;
