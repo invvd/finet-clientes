@@ -39,6 +39,7 @@ describe('MorosidadService', () => {
       updateMany: jest.Mock;
       update: jest.Mock;
       count: jest.Mock;
+      groupBy: jest.Mock;
       findMany: jest.Mock;
       findUnique: jest.Mock;
     };
@@ -57,6 +58,7 @@ describe('MorosidadService', () => {
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
         update: jest.fn().mockResolvedValue(contratoConfig),
         count: jest.fn().mockResolvedValue(0),
+        groupBy: jest.fn().mockResolvedValue([]),
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue(contratoConfig),
       },
@@ -217,7 +219,7 @@ describe('MorosidadService', () => {
     /**
      * Prepara las consultas en el orden en que las hace el servicio:
      *
-     * `findMany` #1 → los valores distintos de `dias_gracia` (los grupos).
+     * `groupBy` → los valores distintos de `dias_gracia` (los grupos).
      * `count` #1 → procesados, `count` #2 → contratos sin parámetros.
      * Luego, por cada grupo: `count` → omitidos y `findMany` → contratos a marcar.
      *
@@ -237,7 +239,7 @@ describe('MorosidadService', () => {
         .mockResolvedValueOnce(opciones.procesados ?? 0)
         .mockResolvedValueOnce(opciones.sinParametros ?? 0);
 
-      mockPrisma.contrato.findMany.mockResolvedValueOnce(
+      mockPrisma.contrato.groupBy.mockResolvedValue(
         grupos.map((dias_gracia) => ({ dias_gracia })),
       );
 
@@ -300,8 +302,8 @@ describe('MorosidadService', () => {
 
       await morosidadService.revisarMorosidad();
 
-      // La primera llamada es la de grupos; la segunda es la de contratos a marcar.
-      const argumentos = mockPrisma.contrato.findMany.mock.calls[1]![0] as {
+      // Los grupos salen de `groupBy`, así que `findMany` solo trae los a marcar.
+      const argumentos = mockPrisma.contrato.findMany.mock.calls[0]![0] as {
         where: { factura: { some: { fecha_limite_pago: { lt: Date } } } };
       };
       const corte = argumentos.where.factura.some.fecha_limite_pago.lt;
@@ -356,7 +358,7 @@ describe('MorosidadService', () => {
 
     // CU-47 Excepcion 1: el proceso programado no puede iniciarse.
     it('record the failure and mark nothing when no contract has parameters configured', async () => {
-      mockPrisma.contrato.findMany.mockResolvedValueOnce([]);
+      mockPrisma.contrato.groupBy.mockResolvedValue([]);
 
       const result = await morosidadService.revisarMorosidad();
 
@@ -377,8 +379,8 @@ describe('MorosidadService', () => {
 
       await morosidadService.revisarMorosidad();
 
-      // findMany #1 son los grupos; #2 y #3 son los contratos a marcar de cada grupo.
-      const cortes = mockPrisma.contrato.findMany.mock.calls.slice(1).map(
+      // Una llamada a findMany por grupo, con el corte propio de cada uno.
+      const cortes = mockPrisma.contrato.findMany.mock.calls.map(
         (llamada) =>
           (
             llamada[0] as {
@@ -406,7 +408,7 @@ describe('MorosidadService', () => {
       mockPrisma.contrato.count
         .mockResolvedValueOnce(2)
         .mockResolvedValueOnce(0);
-      mockPrisma.contrato.findMany.mockResolvedValueOnce(
+      mockPrisma.contrato.groupBy.mockResolvedValue(
         grupos.map((dias_gracia) => ({ dias_gracia })),
       );
       mockPrisma.contrato.count.mockResolvedValueOnce(0);
@@ -461,7 +463,7 @@ describe('MorosidadService', () => {
     // CU-47 Excepcion 3: la consulta masiva falla, el proceso queda inconcluso.
     it('leave the run unfinished and record the error when the query fails', async () => {
       // Los grupos resuelven bien; lo que falla es la consulta masiva posterior.
-      mockPrisma.contrato.findMany.mockResolvedValueOnce([{ dias_gracia: 5 }]);
+      mockPrisma.contrato.groupBy.mockResolvedValue([{ dias_gracia: 5 }]);
       mockPrisma.contrato.count.mockRejectedValue(new Error('db down'));
 
       const result = await morosidadService.revisarMorosidad();

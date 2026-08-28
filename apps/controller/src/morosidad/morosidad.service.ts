@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ESTADOS_IMPAGOS } from '../common/constants/facturacion.js';
 import type {
   ActualizarConfiguracionDto,
   ConfiguracionMorosidadDto,
@@ -17,13 +18,6 @@ import type {
   PagoDetalleDto,
   ResultadoRevisionDto,
 } from './dto/morosidad.dto.js';
-
-/**
- * Estados de `factura` que cuentan como deuda pendiente de pago. Se define una sola vez
- * porque los cuatro CU del bloque (47, 55, 56 y el saldo de 80) tienen que coincidir: si
- * mañana se agrega un estado, no puede quedar uno de ellos con un criterio distinto.
- */
-const ESTADOS_IMPAGOS = ['pendiente', 'vencida'];
 
 /**
  * Techo de `ids_marcados` en el resultado de CU-47. El conteo total va aparte, en
@@ -39,6 +33,13 @@ const DIA_VENCIMIENTO_VALIDO = { gte: 1, lte: 28 };
  * Parámetros de morosidad tal como llegan de Prisma desde `contrato` (Decimal sin
  * serializar). Ambos son nullable: un contrato puede no tenerlos configurados todavía.
  */
+/** Lo que la revisión de CU-47 decide antes de escribir nada en la base. */
+type CarteraRevisada = {
+  procesados: number;
+  omitidos: number;
+  ids: number[];
+};
+
 type ConfiguracionRaw = {
   id_contrato: number;
   dias_gracia: number | null;
@@ -86,6 +87,10 @@ export class MorosidadService {
       return this.construirConfiguracion(contrato);
     } catch (error) {
       if (error instanceof HttpException) throw error;
+      this.logger.error(
+        `No se pudieron leer los parámetros de morosidad del contrato ${idContrato}`,
+        error,
+      );
       throw new InternalServerErrorException(
         'Los parámetros de morosidad no están disponibles temporalmente.',
       );
@@ -176,6 +181,10 @@ export class MorosidadService {
       return this.construirConfiguracion(actualizado);
     } catch (error) {
       if (error instanceof HttpException) throw error;
+      this.logger.error(
+        `No se pudieron actualizar los parámetros de morosidad del contrato ${idContrato}`,
+        error,
+      );
       throw new InternalServerErrorException(
         'No fue posible actualizar los parámetros de morosidad.',
       );
@@ -200,97 +209,11 @@ export class MorosidadService {
     const inicio = new Date();
     this.logger.log('Revisión de morosidad iniciada');
 
-    // Los días de gracia son por contrato, así que no existe una sola fecha de corte
-    // global. Se agrupan los contratos por su valor de `dias_gracia` —rango acotado 0–90, en
-    // la práctica un puñado de valores distintos— y se corre una comparación por grupo. La
-    // base sigue haciendo la comparación de fechas: no se traen a memoria todas las facturas
-    // impagas del sistema para descartarlas en JavaScript.
     const hoy = this.hoy();
-    const conDeudaPendiente = { estado: { in: ESTADOS_IMPAGOS } };
-
-    let procesados: number;
-    let sinParametros: number;
-    let omitidosPorVencimiento = 0;
-    const ids: number[] = [];
+    let cartera: CarteraRevisada | null;
 
     try {
-      const grupos = await this.prisma.contrato.findMany({
-        where: { dias_gracia: { not: null } },
-        distinct: ['dias_gracia'],
-        select: { dias_gracia: true },
-        orderBy: { dias_gracia: 'asc' },
-      });
-
-      // CU-47 Excepción 1: el proceso no puede iniciarse. Si ningún contrato tiene
-      // parámetros configurados no hay días de gracia con los que comparar, así que se deja
-      // registro y no se marca nada.
-      if (grupos.length === 0) {
-        this.logger.error(
-          'Revisión de morosidad no pudo iniciarse: ningún contrato tiene parámetros configurados',
-        );
-        return this.registrarResultado({
-          inicio,
-          fin: new Date(),
-          procesados: 0,
-          marcados: [],
-          omitidos: 0,
-          fallo: 'SIN_CONFIGURACION',
-        });
-      }
-
-      [procesados, sinParametros] = await Promise.all([
-        // "el sistema consulta todos los contratos con deuda pendiente"
-        this.prisma.contrato.count({
-          where: { factura: { some: conDeudaPendiente } },
-        }),
-        // La misma Excepción 1, pero por contrato: con deuda pendiente y sin parámetros
-        // propios se omite, en vez de asumir un valor por defecto que nadie configuró.
-        this.prisma.contrato.count({
-          where: { factura: { some: conDeudaPendiente }, dias_gracia: null },
-        }),
-      ]);
-
-      for (const grupo of grupos) {
-        const diasGracia = grupo.dias_gracia;
-        if (diasGracia === null) continue;
-
-        // `fecha_limite_pago + dias_gracia < hoy` es equivalente a
-        // `fecha_limite_pago < hoy - dias_gracia`. Todo el grupo comparte `dias_gracia`, así
-        // que la fecha de corte se calcula una vez y la comparación la hace la base.
-        const corte = new Date(hoy);
-        corte.setUTCDate(corte.getUTCDate() - diasGracia);
-
-        const pasadaLaGracia = {
-          ...conDeudaPendiente,
-          fecha_limite_pago: { lt: corte },
-        };
-
-        const [omitidosGrupo, aMarcar] = await Promise.all([
-          // CU-47 Excepción 2: los que superan la gracia pero no tienen día de vencimiento
-          // válido se omiten y se registra la inconsistencia.
-          this.prisma.contrato.count({
-            where: {
-              dias_gracia: diasGracia,
-              factura: { some: pasadaLaGracia },
-              NOT: { dia_vencimiento: DIA_VENCIMIENTO_VALIDO },
-            },
-          }),
-          // Los que se marcan. `fecha_morosidad: null` excluye los ya marcados en corridas
-          // anteriores, para conservar la fecha original desde la que están morosos.
-          this.prisma.contrato.findMany({
-            where: {
-              dias_gracia: diasGracia,
-              factura: { some: pasadaLaGracia },
-              dia_vencimiento: DIA_VENCIMIENTO_VALIDO,
-              fecha_morosidad: null,
-            },
-            select: { id_contrato: true },
-          }),
-        ]);
-
-        omitidosPorVencimiento += omitidosGrupo;
-        ids.push(...aMarcar.map((c) => c.id_contrato));
-      }
+      cartera = await this.revisarCartera(hoy);
     } catch (error) {
       // CU-47 Excepción 3: la consulta masiva falla, el proceso queda inconcluso.
       this.logger.error(
@@ -307,7 +230,107 @@ export class MorosidadService {
       });
     }
 
-    const omitidos = sinParametros + omitidosPorVencimiento;
+    // CU-47 Excepción 1: el proceso no puede iniciarse. Sin ningún contrato con parámetros
+    // configurados no hay días de gracia con los que comparar.
+    if (cartera === null) {
+      this.logger.error(
+        'Revisión de morosidad no pudo iniciarse: ningún contrato tiene parámetros configurados',
+      );
+      return this.registrarResultado({
+        inicio,
+        fin: new Date(),
+        procesados: 0,
+        marcados: [],
+        omitidos: 0,
+        fallo: 'SIN_CONFIGURACION',
+      });
+    }
+
+    if (cartera.ids.length > 0) {
+      try {
+        await this.prisma.contrato.updateMany({
+          where: { id_contrato: { in: cartera.ids }, fecha_morosidad: null },
+          data: { fecha_morosidad: hoy },
+        });
+      } catch (error) {
+        this.logger.error(
+          'Revisión de morosidad inconclusa: falló el marcado de contratos',
+          error,
+        );
+        return this.registrarResultado({
+          inicio,
+          fin: new Date(),
+          procesados: cartera.procesados,
+          marcados: [],
+          omitidos: cartera.omitidos,
+          fallo: 'MARCADO_FALLIDO',
+        });
+      }
+    }
+
+    return this.registrarResultado({
+      inicio,
+      fin: new Date(),
+      procesados: cartera.procesados,
+      marcados: cartera.ids,
+      omitidos: cartera.omitidos,
+    });
+  }
+
+  /**
+   * Recorre la cartera y decide qué contratos hay que marcar, sin escribir nada.
+   *
+   * Devuelve `null` cuando ningún contrato tiene parámetros configurados (CU-47
+   * Excepción 1): no es un error, es que no hay nada contra qué comparar.
+   *
+   * Los días de gracia son por contrato, así que no existe una sola fecha de corte global.
+   * Se agrupan los contratos por su valor de `dias_gracia` —rango acotado 0–90, en la
+   * práctica un puñado de valores distintos— y se evalúa un grupo a la vez. La base sigue
+   * haciendo la comparación de fechas: no se traen a memoria todas las facturas impagas
+   * del sistema para descartarlas en JavaScript.
+   */
+  private async revisarCartera(hoy: Date): Promise<CarteraRevisada | null> {
+    const conDeudaPendiente = { estado: { in: ESTADOS_IMPAGOS } };
+
+    // `groupBy` y no `findMany({ distinct })`: el agrupado lo resuelve la base con un
+    // GROUP BY, mientras que `distinct` puede terminar deduplicando en memoria después de
+    // traerse una fila por contrato.
+    const grupos = await this.prisma.contrato.groupBy({
+      by: ['dias_gracia'],
+      where: { dias_gracia: { not: null } },
+      orderBy: { dias_gracia: 'asc' },
+    });
+
+    if (grupos.length === 0) return null;
+
+    const [procesados, sinParametros] = await Promise.all([
+      // "el sistema consulta todos los contratos con deuda pendiente"
+      this.prisma.contrato.count({
+        where: { factura: { some: conDeudaPendiente } },
+      }),
+      // La misma Excepción 1, pero por contrato: con deuda pendiente y sin parámetros
+      // propios se omite, en vez de asumir un valor por defecto que nadie configuró.
+      this.prisma.contrato.count({
+        where: { factura: { some: conDeudaPendiente }, dias_gracia: null },
+      }),
+    ]);
+
+    let omitidosPorVencimiento = 0;
+    const ids: number[] = [];
+
+    for (const grupo of grupos) {
+      const diasGracia = grupo.dias_gracia;
+      if (diasGracia === null) continue;
+
+      const { omitidos, aMarcar } = await this.revisarGrupoDeGracia(
+        diasGracia,
+        hoy,
+        conDeudaPendiente,
+      );
+
+      omitidosPorVencimiento += omitidos;
+      ids.push(...aMarcar);
+    }
 
     if (sinParametros > 0) {
       this.logger.warn(
@@ -321,35 +344,57 @@ export class MorosidadService {
       );
     }
 
-    if (ids.length > 0) {
-      try {
-        await this.prisma.contrato.updateMany({
-          where: { id_contrato: { in: ids }, fecha_morosidad: null },
-          data: { fecha_morosidad: hoy },
-        });
-      } catch (error) {
-        this.logger.error(
-          'Revisión de morosidad inconclusa: falló el marcado de contratos',
-          error,
-        );
-        return this.registrarResultado({
-          inicio,
-          fin: new Date(),
-          procesados,
-          marcados: [],
-          omitidos,
-          fallo: 'MARCADO_FALLIDO',
-        });
-      }
-    }
-
-    return this.registrarResultado({
-      inicio,
-      fin: new Date(),
+    return {
       procesados,
-      marcados: ids,
-      omitidos,
-    });
+      omitidos: sinParametros + omitidosPorVencimiento,
+      ids,
+    };
+  }
+
+  /**
+   * Evalúa los contratos que comparten un mismo `dias_gracia`.
+   *
+   * `fecha_limite_pago + dias_gracia < hoy` es equivalente a
+   * `fecha_limite_pago < hoy - dias_gracia`. Todo el grupo comparte `dias_gracia`, así que
+   * la fecha de corte se calcula una vez y la comparación la hace la base.
+   */
+  private async revisarGrupoDeGracia(
+    diasGracia: number,
+    hoy: Date,
+    conDeudaPendiente: { estado: { in: string[] } },
+  ): Promise<{ omitidos: number; aMarcar: number[] }> {
+    const corte = new Date(hoy);
+    corte.setUTCDate(corte.getUTCDate() - diasGracia);
+
+    const pasadaLaGracia = {
+      ...conDeudaPendiente,
+      fecha_limite_pago: { lt: corte },
+    };
+
+    const [omitidos, aMarcar] = await Promise.all([
+      // CU-47 Excepción 2: los que superan la gracia pero no tienen día de vencimiento
+      // válido se omiten y se registra la inconsistencia.
+      this.prisma.contrato.count({
+        where: {
+          dias_gracia: diasGracia,
+          factura: { some: pasadaLaGracia },
+          NOT: { dia_vencimiento: DIA_VENCIMIENTO_VALIDO },
+        },
+      }),
+      // Los que se marcan. `fecha_morosidad: null` excluye los ya marcados en corridas
+      // anteriores, para conservar la fecha original desde la que están morosos.
+      this.prisma.contrato.findMany({
+        where: {
+          dias_gracia: diasGracia,
+          factura: { some: pasadaLaGracia },
+          dia_vencimiento: DIA_VENCIMIENTO_VALIDO,
+          fecha_morosidad: null,
+        },
+        select: { id_contrato: true },
+      }),
+    ]);
+
+    return { omitidos, aMarcar: aMarcar.map((c) => c.id_contrato) };
   }
 
   /**
@@ -658,19 +703,23 @@ export class MorosidadService {
   /**
    * `umbral_suspension` es Decimal en Prisma; se serializa como número para el JSON.
    *
-   * Solo se llama con un contrato ya validado como configurado, así que los `?? 0` son
-   * defensivos: nunca deberían aplicarse.
+   * Los dos callers descartan los nulos antes de llegar acá. Si igual llega uno es un bug
+   * de programación, no un dato faltante, así que revienta en vez de inventar un `0`: un
+   * cero silencioso acá sería "sin días de gracia" y marcaría contratos morosos de más.
    */
   private construirConfiguracion(
     config: ConfiguracionRaw,
   ): ConfiguracionMorosidadDto {
+    if (config.dias_gracia === null || config.umbral_suspension === null) {
+      throw new InternalServerErrorException(
+        'Los parámetros de morosidad del contrato están incompletos.',
+      );
+    }
+
     return {
       id_contrato: config.id_contrato,
-      dias_gracia: config.dias_gracia ?? 0,
-      umbral_suspension:
-        config.umbral_suspension === null
-          ? 0
-          : Number(config.umbral_suspension.toString()),
+      dias_gracia: config.dias_gracia,
+      umbral_suspension: Number(config.umbral_suspension.toString()),
     };
   }
 }

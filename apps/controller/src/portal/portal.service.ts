@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ESTADOS_IMPAGOS } from '../common/constants/facturacion.js';
 import {
   ContratoEstadoDto,
   ContratoResumenDto,
@@ -212,7 +213,7 @@ export class PortalService {
     const facturas = await this.prisma.factura.findMany({
       where: {
         id_contrato: { in: idContratos },
-        estado: { in: ['pendiente', 'vencida'] },
+        estado: { in: ESTADOS_IMPAGOS },
       },
       orderBy: { fecha_limite_pago: 'asc' },
     });

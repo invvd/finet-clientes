@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ESTADOS_IMPAGOS } from '../common/constants/facturacion.js';
 import { cleanRut } from '../common/utils/rut.js';
 import {
   DetalleFacturaPublicaDto,
@@ -114,7 +115,7 @@ export class DeudaPublicaService {
         this.prisma.factura.findMany({
           where: {
             id_contrato: { in: idContratos },
-            estado: { in: ['pendiente', 'vencida'] },
+            estado: { in: ESTADOS_IMPAGOS },
           },
           orderBy: { fecha_limite_pago: 'asc' },
         }),
