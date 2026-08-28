@@ -274,7 +274,7 @@ export class PortalService {
     };
   }
 
-  // CU-29 / CU-30: Tickets de soporte :DDDDDDDDD AHGG AYUDA
+  // CU-29 / CU-30: Tickets de soporte
   async getTickets(
     idCliente: number,
     limite?: number,
@@ -306,9 +306,11 @@ export class PortalService {
       tickets: ticketsMapeados,
     };
   }
-  // ─── CU-31 + CU-32: Cambiar contraseña de red WiFi ───────────────────────
-  // Formato ya validado por Zod en el controller (RF-24). Guarda el hash
-  // y registra la solicitud en el log de auditoría.
+
+  // ─── CU-31 + CU-32: Cambiar contraseña de red WiFi ─────────────────────────
+  // Formato ya validado por Zod en el controller (RF-24, ampliado para
+  // permitir símbolos). Registra la solicitud en solicitud_wifi, pendiente
+  // de ejecución real (CU-33).
   async cambiarWifiPassword(idCliente: number, nuevaPassword: string) {
     const cliente = await this.prisma.cliente.findUnique({
       where: { id_cliente: idCliente },
@@ -320,9 +322,11 @@ export class PortalService {
 
     const hash = await bcrypt.hash(nuevaPassword, 10);
 
-    await this.prisma.cliente.update({
-      where: { id_cliente: idCliente },
-      data: { wifi_password_hash: hash },
+    await this.prisma.solicitud_wifi.create({
+      data: {
+        id_cliente: idCliente,
+        password_nueva: hash,
+      },
     });
 
     try {
@@ -342,6 +346,7 @@ export class PortalService {
 
     return { success: true };
   }
+
   // variables meses xD
   private formatPeriodo(mes: number, anio: number): string {
     const meses = [

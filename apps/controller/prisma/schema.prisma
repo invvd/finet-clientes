@@ -82,7 +82,6 @@ model cliente {
   email                  String?                  @db.VarChar(120)
   telefono               String?                  @db.VarChar(21)
   password_portal_hash   String?                  @db.VarChar(72)
-  wifi_password_hash     String?                  @db.VarChar(72)
   estado                 String                   @db.VarChar(20)
   es_conflictivo         Boolean?                 @default(false)
   importado_masivo       Boolean?                 @default(false)
@@ -102,10 +101,19 @@ model cliente {
   prospecto              prospecto?
   puerto_nap             puerto_nap[]
   sesion_portal          sesion_portal[]
+  solicitud_wifi         solicitud_wifi[]
   ticket                 ticket[]
   unidad_equipo          unidad_equipo[]
 }
-
+model solicitud_wifi {
+  id_solicitud    Int       @id @default(autoincrement())
+  id_cliente      Int
+  password_nueva  String    @db.VarChar(72)
+  estado          String    @default("pendiente") @db.VarChar(20) // pendiente | ejecutada | fallida
+  fecha_solicitud DateTime  @default(now()) @db.Timestamp(6)
+  fecha_ejecucion DateTime? @db.Timestamp(6)
+  cliente         cliente   @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_solicitud_wifi_id_cliente")
+}
 model configuracion_seo {
   id_seo              Int       @id @default(autoincrement())
   id_empresa          Int
