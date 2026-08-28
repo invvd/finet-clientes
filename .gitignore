@@ -5,6 +5,8 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.*.bak
+*.bak
 
 # OS files
 .DS_Store
