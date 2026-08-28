@@ -13,14 +13,14 @@ export const DIA_VENCIMIENTO_MAX = 28;
 export const AsignarDiaVencimientoDto = z.object({
   dia_vencimiento: z
     .number()
-    .int('dia_vencimiento debe ser un número entero, sin decimales')
+    .int('El día de vencimiento debe ser un número entero, sin decimales')
     .min(
       DIA_VENCIMIENTO_MIN,
-      `dia_vencimiento debe estar entre ${DIA_VENCIMIENTO_MIN} y ${DIA_VENCIMIENTO_MAX}`,
+      `El día de vencimiento debe estar entre ${DIA_VENCIMIENTO_MIN} y ${DIA_VENCIMIENTO_MAX}`,
     )
     .max(
       DIA_VENCIMIENTO_MAX,
-      `dia_vencimiento debe estar entre ${DIA_VENCIMIENTO_MIN} y ${DIA_VENCIMIENTO_MAX}`,
+      `El día de vencimiento debe estar entre ${DIA_VENCIMIENTO_MIN} y ${DIA_VENCIMIENTO_MAX}`,
     ),
 });
 export type AsignarDiaVencimientoDto = z.infer<typeof AsignarDiaVencimientoDto>;

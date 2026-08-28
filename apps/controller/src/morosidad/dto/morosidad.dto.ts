@@ -16,24 +16,24 @@ export const UMBRAL_SUSPENSION_MAX = 99_999_999.99;
 export const ActualizarConfiguracionDto = z.object({
   dias_gracia: z
     .number()
-    .int('dias_gracia debe ser un número entero, sin decimales')
+    .int('Los días de gracia deben ser un número entero, sin decimales')
     .min(
       DIAS_GRACIA_MIN,
-      `dias_gracia debe estar entre ${DIAS_GRACIA_MIN} y ${DIAS_GRACIA_MAX} días`,
+      `Los días de gracia deben estar entre ${DIAS_GRACIA_MIN} y ${DIAS_GRACIA_MAX}`,
     )
     .max(
       DIAS_GRACIA_MAX,
-      `dias_gracia debe estar entre ${DIAS_GRACIA_MIN} y ${DIAS_GRACIA_MAX} días`,
+      `Los días de gracia deben estar entre ${DIAS_GRACIA_MIN} y ${DIAS_GRACIA_MAX}`,
     ),
   umbral_suspension: z
     .number()
     .min(
       UMBRAL_SUSPENSION_MIN,
-      `umbral_suspension debe estar entre ${UMBRAL_SUSPENSION_MIN} y ${UMBRAL_SUSPENSION_MAX}`,
+      `El umbral de suspensión debe estar entre ${UMBRAL_SUSPENSION_MIN} y ${UMBRAL_SUSPENSION_MAX}`,
     )
     .max(
       UMBRAL_SUSPENSION_MAX,
-      `umbral_suspension debe estar entre ${UMBRAL_SUSPENSION_MIN} y ${UMBRAL_SUSPENSION_MAX}`,
+      `El umbral de suspensión debe estar entre ${UMBRAL_SUSPENSION_MIN} y ${UMBRAL_SUSPENSION_MAX}`,
     ),
 });
 export type ActualizarConfiguracionDto = z.infer<

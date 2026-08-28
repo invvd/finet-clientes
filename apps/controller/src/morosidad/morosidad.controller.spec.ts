@@ -150,7 +150,7 @@ describe('MorosidadController', () => {
         });
 
         expect(result.success).toBe(false);
-        expect(result.error?.issues[0].message).toContain('umbral_suspension');
+        expect(result.error?.issues[0].message).toContain('umbral de suspensión');
       }
     });
 
