@@ -58,7 +58,7 @@ export class ContratoService {
         });
       } catch (auditError) {
         this.logger.error(
-          `No se pudo registrar auditoría de dia_vencimiento para contrato=${idContrato}`,
+          `No se pudo registrar auditoría del día de vencimiento para contrato=${idContrato}`,
           auditError,
         );
       }

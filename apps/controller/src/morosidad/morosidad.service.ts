@@ -63,7 +63,7 @@ export class MorosidadService {
 
       if (!config) {
         throw new NotFoundException(
-          'No hay parámetros de morosidad registrados. Falta cargar la fila inicial de configuracion_morosidad.',
+          'No hay parámetros de morosidad registrados. Falta cargar la configuración inicial.',
         );
       }
 
@@ -92,7 +92,7 @@ export class MorosidadService {
 
       if (!actual) {
         throw new NotFoundException(
-          'No hay parámetros de morosidad registrados. Falta cargar la fila inicial de configuracion_morosidad.',
+          'No hay parámetros de morosidad registrados. Falta cargar la configuración inicial.',
         );
       }
 
@@ -128,14 +128,14 @@ export class MorosidadService {
         });
       } catch (auditError) {
         this.logger.error(
-          `No se pudo registrar auditoría de configuracion_morosidad=${actual.id_configuracion}`,
+          `No se pudo registrar auditoría de la configuración de morosidad=${actual.id_configuracion}`,
           auditError,
         );
       }
 
       this.logger.log(
-        `Parámetros de morosidad actualizados — dias_gracia: ${actual.dias_gracia} → ${actualizado.dias_gracia}, ` +
-          `umbral_suspension: ${Number(actual.umbral_suspension)} → ${Number(actualizado.umbral_suspension)}`,
+        `Parámetros de morosidad actualizados — días de gracia: ${actual.dias_gracia} → ${actualizado.dias_gracia}, ` +
+          `umbral de suspensión: ${Number(actual.umbral_suspension)} → ${Number(actualizado.umbral_suspension)}`,
       );
 
       return this.construirConfiguracion(actualizado);
@@ -246,7 +246,7 @@ export class MorosidadService {
 
     if (omitidos > 0) {
       this.logger.warn(
-        `${omitidos} contrato(s) omitidos por dia_vencimiento fuera del rango 1–28`,
+        `${omitidos} contrato(s) omitidos por día de vencimiento fuera del rango 1–28`,
       );
     }
 
