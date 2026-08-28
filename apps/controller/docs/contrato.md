@@ -99,5 +99,5 @@ PATCH /api/admin/contratos/{id}/dia-vencimiento
   `AdminService.desbloquearIp` y `MorosidadService.actualizarConfiguracion`. El campo
   `id_usuario` queda `null` hasta que exista sesión de administrador.
 - **Quién lo consume:** la revisión diaria de morosidad (CU-47) usa este día junto con
-  `dias_gracia` de [`configuracion_morosidad`](./morosidad.md) para decidir qué contratos
+  `dias_gracia` del propio contrato (ver [morosidad](./morosidad.md)) para decidir qué contratos
   quedan morosos.

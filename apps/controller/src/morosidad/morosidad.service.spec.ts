@@ -18,28 +18,26 @@ function diasDesdeHoy(dias: number): Date {
   );
 }
 
-/** Fila tal como la devuelve Prisma: umbral_suspension es Decimal, no number. */
-const filaConfig = {
-  id_configuracion: 1,
-  id_empresa: 1,
+/**
+ * Contrato con parámetros configurados, tal como lo devuelve Prisma: `umbral_suspension`
+ * es Decimal, no number. Los parámetros viven en `contrato`, no en una tabla aparte.
+ */
+const contratoConfig = {
+  id_contrato: 1,
   dias_gracia: 5,
   umbral_suspension: { toString: () => '15000.00' },
-  fecha_actualizacion: new Date('2026-08-23T12:00:00Z'),
 };
 
 describe('MorosidadService', () => {
   let morosidadService: InstanceType<typeof MorosidadService>;
   let mockPrisma: {
-    configuracion_morosidad: {
-      findFirst: jest.Mock;
-      update: jest.Mock;
-    };
     factura: {
       findMany: jest.Mock;
       groupBy: jest.Mock;
     };
     contrato: {
       updateMany: jest.Mock;
+      update: jest.Mock;
       count: jest.Mock;
       findMany: jest.Mock;
       findUnique: jest.Mock;
@@ -51,19 +49,16 @@ describe('MorosidadService', () => {
 
   beforeEach(async () => {
     mockPrisma = {
-      configuracion_morosidad: {
-        findFirst: jest.fn().mockResolvedValue(filaConfig),
-        update: jest.fn().mockResolvedValue(filaConfig),
-      },
       factura: {
         findMany: jest.fn().mockResolvedValue([]),
         groupBy: jest.fn().mockResolvedValue([]),
       },
       contrato: {
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+        update: jest.fn().mockResolvedValue(contratoConfig),
         count: jest.fn().mockResolvedValue(0),
         findMany: jest.fn().mockResolvedValue([]),
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn().mockResolvedValue(contratoConfig),
       },
       log_auditoria: {
         create: jest.fn().mockResolvedValue({}),
@@ -81,32 +76,34 @@ describe('MorosidadService', () => {
   });
 
   describe('obtenerConfiguracion (CU-80)', () => {
-    it('return current parameters with Decimal serialized as number', async () => {
-      const result = await morosidadService.obtenerConfiguracion();
+    it('return the contract parameters with Decimal serialized as number', async () => {
+      const result = await morosidadService.obtenerConfiguracion(1);
 
       expect(result).toEqual({
+        id_contrato: 1,
         dias_gracia: 5,
         umbral_suspension: 15000,
-        fecha_actualizacion: '2026-08-23T12:00:00.000Z',
       });
       expect(typeof result.umbral_suspension).toBe('number');
     });
 
-    it('return null fecha_actualizacion when the row has none', async () => {
-      mockPrisma.configuracion_morosidad.findFirst.mockResolvedValue({
-        ...filaConfig,
-        fecha_actualizacion: null,
-      });
+    it('throw NotFound when the contract does not exist', async () => {
+      mockPrisma.contrato.findUnique.mockResolvedValue(null);
 
-      const result = await morosidadService.obtenerConfiguracion();
-
-      expect(result.fecha_actualizacion).toBeNull();
+      await expect(morosidadService.obtenerConfiguracion(99)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
-    it('throw NotFound when no configuration row exists', async () => {
-      mockPrisma.configuracion_morosidad.findFirst.mockResolvedValue(null);
+    // Los parámetros son nullable: un contrato puede existir sin haberlos configurado.
+    it('throw NotFound when the contract has no parameters configured', async () => {
+      mockPrisma.contrato.findUnique.mockResolvedValue({
+        id_contrato: 1,
+        dias_gracia: null,
+        umbral_suspension: null,
+      });
 
-      await expect(morosidadService.obtenerConfiguracion()).rejects.toThrow(
+      await expect(morosidadService.obtenerConfiguracion(1)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -114,23 +111,23 @@ describe('MorosidadService', () => {
 
   describe('actualizarConfiguracion (CU-80)', () => {
     const nuevosValores = { dias_gracia: 10, umbral_suspension: 20000 };
-    const filaActualizada = {
-      ...filaConfig,
+    const contratoActualizado = {
+      id_contrato: 1,
       dias_gracia: 10,
       umbral_suspension: { toString: () => '20000.00' },
     };
 
-    it('persist the new values and return the updated configuration', async () => {
-      mockPrisma.configuracion_morosidad.update.mockResolvedValue(
-        filaActualizada,
+    it('persist the new values on the contract and return them', async () => {
+      mockPrisma.contrato.update.mockResolvedValue(contratoActualizado);
+
+      const result = await morosidadService.actualizarConfiguracion(
+        1,
+        nuevosValores,
       );
 
-      const result =
-        await morosidadService.actualizarConfiguracion(nuevosValores);
-
-      expect(mockPrisma.configuracion_morosidad.update).toHaveBeenCalledWith(
+      expect(mockPrisma.contrato.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id_configuracion: 1 },
+          where: { id_contrato: 1 },
           data: expect.objectContaining({
             dias_gracia: 10,
             umbral_suspension: 20000,
@@ -138,24 +135,45 @@ describe('MorosidadService', () => {
         }),
       );
       expect(result).toEqual({
+        id_contrato: 1,
         dias_gracia: 10,
         umbral_suspension: 20000,
-        fecha_actualizacion: '2026-08-23T12:00:00.000Z',
+      });
+    });
+
+    // Configurar por primera vez un contrato que tenía los parámetros en null es el mismo
+    // camino que modificar uno ya configurado: no debe exigir valores previos.
+    it('configure a contract that had no parameters yet', async () => {
+      mockPrisma.contrato.findUnique.mockResolvedValue({
+        id_contrato: 1,
+        dias_gracia: null,
+        umbral_suspension: null,
+      });
+      mockPrisma.contrato.update.mockResolvedValue(contratoActualizado);
+
+      const result = await morosidadService.actualizarConfiguracion(
+        1,
+        nuevosValores,
+      );
+
+      expect(result.dias_gracia).toBe(10);
+      expect(mockPrisma.log_auditoria.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          valor_anterior: { dias_gracia: null, umbral_suspension: null },
+        }),
       });
     });
 
     // CU-80 poscondición: el cambio queda registrado en la bitácora con marca de tiempo.
     it('record the change in log_auditoria with previous and new values', async () => {
-      mockPrisma.configuracion_morosidad.update.mockResolvedValue(
-        filaActualizada,
-      );
+      mockPrisma.contrato.update.mockResolvedValue(contratoActualizado);
 
-      await morosidadService.actualizarConfiguracion(nuevosValores);
+      await morosidadService.actualizarConfiguracion(1, nuevosValores);
 
       expect(mockPrisma.log_auditoria.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           accion: 'ACTUALIZAR_CONFIG_MOROSIDAD',
-          entidad_afectada: 'configuracion_morosidad',
+          entidad_afectada: 'contrato',
           id_entidad_afectada: 1,
           valor_anterior: { dias_gracia: 5, umbral_suspension: 15000 },
           valor_nuevo: { dias_gracia: 10, umbral_suspension: 20000 },
@@ -166,48 +184,69 @@ describe('MorosidadService', () => {
     // Los parámetros ya quedaron guardados: un fallo de auditoría no debe convertirse en un
     // 500 que haga creer al administrador que el cambio no se aplicó.
     it('still succeed when writing the audit log fails', async () => {
-      mockPrisma.configuracion_morosidad.update.mockResolvedValue(
-        filaActualizada,
-      );
+      mockPrisma.contrato.update.mockResolvedValue(contratoActualizado);
       mockPrisma.log_auditoria.create.mockRejectedValue(
         new Error('audit table down'),
       );
 
-      const result =
-        await morosidadService.actualizarConfiguracion(nuevosValores);
+      const result = await morosidadService.actualizarConfiguracion(
+        1,
+        nuevosValores,
+      );
 
       expect(result).toEqual({
+        id_contrato: 1,
         dias_gracia: 10,
         umbral_suspension: 20000,
-        fecha_actualizacion: '2026-08-23T12:00:00.000Z',
       });
     });
 
-    it('throw NotFound and write nothing when there is no row to update', async () => {
-      mockPrisma.configuracion_morosidad.findFirst.mockResolvedValue(null);
+    it('throw NotFound and write nothing when the contract does not exist', async () => {
+      mockPrisma.contrato.findUnique.mockResolvedValue(null);
 
       await expect(
-        morosidadService.actualizarConfiguracion(nuevosValores),
+        morosidadService.actualizarConfiguracion(99, nuevosValores),
       ).rejects.toThrow(NotFoundException);
 
-      expect(mockPrisma.configuracion_morosidad.update).not.toHaveBeenCalled();
+      expect(mockPrisma.contrato.update).not.toHaveBeenCalled();
       expect(mockPrisma.log_auditoria.create).not.toHaveBeenCalled();
     });
   });
 
   describe('revisarMorosidad (CU-47)', () => {
-    /** Deja las 3 consultas paralelas listas: procesados, omitidos y a marcar. */
+    /**
+     * Prepara las consultas en el orden en que las hace el servicio:
+     *
+     * `findMany` #1 → los valores distintos de `dias_gracia` (los grupos).
+     * `count` #1 → procesados, `count` #2 → contratos sin parámetros.
+     * Luego, por cada grupo: `count` → omitidos y `findMany` → contratos a marcar.
+     *
+     * `gruposGracia` por defecto es `[5]`: un solo grupo con 5 días de gracia, que es lo
+     * que asumen los tests de corte.
+     */
     function conContratos(opciones: {
       procesados?: number;
+      sinParametros?: number;
       omitidos?: number;
       aMarcar?: number[];
+      gruposGracia?: number[];
     }) {
+      const grupos = opciones.gruposGracia ?? [5];
+
       mockPrisma.contrato.count
         .mockResolvedValueOnce(opciones.procesados ?? 0)
-        .mockResolvedValueOnce(opciones.omitidos ?? 0);
-      mockPrisma.contrato.findMany.mockResolvedValue(
-        (opciones.aMarcar ?? []).map((id) => ({ id_contrato: id })),
+        .mockResolvedValueOnce(opciones.sinParametros ?? 0);
+
+      mockPrisma.contrato.findMany.mockResolvedValueOnce(
+        grupos.map((dias_gracia) => ({ dias_gracia })),
       );
+
+      for (let i = 0; i < grupos.length; i += 1) {
+        mockPrisma.contrato.count.mockResolvedValueOnce(opciones.omitidos ?? 0);
+        mockPrisma.contrato.findMany.mockResolvedValueOnce(
+          (opciones.aMarcar ?? []).map((id) => ({ id_contrato: id })),
+        );
+      }
     }
 
     // "compara la fecha actual con la fecha limite de pago mas los dias de gracia
@@ -235,7 +274,7 @@ describe('MorosidadService', () => {
 
       await morosidadService.revisarMorosidad();
 
-      // filaConfig fija dias_gracia en 5.
+      // El grupo por defecto de `conContratos` fija dias_gracia en 5.
       const esperado = diasDesdeHoy(-5);
       expect(mockPrisma.contrato.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -261,14 +300,15 @@ describe('MorosidadService', () => {
 
       await morosidadService.revisarMorosidad();
 
-      const [[argumentos]] = mockPrisma.contrato.findMany.mock.calls as [
-        [{ where: { factura: { some: { fecha_limite_pago: { lt: Date } } } } }],
-      ];
+      // La primera llamada es la de grupos; la segunda es la de contratos a marcar.
+      const argumentos = mockPrisma.contrato.findMany.mock.calls[1]![0] as {
+        where: { factura: { some: { fecha_limite_pago: { lt: Date } } } };
+      };
       const corte = argumentos.where.factura.some.fecha_limite_pago.lt;
 
       expect(corte.getUTCHours()).toBe(0);
       expect(corte.getUTCMinutes()).toBe(0);
-      // Hoy menos los 5 días de gracia de `filaConfig`.
+      // Hoy menos los 5 días de gracia del grupo por defecto.
       expect(corte.toISOString()).toBe(diasDesdeHoy(-5).toISOString());
     });
 
@@ -315,8 +355,8 @@ describe('MorosidadService', () => {
     });
 
     // CU-47 Excepcion 1: el proceso programado no puede iniciarse.
-    it('record the failure and mark nothing when there are no parameters configured', async () => {
-      mockPrisma.configuracion_morosidad.findFirst.mockResolvedValue(null);
+    it('record the failure and mark nothing when no contract has parameters configured', async () => {
+      mockPrisma.contrato.findMany.mockResolvedValueOnce([]);
 
       const result = await morosidadService.revisarMorosidad();
 
@@ -330,6 +370,74 @@ describe('MorosidadService', () => {
       });
     });
 
+    // El corazón del cambio: los días de gracia son por contrato, así que no hay una sola
+    // fecha de corte. Cada grupo de `dias_gracia` se compara contra su propio corte.
+    it('use a different cutoff per grace-period group', async () => {
+      conContratos({ procesados: 4, gruposGracia: [5, 30], aMarcar: [] });
+
+      await morosidadService.revisarMorosidad();
+
+      // findMany #1 son los grupos; #2 y #3 son los contratos a marcar de cada grupo.
+      const cortes = mockPrisma.contrato.findMany.mock.calls.slice(1).map(
+        (llamada) =>
+          (
+            llamada[0] as {
+              where: {
+                dias_gracia: number;
+                factura: { some: { fecha_limite_pago: { lt: Date } } };
+              };
+            }
+          ).where,
+      );
+
+      expect(cortes).toHaveLength(2);
+      expect(cortes[0]!.dias_gracia).toBe(5);
+      expect(cortes[0]!.factura.some.fecha_limite_pago.lt.toISOString()).toBe(
+        diasDesdeHoy(-5).toISOString(),
+      );
+      expect(cortes[1]!.dias_gracia).toBe(30);
+      expect(cortes[1]!.factura.some.fecha_limite_pago.lt.toISOString()).toBe(
+        diasDesdeHoy(-30).toISOString(),
+      );
+    });
+
+    it('mark contracts from every grace-period group in the same run', async () => {
+      const grupos = [5, 30];
+      mockPrisma.contrato.count
+        .mockResolvedValueOnce(2)
+        .mockResolvedValueOnce(0);
+      mockPrisma.contrato.findMany.mockResolvedValueOnce(
+        grupos.map((dias_gracia) => ({ dias_gracia })),
+      );
+      mockPrisma.contrato.count.mockResolvedValueOnce(0);
+      mockPrisma.contrato.findMany.mockResolvedValueOnce([{ id_contrato: 1 }]);
+      mockPrisma.contrato.count.mockResolvedValueOnce(0);
+      mockPrisma.contrato.findMany.mockResolvedValueOnce([{ id_contrato: 2 }]);
+
+      const result = await morosidadService.revisarMorosidad();
+
+      expect(result.ids_marcados).toEqual([1, 2]);
+      expect(result.contratos_marcados).toBe(2);
+    });
+
+    // CU-47 Excepcion 1, ahora por contrato: con deuda pero sin parámetros propios se omite
+    // en vez de asumir un valor por defecto que nadie configuró.
+    it('count contracts without configured parameters as omitted', async () => {
+      conContratos({ procesados: 5, sinParametros: 3, aMarcar: [8] });
+
+      const result = await morosidadService.revisarMorosidad();
+
+      expect(result.contratos_omitidos).toBe(3);
+      expect(result.ids_marcados).toEqual([8]);
+      // count #2 es el de contratos con deuda y sin parámetros.
+      expect(mockPrisma.contrato.count).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          where: expect.objectContaining({ dias_gracia: null }),
+        }),
+      );
+    });
+
     // CU-47 Excepcion 2: contratos sin fecha de vencimiento valida se omiten.
     it('count contracts with an invalid dia_vencimiento apart, without marking them', async () => {
       conContratos({ procesados: 3, omitidos: 2, aMarcar: [9] });
@@ -338,10 +446,12 @@ describe('MorosidadService', () => {
 
       expect(result.contratos_omitidos).toBe(2);
       expect(result.ids_marcados).toEqual([9]);
+      // count #1 procesados, #2 sin parámetros, #3 los omitidos del único grupo.
       expect(mockPrisma.contrato.count).toHaveBeenNthCalledWith(
-        2,
+        3,
         expect.objectContaining({
           where: expect.objectContaining({
+            dias_gracia: 5,
             NOT: { dia_vencimiento: { gte: 1, lte: 28 } },
           }),
         }),
@@ -350,6 +460,8 @@ describe('MorosidadService', () => {
 
     // CU-47 Excepcion 3: la consulta masiva falla, el proceso queda inconcluso.
     it('leave the run unfinished and record the error when the query fails', async () => {
+      // Los grupos resuelven bien; lo que falla es la consulta masiva posterior.
+      mockPrisma.contrato.findMany.mockResolvedValueOnce([{ dias_gracia: 5 }]);
       mockPrisma.contrato.count.mockRejectedValue(new Error('db down'));
 
       const result = await morosidadService.revisarMorosidad();

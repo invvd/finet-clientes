@@ -8,21 +8,25 @@ administrativo esto pasa a sesión + rol `ADMIN`, cambiando solo `admin.guard.ts
 
 Corresponde al `MorosidadController` del Diagrama de Componentes del Documento 0.
 
-> ⚠️ **Requiere una migración que todavía no está aplicada.** Los endpoints de configuración
-> (CU-80) y la revisión de morosidad (CU-47) necesitan la tabla `configuracion_morosidad` y
-> la columna `contrato.fecha_morosidad`. Ambas están pendientes de aprobación del equipo,
-> porque la base es la global compartida por 4 grupos. Sin ellas responden 500.
+> ⚠️ **Requiere columnas que todavía no están en la base.** Los endpoints de configuración
+> (CU-80) y la revisión de morosidad (CU-47) necesitan `contrato.dias_gracia`,
+> `contrato.umbral_suspension` y `contrato.fecha_morosidad`. Están pendientes de aprobación
+> del equipo, porque la base es la global compartida por 4 grupos. Sin ellas responden 500.
+> El detalle está en [`docs/ADMIN-TABLAS-DEUDA.md`](../../../docs/ADMIN-TABLAS-DEUDA.md).
 >
 > Los endpoints de contratos vencidos (CU-55 y CU-56) **sí funcionan** contra la base actual.
 
 ---
 
-## 1. Consultar parámetros de morosidad (CU-80)
+## 1. Consultar parámetros de morosidad de un contrato (CU-80)
 
-Devuelve los valores vigentes que usa la revisión diaria de morosidad (CU-47).
+Devuelve los valores que usa la revisión diaria de morosidad (CU-47) para ese contrato.
+
+Los parámetros son **por contrato**, no globales: cada contrato define su propio corte según
+cuándo se contrató o según lo que el administrador decida para ese cliente.
 
 ```
-GET /api/admin/morosidad/configuracion
+GET /api/admin/morosidad/configuracion/:idContrato
 ```
 
 **Headers:**
@@ -35,17 +39,20 @@ GET /api/admin/morosidad/configuracion
 
 ```json
 {
+  "id_contrato": 7,
   "dias_gracia": 5,
-  "umbral_suspension": 15000,
-  "fecha_actualizacion": "2026-08-23T12:00:00.000Z"
+  "umbral_suspension": 15000
 }
 ```
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
+| `id_contrato` | number | Contrato al que pertenecen estos parámetros |
 | `dias_gracia` | number | Días posteriores a `factura.fecha_limite_pago` antes de marcar el contrato como moroso |
 | `umbral_suspension` | number | Monto de deuda que habilita la suspensión del servicio (CU-48) |
-| `fecha_actualizacion` | string \| null | ISO 8601 del último cambio |
+
+La fecha del último cambio no viaja en la respuesta: queda en `log_auditoria.fecha_hora`,
+que es donde CU-80 pide que se registre.
 
 **Respuesta 401 — sin API key o inválida** (CU-80 Excepción 1):
 
@@ -53,12 +60,18 @@ GET /api/admin/morosidad/configuracion
 { "statusCode": 401, "message": "X-API-Key header is required" }
 ```
 
-**Respuesta 404 — no hay fila de configuración cargada:**
+**Respuesta 404 — el contrato no existe:**
+
+```json
+{ "statusCode": 404, "message": "No existe el contrato 99." }
+```
+
+**Respuesta 404 — el contrato existe pero no tiene parámetros configurados:**
 
 ```json
 {
   "statusCode": 404,
-  "message": "No hay parámetros de morosidad registrados. Falta cargar la fila inicial de configuracion_morosidad."
+  "message": "El contrato 7 no tiene parámetros de morosidad configurados."
 }
 ```
 
@@ -67,7 +80,7 @@ GET /api/admin/morosidad/configuracion
 ## 2. Actualizar parámetros de morosidad (CU-80)
 
 ```
-PUT /api/admin/morosidad/configuracion
+PUT /api/admin/morosidad/configuracion/:idContrato
 ```
 
 **Body:**
@@ -93,7 +106,7 @@ válido, tal como pide el CU:
 {
   "message": "Validation failed",
   "errors": [
-    { "path": "dias_gracia", "message": "dias_gracia debe estar entre 0 y 90 días" }
+    { "path": "dias_gracia", "message": "Los días de gracia deben estar entre 0 y 90" }
   ]
 }
 ```
@@ -102,8 +115,8 @@ Otros mensajes de validación:
 
 | Caso | Mensaje |
 |------|---------|
-| `dias_gracia` con decimales | `dias_gracia debe ser un número entero, sin decimales` |
-| `umbral_suspension` fuera de rango | `umbral_suspension debe estar entre 0 y 99999999.99` |
+| `dias_gracia` con decimales | `Los días de gracia deben ser un número entero, sin decimales` |
+| `umbral_suspension` fuera de rango | `El umbral de suspensión debe estar entre 0 y 99999999.99` |
 
 **Efecto secundario:** cada actualización exitosa escribe una fila en `log_auditoria` con
 `accion: 'ACTUALIZAR_CONFIG_MOROSIDAD'`, los valores anterior y nuevo, y la marca de tiempo

@@ -42,9 +42,9 @@ export type ActualizarConfiguracionDto = z.infer<
 
 /** Forma que devuelven los endpoints de configuración de CU-80. */
 export type ConfiguracionMorosidadDto = {
+  id_contrato: number;
   dias_gracia: number;
   umbral_suspension: number;
-  fecha_actualizacion: string | null;
 };
 
 // ─── CU-55 / RF-40: Lista paginada de contratos con saldos vencidos ───────────

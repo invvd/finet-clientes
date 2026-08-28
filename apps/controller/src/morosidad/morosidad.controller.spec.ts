@@ -42,34 +42,35 @@ describe('MorosidadController', () => {
     morosidadController = module.get<MorosidadController>(MorosidadController);
   });
 
-  describe('GET /admin/morosidad/configuracion', () => {
-    it('return the current parameters', async () => {
+  describe('GET /admin/morosidad/configuracion/:idContrato', () => {
+    it('return the parameters of the requested contract', async () => {
       const mockResult = {
+        id_contrato: 7,
         dias_gracia: 5,
         umbral_suspension: 15000,
-        fecha_actualizacion: '2026-08-23T12:00:00.000Z',
       };
       mockMorosidadService.obtenerConfiguracion.mockResolvedValue(mockResult);
 
-      const result = await morosidadController.obtenerConfiguracion();
+      const result = await morosidadController.obtenerConfiguracion(7);
 
       expect(result).toEqual(mockResult);
-      expect(mockMorosidadService.obtenerConfiguracion).toHaveBeenCalled();
+      expect(mockMorosidadService.obtenerConfiguracion).toHaveBeenCalledWith(7);
     });
   });
 
-  describe('PUT /admin/morosidad/configuracion', () => {
-    it('delegate the new values to the service', async () => {
+  describe('PUT /admin/morosidad/configuracion/:idContrato', () => {
+    it('delegate the contract and the new values to the service', async () => {
       const body = { dias_gracia: 10, umbral_suspension: 20000 };
-      const mockResult = { ...body, fecha_actualizacion: null };
+      const mockResult = { id_contrato: 7, ...body };
       mockMorosidadService.actualizarConfiguracion.mockResolvedValue(
         mockResult,
       );
 
-      const result = await morosidadController.actualizarConfiguracion(body);
+      const result = await morosidadController.actualizarConfiguracion(7, body);
 
       expect(result).toEqual(mockResult);
       expect(mockMorosidadService.actualizarConfiguracion).toHaveBeenCalledWith(
+        7,
         body,
       );
     });
@@ -150,7 +151,9 @@ describe('MorosidadController', () => {
         });
 
         expect(result.success).toBe(false);
-        expect(result.error?.issues[0].message).toContain('umbral de suspensión');
+        expect(result.error?.issues[0].message).toContain(
+          'umbral de suspensión',
+        );
       }
     });
 

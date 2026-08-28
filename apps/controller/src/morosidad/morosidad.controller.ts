@@ -31,23 +31,29 @@ import {
 export class MorosidadController {
   constructor(private readonly morosidadService: MorosidadService) {}
 
-  /** CU-80: valores actuales de los parámetros de detección de morosidad. */
-  @Get('configuracion')
-  obtenerConfiguracion() {
-    return this.morosidadService.obtenerConfiguracion();
+  /**
+   * CU-80: parámetros de detección de morosidad de un contrato.
+   *
+   * Van por contrato porque cada uno define su propio corte: según cuándo se contrató, o
+   * según lo que el administrador decida para ese cliente.
+   */
+  @Get('configuracion/:idContrato')
+  obtenerConfiguracion(@Param('idContrato', ParseIntPipe) idContrato: number) {
+    return this.morosidadService.obtenerConfiguracion(idContrato);
   }
 
   /**
-   * CU-80: actualiza los parámetros.
+   * CU-80: actualiza los parámetros de un contrato.
    * Excepción 2 (valor fuera de rango) la rechaza el ZodValidationPipe con 400.
    */
-  @Put('configuracion')
+  @Put('configuracion/:idContrato')
   @HttpCode(200)
   actualizarConfiguracion(
+    @Param('idContrato', ParseIntPipe) idContrato: number,
     @Body(new ZodValidationPipe(ActualizarConfiguracionDto))
     body: ActualizarConfiguracionDto,
   ) {
-    return this.morosidadService.actualizarConfiguracion(body);
+    return this.morosidadService.actualizarConfiguracion(idContrato, body);
   }
 
   /**
