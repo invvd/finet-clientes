@@ -21,8 +21,10 @@ Para el panorama completo del monorepo (backend, base de datos, variables de ent
 
 ## Configuración
 
+Crear `apps/view/.env` a mano (no hay `.env.example` en el repo; está en
+`.gitignore` y no se commitea) y levantar el server:
+
 ```bash
-cp .env.example .env
 pnpm dev
 ```
 
@@ -30,11 +32,21 @@ Abrir [http://localhost:3000](http://localhost:3000).
 
 ### Variables de entorno
 
+```bash
+API_URL="http://localhost:4000/api"
+NEXT_PUBLIC_API_URL="http://localhost:4000/api"
+JWT_SECRET="tu-jwt-secret-aqui"
+ADMIN_API_KEY="tu-admin-api-key-aqui"
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+NEXT_PUBLIC_SENTRY_DSN=
+```
+
 | Variable | Requerida | Descripción |
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | Sí | URL del backend, usada por componentes cliente y por casi todo el server-side fetching |
 | `API_URL` | Sí (ver nota) | URL del backend, usada **solo** por `app/portal/_lib/portal-api.ts`. Ver "Quirk conocido" abajo |
 | `JWT_SECRET` | Sí | Debe ser idéntico al del backend — el proxy verifica el JWT localmente, sin llamar a la API |
+| `ADMIN_API_KEY` | Solo para `/admin/cobertura` | Debe ser idéntica a la del backend. La lee el route handler `POST /api/cobertura/revalidar`, que corre en Next y no en NestJS. Ver [`docs/cobertura.md`](./docs/cobertura.md) |
 | `NEXT_PUBLIC_SITE_URL` | No | URL pública del sitio (SEO: JSON-LD, sitemap) |
 | `NEXT_PUBLIC_SENTRY_DSN` | No | Si está seteada, `securityLogger` reporta eventos de seguridad en producción |
 
@@ -72,7 +84,7 @@ app/
                           # planes, contratar/[planId], consultar-deuda, hogar/, empresas/, tv/, legal/, ...
 ```
 
-Ver [`docs/routing.md`](./docs/routing.md) para el mapa completo de rutas y a qué endpoint/caso de uso corresponde cada una, y [`docs/conventions.md`](./docs/conventions.md) para las convenciones de componentes, fetching y testing (incluye el detalle del quirk de las tres variables de API).
+Ver [`docs/routing.md`](./docs/routing.md) para el mapa completo de rutas y a qué endpoint/caso de uso corresponde cada una, [`docs/conventions.md`](./docs/conventions.md) para las convenciones de componentes, fetching y testing (incluye el detalle del quirk de las variables de API), y [`docs/cobertura.md`](./docs/cobertura.md) para la diferencia entre el mapa público del sitio y el editor del administrador.
 
 ## Sesión y rutas protegidas
 
