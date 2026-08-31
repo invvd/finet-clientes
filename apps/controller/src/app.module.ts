@@ -13,7 +13,6 @@ import { AdminModule } from './admin/admin.module.js';
 import { PerfilModule } from './perfil/perfil.module.js';
 import { LandingModule } from './landing/landing.module.js';
 import { ContratacionesModule } from './contrataciones/contrataciones.module.js';
-import { SoporteModule } from './soporte/soporte.module.js';
 
 @Module({
   imports: [
@@ -33,7 +32,6 @@ import { SoporteModule } from './soporte/soporte.module.js';
     PerfilModule,
     LandingModule,
     ContratacionesModule,
-    SoporteModule,
   ],
   controllers: [AppController],
   providers: [
