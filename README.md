@@ -1,6 +1,6 @@
 # Monorepo Finet
 
-Plataforma de gestión de clientes para Fibernet Limitada (Finet) — Internet de fibra óptica en La Pintana y Puente Alto.
+Plataforma de gestión de clientes para Fibernet Limitada (Finet) — Internet de fibra óptica.
 
 ## Estructura
 
