@@ -2,8 +2,6 @@
 
 import { cookies } from 'next/headers';
 
-// RF-24: Solo caracteres alfanuméricos, validado también en servidor
-const WIFI_PASSWORD_REGEX = /^[a-zA-Z0-9]+$/;
 const WIFI_PASSWORD_MIN = 8;
 const WIFI_PASSWORD_MAX = 63; // WPA2 máximo
 
@@ -21,29 +19,68 @@ async function authHeaders(): Promise<HeadersInit> {
   return headers;
 }
 
+export interface ContratoParaWifi {
+  id_contrato: number;
+  nombre: string;
+}
+
+// Server Action: trae los contratos vigentes del cliente para el selector
+// de servicio en el formulario de cambio de contraseña WiFi (CU-31/32).
+// Server Action porque necesita process.env.API_URL y el token de la
+// cookie httpOnly, ninguno disponible en un Client Component.
+export async function getContratosParaWifi(): Promise<ContratoParaWifi[]> {
+  try {
+    const res = await fetch(apiUrl('/portal/contratos/vigentes'), {
+      headers: await authHeaders(),
+      cache: 'no-store',
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as Array<{
+      id_contrato: number;
+      plan: { nombre_comercial: string } | null;
+    }>;
+    return data.map((c) => ({
+      id_contrato: c.id_contrato,
+      nombre: c.plan?.nombre_comercial ?? `Contrato #${c.id_contrato}`,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function changeWifiPassword(
-  password: string
+  idContrato: number,
+  password: string,
+  passwordConfirmacion: string,
 ): Promise<{ success: boolean; error?: string }> {
-  // Validación server-side (no confiar solo en el cliente)
-  if (typeof password !== 'string' || password.trim().length === 0) {
+  if (!idContrato) {
+    return { success: false, error: 'Debe seleccionar un servicio' };
+  }
+  if (typeof password !== 'string' || password.length === 0) {
     return { success: false, error: 'Contraseña inválida' };
   }
-  const sanitized = password.trim();
-  if (sanitized.length < WIFI_PASSWORD_MIN || sanitized.length > WIFI_PASSWORD_MAX) {
+  if (password.length < WIFI_PASSWORD_MIN || password.length > WIFI_PASSWORD_MAX) {
     return {
       success: false,
       error: `La contraseña debe tener entre ${WIFI_PASSWORD_MIN} y ${WIFI_PASSWORD_MAX} caracteres`,
     };
   }
-  if (!WIFI_PASSWORD_REGEX.test(sanitized)) {
-    return { success: false, error: 'Solo se permiten caracteres alfanuméricos' };
+  if (/\s/.test(password)) {
+    return { success: false, error: 'No se permiten espacios' };
+  }
+  if (password !== passwordConfirmacion) {
+    return { success: false, error: 'Las contraseñas no coinciden' };
   }
 
   try {
     const res = await fetch(apiUrl('/portal/wifi/password'), {
       method: 'POST',
       headers: await authHeaders(),
-      body: JSON.stringify({ password: sanitized }),
+      body: JSON.stringify({
+  id_contrato: idContrato,
+  password,
+  password_confirmacion: passwordConfirmacion,
+}),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));

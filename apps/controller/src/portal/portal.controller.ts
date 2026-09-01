@@ -182,6 +182,7 @@ export class PortalController {
   ) {
     return this.portalService.cambiarWifiPassword(
       cliente.id_cliente,
+      body.id_contrato,
       body.password,
     );
   }

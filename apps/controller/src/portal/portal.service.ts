@@ -311,13 +311,19 @@ export class PortalService {
   // Formato ya validado por Zod en el controller (RF-24, ampliado para
   // permitir símbolos). Registra la solicitud en solicitud_wifi, pendiente
   // de ejecución real (CU-33).
-  async cambiarWifiPassword(idCliente: number, nuevaPassword: string) {
-    const cliente = await this.prisma.cliente.findUnique({
-      where: { id_cliente: idCliente },
+   async cambiarWifiPassword(
+    idCliente: number,
+    idContrato: number,
+    nuevaPassword: string,
+  ) {
+    const contrato = await this.prisma.contrato.findFirst({
+      where: { id_contrato: idContrato, id_cliente: idCliente },
     });
 
-    if (!cliente) {
-      throw new NotFoundException('Cliente no encontrado');
+    if (!contrato) {
+      throw new NotFoundException(
+        'El servicio seleccionado no pertenece a este cliente',
+      );
     }
 
     const hash = await bcrypt.hash(nuevaPassword, 10);
@@ -325,6 +331,7 @@ export class PortalService {
     await this.prisma.solicitud_wifi.create({
       data: {
         id_cliente: idCliente,
+        id_contrato: idContrato,
         password_nueva: hash,
       },
     });
@@ -333,20 +340,19 @@ export class PortalService {
       await this.prisma.log_auditoria.create({
         data: {
           accion: 'CAMBIO_PASSWORD_WIFI_SOLICITADO',
-          entidad_afectada: 'cliente',
-          id_entidad_afectada: idCliente,
+          entidad_afectada: 'contrato',
+          id_entidad_afectada: idContrato,
         },
       });
     } catch (auditError) {
       this.logger.error(
-        `No se pudo registrar auditoría de cambio de clave WiFi para cliente ${idCliente}`,
+        `No se pudo registrar auditoría de cambio de clave WiFi para contrato ${idContrato}`,
         auditError,
       );
     }
 
     return { success: true };
   }
-
   // variables meses xD
   private formatPeriodo(mes: number, anio: number): string {
     const meses = [
