@@ -25,12 +25,12 @@ export type ActualizarEmailDto = z.infer<typeof ActualizarEmailDto>;
 export const CambiarPasswordDto = z
   .object({
     password_actual: z.string().min(1, 'La contraseña actual es requerida'),
+    // RF-09 / CU-11: misma regla que registro y recuperación (8 + mayúscula + número)
     password_nuevo: z
       .string()
       .min(8, 'Mínimo 8 caracteres')
       .regex(/[A-Z]/, 'Debe contener al menos una letra mayúscula')
-      .regex(/[0-9]/, 'Debe contener al menos un número')
-      .regex(/[^A-Za-z0-9]/, 'Debe contener al menos un carácter especial'),
+      .regex(/[0-9]/, 'Debe contener al menos un número'),
     password_confirmacion: z
       .string()
       .min(1, 'Debe confirmar la nueva contraseña'),

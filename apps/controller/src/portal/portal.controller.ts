@@ -1,7 +1,9 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { PortalService } from './portal.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentClient } from '../auth/decorators/current-client.decorator.js';
+import { ZodValidationPipe } from '../auth/pipes/zod-validation.pipe.js';
+import { CambiarWifiPasswordDto } from './dto/portal-request.dto.js';
 import type { cliente } from '../../generated/prisma/client.js';
 
 /**
@@ -154,5 +156,34 @@ export class PortalController {
   ) {
     const limiteNum = limite ? parseInt(limite, 10) : undefined;
     return this.portalService.getTickets(cliente.id_cliente, limiteNum);
+  }
+
+  /**
+   * CU-31 + CU-32: Cambiar contraseña de red WiFi
+   *
+   * Valida formato (RF-24: alfanumérico, 8-63 caracteres) y registra
+   * la solicitud de cambio de clave WiFi del cliente.
+   *
+   * POST /portal/wifi/password
+   * Auth: Bearer <token>
+   *
+   * @body password: string
+   *
+   * Errores:
+   *   400 - Formato de contraseña inválido
+   *   401 - Sesión expirada por inactividad / Token JWT inválido
+   *   404 - Cliente no encontrado
+   */
+  @Post('wifi/password')
+  cambiarWifiPassword(
+    @CurrentClient() cliente: cliente,
+    @Body(new ZodValidationPipe(CambiarWifiPasswordDto))
+    body: CambiarWifiPasswordDto,
+  ) {
+    return this.portalService.cambiarWifiPassword(
+      cliente.id_cliente,
+      body.id_contrato,
+      body.password,
+    );
   }
 }

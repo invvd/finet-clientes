@@ -118,16 +118,13 @@ export const changePasswordSchema = z
     passwordActual: z
       .string({ message: "La contraseña actual es requerida" })
       .min(1, "La contraseña actual es requerida"),
+    // RF-09 / CU-11: misma regla que registro y recuperación (8 + mayúscula + número)
     passwordNuevo: z
       .string({ message: "La nueva contraseña es obligatoria" })
       .min(8, "Mínimo 8 caracteres")
       .max(128, "La contraseña es demasiado larga")
       .regex(/[A-Z]/, "Al menos 1 letra mayúscula")
-      .regex(/[0-9]/, "Al menos 1 número")
-      .regex(
-        /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
-        "Al menos 1 carácter especial",
-      ),
+      .regex(/[0-9]/, "Al menos 1 número"),
     passwordConfirmacion: z
       .string({ message: "Debes confirmar la nueva contraseña" })
       .min(1, "Debes confirmar la nueva contraseña"),

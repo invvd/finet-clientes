@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Search, AlertCircle, CheckCircle2, FileText } from "lucide-react";
+import {
+  Search,
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  Zap,
+  CreditCard,
+} from "lucide-react";
 import { cleanRut } from "../utils/login-schema";
 import { recoverySchema } from "../utils/login-schema";
 import RutInput from "../components/RutInput";
@@ -16,6 +23,13 @@ type Factura = {
   dias_para_vencer: number | null;
 };
 
+type Plan = {
+  nombre_comercial: string;
+  tipo_plan: string;
+  velocidad_mbps: number | null;
+  precio_mensual: number;
+};
+
 type DeudaData = {
   encontrado: boolean;
   cliente: {
@@ -26,6 +40,12 @@ type DeudaData = {
   tiene_deuda: boolean;
   saldo_total: number;
   facturas: Factura[];
+  // Detalle del/los plan(es) contratado(s)
+  planes: Plan[];
+  // CU-41 Exc 1: false si no fue posible obtener el detalle de facturación
+  detalle_disponible: boolean;
+  // CU-41 Exc 2: false si hay montos o fechas inconsistentes
+  informacion_completa: boolean;
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -241,8 +261,40 @@ export default function DeudaLookupForm() {
         </div>
       )}
 
-      {result && result.encontrado && (
+      {/* CU-41 Excepción 1: no fue posible obtener el detalle de facturación */}
+      {result && result.encontrado && !result.detalle_disponible && (
+        <div className="border border-warning/20 bg-warning-container rounded-xl p-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle
+              size={20}
+              className="text-on-warning-container mt-0.5 shrink-0"
+              aria-hidden
+            />
+            <p className="text-sm font-medium text-on-warning-container">
+              No fue posible obtener el detalle de facturación. Intenta nuevamente más tarde.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {result && result.encontrado && result.detalle_disponible && (
         <div className="border border-border rounded-xl bg-background divide-y divide-border">
+          {/* CU-41 Excepción 2: información incompleta por inconsistencia de datos */}
+          {!result.informacion_completa && (
+            <div className="p-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle
+                  size={20}
+                  className="text-on-warning-container mt-0.5 shrink-0"
+                  aria-hidden
+                />
+                <p className="text-sm font-medium text-on-warning-container">
+                  La información de tu deuda está incompleta. Contáctanos para regularizar tu situación.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="p-6">
             <div className="flex items-start gap-2">
               <CheckCircle2 size={18} className="text-success mt-0.5 shrink-0" aria-hidden />
@@ -264,6 +316,14 @@ export default function DeudaLookupForm() {
                 <p className="text-sm text-muted mt-1">
                   Saldo pendiente
                 </p>
+                {/* TODO: enlazar a la pasarela de pago (CU-42+). Por ahora sin acción. */}
+                <button
+                  type="button"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-background shadow-sm transition-all hover:opacity-90 active:scale-[0.98]"
+                >
+                  <CreditCard size={16} aria-hidden />
+                  Pagar ahora
+                </button>
               </>
             ) : (
               <p className="mt-4 text-lg font-semibold text-success">
@@ -271,6 +331,39 @@ export default function DeudaLookupForm() {
               </p>
             )}
           </div>
+
+          {/* Detalle del/los plan(es) contratado(s) */}
+          {result.planes.length > 0 && (
+            <div className="p-6">
+              <h3 className="text-sm font-semibold text-foreground mb-3">
+                {result.planes.length > 1 ? "Planes contratados" : "Plan contratado"}
+              </h3>
+              <div className="grid gap-3">
+                {result.planes.map((plan) => (
+                  <div
+                    key={plan.nombre_comercial}
+                    className="flex items-center justify-between gap-4 rounded-lg border border-border p-4"
+                  >
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {plan.nombre_comercial}
+                      </p>
+                      {plan.velocidad_mbps != null && (
+                        <div className="mt-1 flex items-center gap-1.5 text-sm text-muted">
+                          <Zap size={14} aria-hidden />
+                          <span>{plan.velocidad_mbps} Mbps</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="whitespace-nowrap text-lg font-bold text-foreground">
+                      {formatPrecio(plan.precio_mensual)}
+                      <span className="text-xs font-normal text-muted">/mes</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {result.tiene_deuda && result.facturas.length > 0 && (
             <div className="p-6">

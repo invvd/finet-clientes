@@ -333,7 +333,6 @@ Content-Type: application/json
 - Mínimo 8 caracteres
 - Al menos 1 mayúscula
 - Al menos 1 número
-- Al menos 1 carácter especial
 - No puede ser igual a la actual
 - Debe coincidir con `password_confirmacion`
 
@@ -350,7 +349,6 @@ Content-Type: application/json
 | 400 | Mínimo 8 caracteres | Muy corta |
 | 400 | Debe contener al menos una letra mayúscula | Falta mayúscula |
 | 400 | Debe contener al menos un número | Falta número |
-| 400 | Debe contener al menos un carácter especial | Falta especial |
 | 400 | Las contraseñas no coinciden | password_nuevo ≠ password_confirmacion |
 | 400 | La nueva contraseña no puede ser igual a la actual | Misma contraseña |
 | 401 | La contraseña actual es incorrecta | Password actual incorrecta |

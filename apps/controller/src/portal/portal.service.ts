@@ -1,3 +1,5 @@
+import { CambiarWifiPasswordDto } from './dto/portal-request.dto.js';
+import * as bcrypt from 'bcrypt';
 import {
   BadRequestException,
   HttpException,
@@ -272,7 +274,7 @@ export class PortalService {
     };
   }
 
-  // CU-29 / CU-30: Tickets de soporte :DDDDDDDDD AHGG AYUDA
+  // CU-29 / CU-30: Tickets de soporte
   async getTickets(
     idCliente: number,
     limite?: number,
@@ -305,6 +307,52 @@ export class PortalService {
     };
   }
 
+  // ─── CU-31 + CU-32: Cambiar contraseña de red WiFi ─────────────────────────
+  // Formato ya validado por Zod en el controller (RF-24, ampliado para
+  // permitir símbolos). Registra la solicitud en solicitud_wifi, pendiente
+  // de ejecución real (CU-33).
+   async cambiarWifiPassword(
+    idCliente: number,
+    idContrato: number,
+    nuevaPassword: string,
+  ) {
+    const contrato = await this.prisma.contrato.findFirst({
+      where: { id_contrato: idContrato, id_cliente: idCliente },
+    });
+
+    if (!contrato) {
+      throw new NotFoundException(
+        'El servicio seleccionado no pertenece a este cliente',
+      );
+    }
+
+    const hash = await bcrypt.hash(nuevaPassword, 10);
+
+    await this.prisma.solicitud_wifi.create({
+      data: {
+        id_cliente: idCliente,
+        id_contrato: idContrato,
+        password_nueva: hash,
+      },
+    });
+
+    try {
+      await this.prisma.log_auditoria.create({
+        data: {
+          accion: 'CAMBIO_PASSWORD_WIFI_SOLICITADO',
+          entidad_afectada: 'contrato',
+          id_entidad_afectada: idContrato,
+        },
+      });
+    } catch (auditError) {
+      this.logger.error(
+        `No se pudo registrar auditoría de cambio de clave WiFi para contrato ${idContrato}`,
+        auditError,
+      );
+    }
+
+    return { success: true };
+  }
   // variables meses xD
   private formatPeriodo(mes: number, anio: number): string {
     const meses = [

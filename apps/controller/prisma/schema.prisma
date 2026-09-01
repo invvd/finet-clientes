@@ -101,10 +101,21 @@ model cliente {
   prospecto              prospecto?
   puerto_nap             puerto_nap[]
   sesion_portal          sesion_portal[]
+  solicitud_wifi         solicitud_wifi[]
   ticket                 ticket[]
   unidad_equipo          unidad_equipo[]
 }
-
+model solicitud_wifi {
+  id_solicitud    Int       @id @default(autoincrement())
+  id_cliente      Int
+  id_contrato     Int
+  password_nueva  String    @db.VarChar(72)
+  estado          String    @default("pendiente") @db.VarChar(20)
+  fecha_solicitud DateTime  @default(now()) @db.Timestamp(6)
+  fecha_ejecucion DateTime? @db.Timestamp(6)
+  cliente         cliente   @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_solicitud_wifi_id_cliente")
+  contrato        contrato  @relation(fields: [id_contrato], references: [id_contrato], onDelete: NoAction, onUpdate: NoAction, map: "fk_solicitud_wifi_id_contrato")
+}
 model configuracion_seo {
   id_seo              Int       @id @default(autoincrement())
   id_empresa          Int
@@ -142,6 +153,7 @@ model contrato {
   plan              plan?              @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "fk_contrato_id_plan")
   credenciales_tvip credenciales_tvip?
   factura           factura[]
+  solicitud_wifi solicitud_wifi[]
 }
 
 model conversacion_bot {

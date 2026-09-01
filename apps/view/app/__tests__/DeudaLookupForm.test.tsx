@@ -29,6 +29,11 @@ describe('DeudaLookupForm (CU-39/CU-40)', () => {
           { id_factura: 1, periodo: 'Mayo 2026', monto: 19990, fecha_limite_pago: '2026-05-10', estado: 'pendiente', dias_vencida: null, dias_para_vencer: 15 },
           { id_factura: 2, periodo: 'Abril 2026', monto: 19990, fecha_limite_pago: '2026-04-10', estado: 'vencida', dias_vencida: 45, dias_para_vencer: null },
         ],
+        planes: [
+          { nombre_comercial: 'Plan 200 Mbps', tipo_plan: 'FIBRA', velocidad_mbps: 200, precio_mensual: 24990 },
+        ],
+        detalle_disponible: true,
+        informacion_completa: true,
       }),
     });
 
@@ -44,6 +49,10 @@ describe('DeudaLookupForm (CU-39/CU-40)', () => {
       );
       expect(screen.getByText(/juan pérez/i)).toBeInTheDocument();
     });
+
+    // Detalle del plan y botón de pago (sin link)
+    expect(screen.getByText(/plan 200 mbps/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /pagar ahora/i })).toBeInTheDocument();
   });
 
   it('cambia a modo código de abonado y consulta (CU-40)', async () => {
@@ -56,6 +65,9 @@ describe('DeudaLookupForm (CU-39/CU-40)', () => {
         tiene_deuda: false,
         saldo_total: 0,
         facturas: [],
+        planes: [],
+        detalle_disponible: true,
+        informacion_completa: true,
       }),
     });
 

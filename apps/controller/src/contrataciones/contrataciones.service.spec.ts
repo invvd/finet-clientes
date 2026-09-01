@@ -81,7 +81,9 @@ describe('ContratacionesService', () => {
       });
       (tx.contrato.create as jest.Mock).mockResolvedValue({ id_contrato: 20 });
       (tx.orden_trabajo.create as jest.Mock).mockResolvedValue({ id_ot: 30 });
-      (tx.prospecto.create as jest.Mock).mockResolvedValue({ id_prospecto: 99 });
+      (tx.prospecto.create as jest.Mock).mockResolvedValue({
+        id_prospecto: 99,
+      });
 
       const result = await service.crear(DTO_MOCK);
 
@@ -143,7 +145,9 @@ describe('ContratacionesService', () => {
       });
       (tx.contrato.create as jest.Mock).mockResolvedValue({ id_contrato: 20 });
       (tx.orden_trabajo.create as jest.Mock).mockResolvedValue({ id_ot: 30 });
-      (tx.prospecto.create as jest.Mock).mockResolvedValue({ id_prospecto: 99 });
+      (tx.prospecto.create as jest.Mock).mockResolvedValue({
+        id_prospecto: 99,
+      });
 
       await service.crear(DTO_MOCK);
 
@@ -171,7 +175,9 @@ describe('ContratacionesService', () => {
       });
       (tx.contrato.create as jest.Mock).mockResolvedValue({ id_contrato: 20 });
       (tx.orden_trabajo.create as jest.Mock).mockResolvedValue({ id_ot: 30 });
-      (tx.prospecto.create as jest.Mock).mockResolvedValue({ id_prospecto: 99 });
+      (tx.prospecto.create as jest.Mock).mockResolvedValue({
+        id_prospecto: 99,
+      });
       (prisma.log_auditoria.create as jest.Mock).mockRejectedValue(
         new Error('DB audit down'),
       );
@@ -195,7 +201,9 @@ describe('ContratacionesService', () => {
       });
       (tx.contrato.create as jest.Mock).mockResolvedValue({ id_contrato: 20 });
       (tx.orden_trabajo.create as jest.Mock).mockResolvedValue({ id_ot: 30 });
-      (tx.prospecto.create as jest.Mock).mockResolvedValue({ id_prospecto: 99 });
+      (tx.prospecto.create as jest.Mock).mockResolvedValue({
+        id_prospecto: 99,
+      });
 
       const result = await service.crear(dtoSinOpcionales);
 

@@ -5,6 +5,12 @@ import Navbar from "./_components/layout/navbar/Navbar";
 import Footer from "./_components/layout/footer/Footer";
 import { themeScript } from "./_components/layout/theme/theme-script";
 import { BASE_URL } from "./_lib/consts";
+import {
+  COMPANY_ADDRESS,
+  COMPANY_BRAND,
+  COMPANY_LEGAL_NAME,
+  COMPANY_PHONE_DISPLAY,
+} from "./_lib/company";
 import { AuthProvider } from "./_lib/auth";
 
 const hanken = Hanken_Grotesk({
@@ -30,9 +36,9 @@ export const metadata: Metadata = {
     "fibra optica sur de Santiago",
     "Finet",
   ],
-  authors: [{ name: "Fibernet Limitada" }],
-  creator: "Fibernet Limitada",
-  publisher: "Fibernet Limitada",
+  authors: [{ name: COMPANY_LEGAL_NAME }],
+  creator: COMPANY_LEGAL_NAME,
+  publisher: COMPANY_LEGAL_NAME,
   robots: {
     index: true,
     follow: true,
@@ -65,26 +71,26 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "Fibernet Limitada",
-  alternateName: "Finet",
+  name: COMPANY_LEGAL_NAME,
+  alternateName: COMPANY_BRAND,
   url: BASE_URL,
   logo: `${BASE_URL}/brand/FinetLogo.png`,
   contactPoint: {
     "@type": "ContactPoint",
-    telephone: "+56 9 XXXX XXXX",
+    telephone: COMPANY_PHONE_DISPLAY,
     contactType: "customer service",
-    areaServed: ["CL"],
+    areaServed: [COMPANY_ADDRESS.country],
     availableLanguage: ["Spanish"],
   },
   areaServed: {
     "@type": "City",
-    name: "La Pintana",
+    name: COMPANY_ADDRESS.locality,
   },
   address: {
     "@type": "PostalAddress",
-    addressLocality: "La Pintana",
-    addressRegion: "Region Metropolitana",
-    addressCountry: "CL",
+    addressLocality: COMPANY_ADDRESS.locality,
+    addressRegion: COMPANY_ADDRESS.region,
+    addressCountry: COMPANY_ADDRESS.country,
   },
 };
 
@@ -111,7 +117,7 @@ export default function RootLayout({
         {/* Skip-to-content link for keyboard users */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-background focus:text-sm focus:outline-none"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-100 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-background focus:text-sm focus:outline-none"
         >
           Saltar al contenido principal
         </a>
