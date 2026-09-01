@@ -1,15 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, Loader2 } from "lucide-react";
 
 export const OoklaSpeedTest = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [hasError, setHasError] = useState<boolean>(false);
+    const speedtestUrl = "" // No hay enlace todavia, se debe reemplazar con el enlace oficial luego.
 
     // Efecto de timeout si el iframe se demora más de 10 segundos en cargar
     useEffect(() => {
         const timer = setTimeout(() => {
+            if (!speedtestUrl) {
+                setIsLoading(false);
+                return;
+            }
+
             if (isLoading) {
                 setHasError(true);
                 setIsLoading(false);
@@ -29,6 +35,32 @@ export const OoklaSpeedTest = () => {
         setHasError(true);
         setIsLoading(false);
     }
+
+    // Renderizado de carga: Enlace no disponible
+    if (!speedtestUrl) {
+        return (
+            <div className="w-full min-h-[450px] flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 text-center shadow-sm">
+                <div className="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-full mb-4">
+                    <ExternalLink className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    Mide la velocidad de tu conexión
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-6">
+                    La herramienta integrada está en configuración. Seras redirigido a la página oficial de Ookla para realizar la medición de velocidad de tu conexión.
+                </p>
+                <a
+                    href="https://www.speedtest.net/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
+                    >
+                        Ir a Speedtest Oficial
+                    </a>
+            </div>
+        )
+    }
+
 
     // Renderizado de excepción: Servicio no disponible
     if (hasError) {
@@ -64,7 +96,7 @@ export const OoklaSpeedTest = () => {
                 Nota: Reemplazar el src con el enlace oficial de Ookla para Finet.
             */}
             <iframe
-                src="https://c.speedtestcustom.com/Finet"
+                src={speedtestUrl}
                 className="w-full h-full min-h-[450px] md:min-h-[600px] border-none"
                 onLoad={handleLoad}
                 onError={handleError}
